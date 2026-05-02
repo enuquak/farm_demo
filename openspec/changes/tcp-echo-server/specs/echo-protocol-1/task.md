@@ -11,4 +11,4 @@ openspec/changes/tcp-echo-server/specs/echo-protocol-1/spec.md
 - [已完成 ✅] 运行 protoc 生成 C++ 代码到 `script/server_script/proto/`（echo.pb.cc, echo.pb.h）
 - [已完成 ✅] 运行 protoc 生成 Python 代码到 `script/client_script/proto/`（echo_pb2.py + __init__.py）
 - [已完成 ✅] 验证生成的文件存在且内容正确
-- [ ] git add + commit 所有相关文件
+- [已完成 ✅] git add + commit 所有相关文件 (commit: 201174b)
