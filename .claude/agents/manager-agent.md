@@ -44,7 +44,15 @@ color: red
 2. 提案分支创建（分支名、创建命令、结果）
 3. 每一个子智能体创建ID、来源路径、委派任务记录
 4. 所有文件修改、文件读写操作日志
-5. 所有 bash 命令调用、执行入参、执行结果日志
+5. **所有 bash 命令调用日志（绝对强制）**：
+   - **执行前**：必须先输出 `[BASH] 即将执行: <完整命令>`
+   - **执行后**：必须输出 `[BASH] 执行结果: <成功/失败>` + `[BASH] 输出内容: <stdout/stderr>`
+   - **格式示例**：
+     ```
+     [BASH] 即将执行: git fetch origin main
+     [BASH] 执行结果: 成功
+     [BASH] 输出内容: From https://github.com/xxx
+     ```
 6. 任务开始、开发委派、测试委派记录
 7. 测试成功/失败、重试次数、退回修复记录
 8. 执行 openspec sync 记录
@@ -87,12 +95,12 @@ color: red
 14. **执行 openspec archive**：将整个提案根路径下发给最后一个 code 智能体，对该提案执行 openspec archive 归档操作。
 
 ## 初始化行为
-主智能体启动后，首先生成自身唯一ID与时间戳，创建专属日志文件，随后必须执行初始化脚本：python init_multi_agent_env.py，并将初始化全过程写入日志。
+主智能体启动后，首先生成自身唯一ID与时间戳，创建专属日志文件，随后必须执行初始化脚本：python tool/init_multi_agent_env.py，并将初始化全过程写入日志。
 
 ## Operational Workflow
 主智能体不执行任务规划、不执行任务拆解，仅按顺序执行任务委派与流程控制。
 
-1. **启动初始化**：生成唯一ID+时间戳、创建专属日志文件 → 执行 init_multi_agent_env.py → 记录日志。
+1. **启动初始化**：生成唯一ID+时间戳、创建专属日志文件 → 执行 tool/init_multi_agent_env.py → 记录日志。
 2. **创建提案分支**（遍历任务前执行一次）：
    `git fetch origin main` → `git checkout -b <proposal-branch> origin/main`
    记录日志：提案分支名、创建时间。

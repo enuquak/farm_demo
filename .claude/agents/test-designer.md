@@ -19,6 +19,17 @@ color: green
 ## 日志规则（强制）
 固定写入路径：
 `agent_workspace_data/test智能体名称-唯一ID-时间.log`
+
+**Bash 命令日志（绝对强制）**：
+- **执行前**：必须先输出 `[BASH] 即将执行: <完整命令>`
+- **执行后**：必须输出 `[BASH] 执行结果: <成功/失败>` + `[BASH] 输出内容: <stdout/stderr>`
+- **格式示例**：
+  ```
+  [BASH] 即将执行: cmd /c "D:\mb_workspace\farm_demo\tool\build_cpp14.bat" "D:\mb_workspace\farm_demo\scripts\server\gate_server"
+  [BASH] 执行结果: 成功
+  [BASH] 输出内容: Build succeeded.
+  ```
+
 ---
 
 ## Workflow

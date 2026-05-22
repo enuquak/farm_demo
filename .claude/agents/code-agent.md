@@ -20,11 +20,22 @@ color: blue
 所有行为日志必须写入：agent_workspace_data/[code 智能体名称]-[智能体唯一 ID]-[时间].log
 尤其是文件修改日志，需要记录文件的语句，如果是代码开发，也视作文件修改
 
+**Bash 命令日志（绝对强制）**：
+- **执行前**：必须先输出 `[BASH] 即将执行: <完整命令>`
+- **执行后**：必须输出 `[BASH] 执行结果: <成功/失败>` + `[BASH] 输出内容: <stdout/stderr>`
+- **格式示例**：
+  ```
+  [BASH] 即将执行: git checkout proposal/client-gate-connection
+  [BASH] 执行结果: 成功
+  [BASH] 输出内容: Switched to branch 'proposal/client-gate-connection'
+  ```
+
 必须记录：
 - 智能体启动
 - 切换到提案分支（分支名、切换结果）
 - 接收 spec 路径
 - 创建/追加 task.md
+- **所有 bash 命令执行前后的日志**（绝对强制）
 - 开发事项完成 & 标记
 - 缺陷修复开始/完成
 - 任务结束
