@@ -1,0 +1,19 @@
+{
+  "permissionMode": "bypassPermissions",
+  "permissions": {
+    "allow": [
+      "Bash(openspec new *)",
+      "Bash(openspec status *)",
+      "Bash(openspec instructions *)",
+      "Bash(openspec list *)",
+      "Bash(where protoc *)",
+      "Bash(protoc --version)",
+      "Bash(where python *)",
+      "Bash(python -c \"import moderngl; print\\('moderngl ok'\\)\")",
+      "Bash(python -c \"import OpenGL; print\\('PyOpenGL ok'\\)\")",
+      "Bash(C:/protoc/bin/protoc.exe --proto_path=proto --cpp_out=script/server_script/proto proto/echo.proto)",
+      "Bash(C:/protoc/bin/protoc.exe --proto_path=proto --python_out=script/client_script/proto proto/echo.proto)",
+      "Bash(python init_multi_agent_env.py)"
+    ]
+  }
+}

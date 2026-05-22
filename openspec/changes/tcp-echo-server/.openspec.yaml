@@ -1,8 +1,0 @@
-schema: spec-driven
-created: 2026-05-01
-
-specs:
-  echo-protocol-1:
-    status: synced
-    synced_at: 2026-05-03
-    branch_merged: feature/echo-protocol-1
