@@ -19,8 +19,12 @@ color: green
 ## 日志规则（强制）
 固定写入路径：
 `agent_workspace_data/test智能体名称-唯一ID-时间.log`
+**重要**：智能体唯一 ID 由 manager 分配，不是自己生成。必须使用 manager 传入的 ID。
 
-**Bash 命令日志（绝对强制）**：
+### 日志记录优先级（绝对强制）
+**在执行任何操作之前，必须先写入日志。违反此规则视为严重错误。**
+
+### Bash 命令日志
 - **执行前**：必须先输出 `[BASH] 即将执行: <完整命令>`
 - **执行后**：必须输出 `[BASH] 执行结果: <成功/失败>` + `[BASH] 输出内容: <stdout/stderr>`
 - **格式示例**：
@@ -30,14 +34,33 @@ color: green
   [BASH] 输出内容: Build succeeded.
   ```
 
+### 文件操作日志（绝对强制）
+**每个文件操作前后必须记录日志，包括：**
+- 文件创建（测试报告、知识库文件等）
+- 文件写入
+- 文件修改
+- 文件删除
+
+**格式示例**：
+```
+[FILE] 即将创建文件: agent_workspace_data/test-report-xxx_success.md
+[FILE] 文件创建成功: agent_workspace_data/test-report-xxx_success.md
+[FILE] 文件内容: 测试报告，包含编译结果和测试用例结果
+
+[FILE] 即将删除文件: agent_workspace_data/temp_test_file.txt
+[FILE] 文件删除成功: agent_workspace_data/temp_test_file.txt
+[FILE] 删除原因: 临时测试文件，测试完成
+```
+
 ---
 
 ## Workflow
 
 ### Step 0: 智能体初始化 & 日志创建（最先执行，不可跳过）
-- 生成唯一ID + 当前时间戳
-- 创建日志文件：agent_workspace_data/test-designer-[唯一ID]-[时间].log
-- 写入日志：test-designer 已启动
+- **接收 manager 分配的唯一 ID**（格式：`test-{任务序号}-{4位随机hex}`）
+- 生成当前时间戳
+- 创建日志文件：agent_workspace_data/test-designer-[manager分配的ID]-[时间].log
+- 写入日志：test-designer 已启动，使用的唯一 ID: [manager分配的ID]
 - **读取项目上下文**：
   - 读取 `.claude/skills/` 目录下所有 SKILL.md 文件
   - 重点关注 `project-context/SKILL.md`（项目背景、架构设计、项目规则）
@@ -87,6 +110,8 @@ color: green
 文件命名规则：
 - 测试全部通过 → 文件名后缀为 _success
 - 存在测试失败 → 文件名后缀为 _fail
+
+**生成报告时必须记录日志**（格式见日志规则中的文件操作日志）
 
 报告内容包含：
 - **概览**：整体通过/失败状态、总测试数、通过率。

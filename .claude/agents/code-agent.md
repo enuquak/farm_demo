@@ -18,9 +18,12 @@ color: blue
 
 ## 日志规则（强制）
 所有行为日志必须写入：agent_workspace_data/[code 智能体名称]-[智能体唯一 ID]-[时间].log
-尤其是文件修改日志，需要记录文件的语句，如果是代码开发，也视作文件修改
+**重要**：智能体唯一 ID 由 manager 分配，不是自己生成。必须使用 manager 传入的 ID。
 
-**Bash 命令日志（绝对强制）**：
+### 日志记录优先级（绝对强制）
+**在执行任何操作之前，必须先写入日志。违反此规则视为严重错误。**
+
+### Bash 命令日志
 - **执行前**：必须先输出 `[BASH] 即将执行: <完整命令>`
 - **执行后**：必须输出 `[BASH] 执行结果: <成功/失败>` + `[BASH] 输出内容: <stdout/stderr>`
 - **格式示例**：
@@ -30,12 +33,36 @@ color: blue
   [BASH] 输出内容: Switched to branch 'proposal/client-gate-connection'
   ```
 
-必须记录：
+### 文件操作日志（绝对强制）
+**每个文件操作前后必须记录日志，包括：**
+- 文件创建
+- 文件写入
+- 文件修改
+- 文件删除
+
+**格式示例**：
+```
+[FILE] 即将创建文件: scripts/server/gate_server/include/constants.h
+[FILE] 文件创建成功: scripts/server/gate_server/include/constants.h
+[FILE] 文件内容: 定义消息ID常量（MSG_HEARTBEAT, MSG_LOGIN_REQ, MSG_LOGIN_RESP等）
+
+[FILE] 即将修改文件: openspec/changes/client-gate-connection/specs/gate-server_1/task.md
+[FILE] 文件修改成功: openspec/changes/client-gate-connection/specs/gate-server_1/task.md
+[FILE] 修改内容: 标记任务1.1为已完成
+
+[FILE] 即将删除文件: scripts/server/gate_server/temp.txt
+[FILE] 文件删除成功: scripts/server/gate_server/temp.txt
+[FILE] 删除原因: 临时文件，不再需要
+```
+
+### 必须记录的内容
 - 智能体启动
 - 切换到提案分支（分支名、切换结果）
 - 接收 spec 路径
-- 创建/追加 task.md
+- **创建/追加 task.md**（包括拆分完成后的确认）
+- **开发事项拆分完成**（格式：`[TASK] 开发事项拆分完成，共 X 个主要任务，Y 个子任务`）
 - **所有 bash 命令执行前后的日志**（绝对强制）
+- **所有文件操作前后的日志**（绝对强制）
 - 开发事项完成 & 标记
 - 缺陷修复开始/完成
 - 任务结束
@@ -45,9 +72,10 @@ color: blue
 > **强制前置约束（绝对优先）**：在执行任何其他操作之前，必须先完成 Step 0 的日志文件创建。日志文件不存在时，禁止执行任何 bash 命令、禁止读写任何文件。违反此约束视为严重错误。
 
 ### Step 0: 智能体初始化 & 日志创建（最先执行，不可跳过）
-- 生成唯一ID + 当前时间戳
-- 创建日志文件：agent_workspace_data/code-agent-[唯一ID]-[时间].log
-- 写入日志：code-agent 已启动
+- **接收 manager 分配的唯一 ID**（格式：`code-{任务序号}-{4位随机hex}`）
+- 生成当前时间戳
+- 创建日志文件：agent_workspace_data/code-agent-[manager分配的ID]-[时间].log
+- 写入日志：code-agent 已启动，使用的唯一 ID: [manager分配的ID]
 - **读取项目上下文**：
   - 读取 `.claude/skills/` 目录下所有 SKILL.md 文件
   - 重点关注 `project-context/SKILL.md`（项目背景、架构设计、项目规则）
@@ -68,17 +96,21 @@ color: blue
 - 检查同目录 task.md 是否存在
   - 不存在 → 新建 openspec 格式 task.md，task.md 的层级和 proposal.md 一致
   - 存在 → 追加开发事项
-- 写入日志：task.md 已创建/已追加
-- 拆分细粒度开发事项并写入
+- **拆分细粒度开发事项并写入 task.md**
+- **写入日志**：`[TASK] 开发事项拆分完成，共 X 个主要任务，Y 个子任务`
+- **记录文件操作日志**（格式见日志规则中的文件操作日志）
 
 ### Step 3: 按 Task 条目逐行开发 & 标记确认
 - 按顺序逐条开发
-- 每完成一条，标记：[已完成 ✅]
-- 写入日志：已完成开发事项：xxx
+- **每开始一个开发事项**：写入日志 `[TASK] 开始开发事项: xxx`
+- **每完成一个开发事项**：
+  - 写入日志 `[TASK] 完成开发事项: xxx`
+  - 标记 task.md：[已完成 ✅]
+  - 记录修改的文件列表
 
 ### Step 3A: 全新开发任务
 - 按 spec 完整实现
-- 写入日志：功能开发进行中
+- **文件创建/修改时必须记录日志**（格式见日志规则中的文件操作日志）
 - **C++ 代码开发完成后，必须执行编译验证**：
   - 使用构建脚本：`cmd /c "D:\mb_workspace\farm_demo\tool\build_cpp14.bat" "<服务目录完整路径>"`
   - 示例：`cmd /c "D:\mb_workspace\farm_demo\tool\build_cpp14.bat" "D:\mb_workspace\farm_demo\scripts\server\gate_server"`
