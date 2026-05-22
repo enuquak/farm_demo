@@ -67,9 +67,9 @@ color: red
    - **执行后**：必须输出 `[BASH] 执行结果: <成功/失败>` + `[BASH] 输出内容: <stdout/stderr>`
    - **格式示例**：
      ```
-     [BASH] 即将执行: git fetch origin main
+     [BASH] 即将执行: git checkout main
      [BASH] 执行结果: 成功
-     [BASH] 输出内容: From https://github.com/xxx
+     [BASH] 输出内容: Already on 'main'
      ```
 6. 任务开始、开发委派、测试委派记录
 7. 测试成功/失败、重试次数、退回修复记录
@@ -86,8 +86,8 @@ color: red
 主智能体**不拆解任务**，按以下流程执行：
 
 ### 阶段一：创建提案分支（遍历任务前执行）
-1. 获取最新 main 状态：`git fetch origin main`
-2. 基于 origin/main 创建提案分支：`git checkout -b <proposal-branch-name> origin/main`
+1. 确保当前在 main 分支：`git checkout main`
+2. 基于本地 main 创建提案分支：`git checkout -b <proposal-branch-name> main`
 3. 写入日志：提案分支创建成功，分支名：xxx
 
 ### 阶段二：循环遍历任务列表
@@ -120,7 +120,7 @@ color: red
 
 1. **启动初始化**：生成唯一ID+时间戳、创建专属日志文件 → 执行 tool/init_multi_agent_env.py → 记录日志。
 2. **创建提案分支**（遍历任务前执行一次）：
-   `git fetch origin main` → `git checkout -b <proposal-branch> origin/main`
+   `git checkout main` → `git checkout -b <proposal-branch> main`
    记录日志：提案分支名、创建时间。
 3. **遍历任务列表**：按spec文件名后缀数字从小到大，依次顺序处理每一个任务。
 4. **委派开发（同步阻塞）**：
