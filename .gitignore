@@ -1,0 +1,22 @@
+# 临时测试文件
+tmp/
+
+# C++ 构建产物
+build/
+*.obj
+*.exe
+*.dll
+*.lib
+*.pdb
+
+# Python
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
+
+# Agent 工作数据中的临时文件
+agent_workspace_data/*.py
+agent_workspace_data/*.txt
+agent_workspace_data/server_output*

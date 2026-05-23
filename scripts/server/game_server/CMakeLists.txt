@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(gate_server LANGUAGES CXX)
+project(game_server LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -26,19 +26,20 @@ set(PROTO_HDRS
 # 源文件
 set(SOURCES
     src/main.cpp
-    src/gate_server.cpp
-    src/session.cpp
-    src/session_manager.cpp
+    src/game_server.cpp
+    src/gate_session.cpp
+    src/player.cpp
+    src/player_manager.cpp
+    src/message_handler.cpp
     src/message_parser.cpp
-    src/game_connection.cpp
     src/msvc_compat.cpp
     ${PROTO_SRCS}
 )
 
-add_executable(gate_server ${SOURCES})
+add_executable(game_server ${SOURCES})
 
 # Include 目录
-target_include_directories(gate_server PRIVATE
+target_include_directories(game_server PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${PROTOBUF_ROOT}/include
     ${LIBEVENT_ROOT}/include
@@ -46,7 +47,7 @@ target_include_directories(gate_server PRIVATE
 )
 
 # 链接库目录
-target_link_directories(gate_server PRIVATE
+target_link_directories(game_server PRIVATE
     ${PROTOBUF_ROOT}/lib
     ${LIBEVENT_ROOT}/lib
 )
@@ -54,19 +55,19 @@ target_link_directories(gate_server PRIVATE
 # MSVC 特定设置
 if(MSVC)
     # 禁用安全警告
-    target_compile_definitions(gate_server PRIVATE
+    target_compile_definitions(game_server PRIVATE
         _CRT_SECURE_NO_WARNINGS
         _WINSOCK_DEPRECATED_NO_WARNINGS
         NOMINMAX
     )
 
     # UTF-8 源文件支持 + 静态运行时（匹配预编译的 absl/protobuf）
-    target_compile_options(gate_server PRIVATE /utf-8 /MT$<$<CONFIG:Debug>:d>)
+    target_compile_options(game_server PRIVATE /utf-8 /MT$<$<CONFIG:Debug>:d>)
 
     # 链接库: protobuf-lite + absl + libevent + Winsock
     # 使用 file(GLOB) 获取所有 absl 库
     file(GLOB ABSL_LIBS "${PROTOBUF_ROOT}/lib/absl_*.lib")
-    target_link_libraries(gate_server PRIVATE
+    target_link_libraries(game_server PRIVATE
         libprotobuf-lite.lib
         libutf8_range.lib
         libutf8_validity.lib
@@ -80,7 +81,7 @@ if(MSVC)
     )
 else()
     # Linux/macOS
-    target_link_libraries(gate_server PRIVATE
+    target_link_libraries(game_server PRIVATE
         protobuf
         event
         event_core
@@ -90,6 +91,6 @@ else()
 endif()
 
 # 输出目录
-set_target_properties(gate_server PROPERTIES
+set_target_properties(game_server PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Release"
 )

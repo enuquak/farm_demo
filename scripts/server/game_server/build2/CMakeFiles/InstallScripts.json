@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"D:/mb_workspace/farm_demo/scripts/server/game_server/build2/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

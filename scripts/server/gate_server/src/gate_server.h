@@ -1,10 +1,12 @@
 #pragma once
 
 #include "session_manager.h"
+#include "game_connection.h"
 #include <event2/event.h>
 #include <event2/listener.h>
 #include <string>
 #include <cstdint>
+#include <unordered_map>
 
 namespace farm {
 
@@ -18,6 +20,9 @@ public:
 
     // 停止服务器
     void stop();
+
+    // 配置 Game Server 连接
+    void set_game_server(const std::string& ip, uint16_t port);
 
 private:
     // libevent 回调
@@ -41,6 +46,15 @@ private:
     void handle_heartbeat(std::shared_ptr<Session> session, const std::vector<uint8_t>& payload);
     void handle_login(std::shared_ptr<Session> session, const std::vector<uint8_t>& payload);
 
+    // Game 连接相关
+    void handle_game_message(uint32_t msg_id, const std::vector<uint8_t>& payload);
+    void handle_game_identify_resp(const std::vector<uint8_t>& payload);
+    void handle_game_heartbeat_resp(const std::vector<uint8_t>& payload);
+    void handle_player_join_resp(const std::vector<uint8_t>& payload);
+    void handle_game_msg(const std::vector<uint8_t>& payload);
+    void forward_to_game(std::shared_ptr<Session> session, uint32_t msg_id,
+                         const std::vector<uint8_t>& payload);
+
     std::string ip_;
     uint16_t port_;
     struct event_base* base_;
@@ -48,6 +62,14 @@ private:
     struct event* heartbeat_timer_;
     SessionManager session_mgr_;
     bool running_;
+
+    // Game 连接
+    std::unique_ptr<GameConnection> game_conn_;
+    std::string game_ip_;
+    uint16_t game_port_;
+
+    // 玩家路由表: player_id -> game_conn (目前只有一个 Game)
+    std::unordered_map<uint64_t, GameConnection*> player_to_game_;
 };
 
 }  // namespace farm

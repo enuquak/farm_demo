@@ -1,0 +1,10 @@
+D:\mb_workspace\farm_demo\scripts\server\game_server\src\main.cpp;D:\mb_workspace\farm_demo\scripts\server\game_server\build2\game_server.dir\Release\main.obj
+D:\mb_workspace\farm_demo\scripts\server\game_server\src\game_server.cpp;D:\mb_workspace\farm_demo\scripts\server\game_server\build2\game_server.dir\Release\game_server.obj
+D:\mb_workspace\farm_demo\scripts\server\game_server\src\gate_session.cpp;D:\mb_workspace\farm_demo\scripts\server\game_server\build2\game_server.dir\Release\gate_session.obj
+D:\mb_workspace\farm_demo\scripts\server\game_server\src\player.cpp;D:\mb_workspace\farm_demo\scripts\server\game_server\build2\game_server.dir\Release\player.obj
+D:\mb_workspace\farm_demo\scripts\server\game_server\src\player_manager.cpp;D:\mb_workspace\farm_demo\scripts\server\game_server\build2\game_server.dir\Release\player_manager.obj
+D:\mb_workspace\farm_demo\scripts\server\game_server\src\message_handler.cpp;D:\mb_workspace\farm_demo\scripts\server\game_server\build2\game_server.dir\Release\message_handler.obj
+D:\mb_workspace\farm_demo\scripts\server\game_server\src\message_parser.cpp;D:\mb_workspace\farm_demo\scripts\server\game_server\build2\game_server.dir\Release\message_parser.obj
+D:\mb_workspace\farm_demo\scripts\server\game_server\src\msvc_compat.cpp;D:\mb_workspace\farm_demo\scripts\server\game_server\build2\game_server.dir\Release\msvc_compat.obj
+D:\mb_workspace\farm_demo\scripts\common\proto\generated\base.pb.cc;D:\mb_workspace\farm_demo\scripts\server\game_server\build2\game_server.dir\Release\base.pb.obj
+D:\mb_workspace\farm_demo\scripts\common\proto\generated\internal.pb.cc;D:\mb_workspace\farm_demo\scripts\server\game_server\build2\game_server.dir\Release\internal.pb.obj

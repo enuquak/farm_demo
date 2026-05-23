@@ -1,4 +1,4 @@
-#include "gate_server.h"
+#include "game_server.h"
 #include <iostream>
 #include <cstdlib>
 #include <csignal>
@@ -7,7 +7,7 @@
 #include <winsock2.h>
 #endif
 
-static farm::GateServer* g_server = nullptr;
+static farm::GameServer* g_server = nullptr;
 
 static void signal_handler(int sig) {
     if (g_server) {
@@ -26,10 +26,8 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-    std::string ip = "0.0.0.0";
-    uint16_t port = 8080;
-    std::string game_ip = "127.0.0.1";
-    uint16_t game_port = 9090;
+    std::string ip = "127.0.0.1";
+    uint16_t port = 9090;
 
     // 解析命令行参数
     if (argc >= 2) {
@@ -38,24 +36,16 @@ int main(int argc, char* argv[]) {
     if (argc >= 3) {
         ip = argv[2];
     }
-    if (argc >= 4) {
-        game_port = static_cast<uint16_t>(std::atoi(argv[3]));
-    }
-    if (argc >= 5) {
-        game_ip = argv[4];
-    }
 
     // 设置信号处理
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 
-    std::cout << "=== Gate Server ===" << std::endl;
+    std::cout << "=== Game Server ===" << std::endl;
     std::cout << "IP: " << ip << std::endl;
     std::cout << "Port: " << port << std::endl;
-    std::cout << "Game Server: " << game_ip << ":" << game_port << std::endl;
 
-    farm::GateServer server(ip, port);
-    server.set_game_server(game_ip, game_port);
+    farm::GameServer server(ip, port);
     g_server = &server;
 
     if (!server.start()) {

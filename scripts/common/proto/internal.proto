@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package farm;
+
+option optimize_for = LITE_RUNTIME;
+
+// ===========================================
+// 内部消息协议 (Gate <-> Game)
+// MsgID 范围: 3000-3299
+// ===========================================
+
+// 心跳消息 (Gate -> Game)
+message InternHeartbeat {
+    uint64 timestamp = 1;
+}
+
+// 心跳响应 (Game -> Gate)
+message InternHeartbeatResp {
+    uint64 timestamp = 1;
+}
+
+// Gate 身份标识 (Gate -> Game)
+message GateIdentify {
+    string gate_id = 1;
+    string address = 2;
+}
+
+// Gate 身份标识响应 (Game -> Gate)
+message GateIdentifyResp {
+    int32 code = 1;      // 0=成功, 其他=失败
+    string msg = 2;
+}
+
+// 玩家加入通知 (Gate -> Game)
+message PlayerJoin {
+    uint64 player_id = 1;
+}
+
+// 玩家加入响应 (Game -> Gate)
+message PlayerJoinResp {
+    uint64 player_id = 1;
+    int32 code = 2;      // 0=成功, 1=重复加入, 其他=失败
+    string msg = 3;
+}
+
+// 玩家离开通知 (Gate -> Game)
+message PlayerLeave {
+    uint64 player_id = 1;
+}
+
+// 客户端消息转发 (Gate -> Game)
+message ClientMessage {
+    uint64 player_id = 1;
+    uint32 msg_id = 2;
+    bytes payload = 3;
+}
+
+// 游戏消息转发 (Game -> Gate)
+message GameMessage {
+    uint64 player_id = 1;
+    uint32 msg_id = 2;
+    bytes payload = 3;
+}
