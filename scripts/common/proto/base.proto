@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package farm;
+
+option optimize_for = LITE_RUNTIME;
+
+// 心跳消息
+message Heartbeat {
+    uint64 timestamp = 1;
+}
+
+// 登录请求
+message LoginReq {
+    string token = 1;
+}
+
+// 登录响应
+message LoginResp {
+    int32 code = 1;
+    string msg = 2;
+}
+
+// 通用消息封装
+message Packet {
+    uint32 msg_id = 1;
+    bytes payload = 2;
+}

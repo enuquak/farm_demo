@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"D:/mb_workspace/farm_demo/scripts/server/gate_server/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

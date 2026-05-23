@@ -31,7 +31,42 @@ netstat -ano | grep 8080        # 确认端口监听
 tasklist | grep gate_server     # 确认进程存活
 ```
 
-### 1.2 验证命令序列（标准流程）
+### 1.2 WSAStartup 初始化陷阱（Windows）
+
+Windows 下 C++ 服务器使用 libevent 时，`main.cpp` 必须在调用任何 libevent 函数之前调用 `WSAStartup()`。否则 libevent 内部的 `socketpair()` 会失败，服务器无法启动。
+
+```cpp
+// ❌ 错误：缺少 WSAStartup
+int main() {
+    // libevent 调用会失败
+    event_base* base = event_base_new();  // socketpair error
+}
+
+// ✅ 正确：先初始化 Winsock
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+
+int main() {
+#ifdef _WIN32
+    WSADATA wsa_data;
+    if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
+        std::cerr << "WSAStartup failed" << std::endl;
+        return 1;
+    }
+#endif
+    // 现在可以安全使用 libevent
+    event_base* base = event_base_new();
+    // ...
+#ifdef _WIN32
+    WSACleanup();
+#endif
+}
+```
+
+**排查方法**：若服务器启动失败，检查 `server_output.txt` 是否包含 `WSAStartup not called` 错误。
+
+### 1.3 验证命令序列（标准流程）
 
 ```bash
 # 1. 启动进程，输出重定向到文件
@@ -151,7 +186,70 @@ s.close()
 
 ---
 
-## 四、测试报告规范
+## 四、Protobuf 协议测试技巧
+
+### 4.1 Python Protobuf 测试脚本
+
+当测试使用 Protobuf 的 C++ 服务器时，使用 Python 生成对应的 protobuf 绑定：
+
+```bash
+# 生成 Python protobuf 文件
+protoc --python_out=<output_dir> --proto_path=<proto_dir> base.proto
+
+# 在测试脚本中导入
+import sys
+sys.path.insert(0, '<output_dir>')
+import base_pb2
+```
+
+### 4.2 消息打包/解包辅助函数
+
+```python
+import struct
+
+def pack_message(msg_id: int, payload: bytes) -> bytes:
+    """打包消息: [4B length(network)][4B msg_id(network)][payload]"""
+    body_len = 4 + len(payload)  # length = MsgID(4B) + Payload
+    return struct.pack('!II', body_len, msg_id) + payload
+
+def recv_exact(sock, n: int) -> bytes:
+    """精确接收 n 字节"""
+    data = b''
+    while len(data) < n:
+        chunk = sock.recv(n - len(data))
+        if not chunk:
+            raise ConnectionError('Connection closed')
+        data += chunk
+    return data
+
+def recv_message(sock) -> tuple:
+    """接收一条完整消息，返回 (msg_id, payload)"""
+    header = recv_exact(sock, 8)
+    body_len, msg_id = struct.unpack('!II', header)
+    payload = recv_exact(sock, body_len - 4) if body_len > 4 else b''
+    return msg_id, payload
+```
+
+### 4.3 粘包/拆包测试模板
+
+```python
+# 粘包：多条消息拼接发送
+msg1 = pack_message(1001, heartbeat_payload1)
+msg2 = pack_message(1001, heartbeat_payload2)
+sock.sendall(msg1 + msg2)  # 一次发送两条
+
+# 拆包：一条消息分段发送
+full_msg = pack_message(2001, login_payload)
+sock.sendall(full_msg[:4])      # 第一段
+time.sleep(0.05)
+sock.sendall(full_msg[4:8])     # 第二段
+time.sleep(0.05)
+sock.sendall(full_msg[8:])      # 第三段
+```
+
+---
+
+## 五、测试报告规范
 
 ### 4.1 报告命名
 

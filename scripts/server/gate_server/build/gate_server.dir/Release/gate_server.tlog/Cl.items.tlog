@@ -1,0 +1,7 @@
+D:\mb_workspace\farm_demo\scripts\server\gate_server\src\main.cpp;D:\mb_workspace\farm_demo\scripts\server\gate_server\build\gate_server.dir\Release\main.obj
+D:\mb_workspace\farm_demo\scripts\server\gate_server\src\gate_server.cpp;D:\mb_workspace\farm_demo\scripts\server\gate_server\build\gate_server.dir\Release\gate_server.obj
+D:\mb_workspace\farm_demo\scripts\server\gate_server\src\session.cpp;D:\mb_workspace\farm_demo\scripts\server\gate_server\build\gate_server.dir\Release\session.obj
+D:\mb_workspace\farm_demo\scripts\server\gate_server\src\session_manager.cpp;D:\mb_workspace\farm_demo\scripts\server\gate_server\build\gate_server.dir\Release\session_manager.obj
+D:\mb_workspace\farm_demo\scripts\server\gate_server\src\message_parser.cpp;D:\mb_workspace\farm_demo\scripts\server\gate_server\build\gate_server.dir\Release\message_parser.obj
+D:\mb_workspace\farm_demo\scripts\server\gate_server\src\msvc_compat.cpp;D:\mb_workspace\farm_demo\scripts\server\gate_server\build\gate_server.dir\Release\msvc_compat.obj
+D:\mb_workspace\farm_demo\scripts\common\proto\generated\base.pb.cc;D:\mb_workspace\farm_demo\scripts\server\gate_server\build\gate_server.dir\Release\base.pb.obj
