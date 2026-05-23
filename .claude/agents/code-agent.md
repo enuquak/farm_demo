@@ -145,6 +145,10 @@ color: blue
   - 示例：`cmd /c "D:\mb_workspace\farm_demo\tool\build_cpp14.bat" "D:\mb_workspace\farm_demo\scripts\server\gate_server"`
   - 编译失败时，根据错误信息修复代码，直到编译通过
   - 将编译结果（成功/失败及错误详情）写入日志
+- **编译后必须验证运行时依赖**：
+  - 检查 exe 输出目录是否包含所有依赖 DLL（如 libevent 的 event.dll、event_core.dll、event_extra.dll）
+  - 若 DLL 缺失，在 build 脚本中补充 DLL 复制逻辑，或手动复制到 exe 目录
+  - **编译成功不等于可运行**，必须确认 DLL 齐全后才算开发完成
 
 ### Step 3B: 缺陷修复任务
 - 读取测试报告
@@ -154,7 +158,10 @@ color: blue
 
 ### Step 4: 开发后知识总结
 - 写入日志：开始知识沉淀
-- 完成 code_pre_knowledge / code_knowledge 更新
+- 将经验追加到 `pre_knowledge/code/knowledge.md`
+- 若积累达到 3 条同类条目，提升至正式知识库：
+  - 通用 C++ 知识 → `.claude/skills/cpp-ai-coding-conventions/SKILL.md`
+  - 组件专属知识 → 对应组件 skill（如 `.claude/skills/gate-server-conventions/SKILL.md`）
 - 写入日志：知识沉淀完成
 
 ### Step 5: 任务结束

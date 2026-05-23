@@ -33,6 +33,23 @@ if exist "CMakeLists.txt" (
     if %errorlevel% equ 0 (
         echo.
         echo Build success!
+
+        REM Copy exe to parent Release directory
+        if exist "Release\gate_server.exe" (
+            if not exist "..\Release" mkdir "..\Release"
+            copy /Y "Release\gate_server.exe" "..\Release\" >nul
+            echo Copied gate_server.exe to ..\Release\
+        )
+
+        REM Copy libevent DLLs to Release directory
+        set "LIBEVENT_ROOT=C:\libevent_install"
+        if exist "%LIBEVENT_ROOT%\lib\event.dll" (
+            if not exist "..\Release" mkdir "..\Release"
+            copy /Y "%LIBEVENT_ROOT%\lib\event.dll" "..\Release\" >nul
+            copy /Y "%LIBEVENT_ROOT%\lib\event_core.dll" "..\Release\" >nul
+            copy /Y "%LIBEVENT_ROOT%\lib\event_extra.dll" "..\Release\" >nul
+            echo Copied libevent DLLs to ..\Release\
+        )
     ) else (
         echo.
         echo Build failed!

@@ -171,7 +171,26 @@ cmd /c "D:\mb_workspace\farm_demo\tool\build_cpp14.bat" "D:\mb_workspace\farm_de
 
 **注意事项**:
 - 每个 C++ 服务目录下必须有 `src\main.cpp` 作为编译入口
-- 编译成功后在服务目录下生成 `main.exe`
+- 编译成功后在服务目录下生成 `Release/gate_server.exe`
+
+**运行时依赖（关键）**:
+- 项目依赖 libevent 动态库，运行时需要以下 DLL 与 exe 同目录：
+  - `event.dll`
+  - `event_core.dll`
+  - `event_extra.dll`
+- DLL 来源路径：`C:/libevent_install/lib/`
+- build 脚本会在编译成功后自动复制 DLL 到 Release 目录
+- protobuf 使用静态链接，无需额外 DLL
+- **若 exe 启动报"找不到 xxx.dll"，检查 Release 目录是否包含所有 DLL**
+
+**启动与验证**:
+```bash
+# 启动服务器（默认端口 8080）
+start /B path/to/gate_server.exe 8080 > server_output.txt 2>&1
+
+# 验证端口监听（必须确认后再执行测试）
+netstat -ano | grep 8080
+```
 
 ```
 farm_demo/
