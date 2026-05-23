@@ -38,6 +38,20 @@ color: blue
   [BASH] 输出内容: Switched to branch 'proposal/client-gate-connection'
   ```
 
+### 后台启动规则（绝对强制）
+**启动长时间运行的进程时，必须使用后台启动，避免卡住前台。**
+- **适用场景**：启动服务器（如 gate.exe、game.exe）、启动客户端、启动测试服务等
+- **后台启动方式**：
+  - Windows: `start /B <command>` 或 `powershell -Command "Start-Process -NoNewWindow <command>"`
+  - Linux/macOS: `<command> &`
+- **日志记录**：
+  ```
+  [BASH] 即将后台启动: start /B gate.exe
+  [BASH] 执行结果: 成功
+  [BASH] 输出内容: 进程已在后台启动，PID: 12345
+  ```
+- **绝对禁止**：使用前台启动长时间运行的进程（如直接执行 `gate.exe` 而不加后台参数）
+
 ### 文件操作日志（绝对强制）
 **每个文件操作前后必须记录日志，包括：**
 - 文件创建
