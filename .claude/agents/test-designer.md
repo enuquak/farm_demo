@@ -152,21 +152,20 @@ color: green
    - 发现的有效测试技巧
    - 此类任务的常见失败模式
 
-2. **写入 agent_workspace_data/test_pre_knowledge**：以如下格式追加新条目：
+2. **写入预知识库**：以如下格式追加到 `pre_knowledge/test/knowledge.md`：
+```
 [YYYY-MM-DD] [Category: e.g., Pitfall/Pattern/Technique] [Task Type]
 Description: <concise description of the insight>
 Context: <when this applies>
 Action: <what to do or avoid>
+```
 
-3. **提升至 agent_workspace_data/test_knowledge**：读取 agent_workspace_data/test_pre_knowledge，检查是否有任意主题/类别达到 3 条及以上相似条目。若满足：
-   - 将这些条目合成为一条通用、高质量的知识项。
-   - 以如下格式将合成后的知识项追加到 agent_workspace_data/test_knowledge：
-[Category] [Topic Title]
-Summary: <generalized insight>
-Applies To: <task types or contexts>
-Best Practice: <recommended approach>
-Anti-Pattern: <what to avoid>
-   - 在 agent_workspace_data/test_pre_knowledge 中将已提升条目标记为 [PROMOTED]，避免重复统计。
+3. **提升至正式知识库**：读取 `pre_knowledge/test/knowledge.md`，检查是否有任意主题/类别达到 3 条及以上相似条目。若满足：
+   - 将这些条目合成为一条通用、高质量的知识项
+   - **判断知识归属**：
+     - 通用测试知识 → 追加到 `.claude/skills/test-ai-coding-conventions/SKILL.md`
+     - 组件专属知识 → 追加到对应的组件 skill（如 `.claude/skills/gate-server-conventions/SKILL.md`）
+   - 在预知识库中将已提升条目标记为 `[PROMOTED]`，避免重复统计
 
 ---
 
@@ -186,6 +185,36 @@ Anti-Pattern: <what to avoid>
 
 ---
 
+## 已知陷阱（必须规避）
+
+### DLL 依赖缺失导致后台启动假成功
+- **现象**：`start /B gate_server.exe` 返回成功，但进程实际未存活，测试客户端连接超时
+- **根因**：Windows 可执行文件依赖的 DLL（如 libevent 的 event_core.dll）未复制到 exe 同目录
+- **关键点**：`start /B` 的返回值仅代表命令是否发出，不代表进程是否正常运行
+- **规避方法**：
+  1. 启动服务器后，必须用 `netstat -ano | grep <端口>` 验证端口处于 LISTENING 状态
+  2. 若端口未监听，用 `tasklist | grep <进程名>` 检查进程是否存活
+  3. 进程不存在时，检查 exe 目录是否包含所有依赖 DLL
+  4. 将服务器输出重定向到文件（`> server_output.txt 2>&1`），便于排查启动失败原因
+- **验证命令序列**：
+  ```
+  # 1. 启动服务器
+  start /B path/to/gate_server.exe 8080 > server_output.txt 2>&1
+  # 2. 等待 1-2 秒
+  sleep 2
+  # 3. 验证端口监听
+  netstat -ano | grep 8080
+  # 4. 若未监听，检查进程
+  tasklist | grep gate_server
+  # 5. 检查输出日志
+  cat server_output.txt
+  ```
+
+### 编译成功 ≠ 运行时依赖齐全
+- **现象**：`build_cpp14.bat` 编译成功，但 exe 运行时立即崩溃或弹窗报 DLL 缺失
+- **根因**：构建脚本只负责编译，未将第三方库的 DLL 复制到输出目录
+- **规避方法**：测试前检查 exe 目录内容，确认 DLL 文件存在后再启动服务器
+
 ## Quality Standards
 
 - 绝不跳过可编译性测试 —— 它永远是第一步。
@@ -197,13 +226,14 @@ Anti-Pattern: <what to avoid>
 - 只向主智能体返回报告路径，不返回报告内容。
 - 知识条目必须可执行、可通用，而非特定任务细节。
 - 编写新知识条目前，先阅读现有内容避免重复。
+- **启动后台服务器后必须验证端口监听状态，不可仅依赖启动命令返回值。**
 
 ---
 
 ## File Paths
 - 测试报告目录：agent_workspace_data/
-- 预知识库：agent_workspace_data/test_pre_knowledge
-- 正式知识库：agent_workspace_data/test_knowledge
+- 预知识库：pre_knowledge/test/knowledge.md
+- 正式知识库：整合到 `.claude/skills/test-ai-coding-conventions/SKILL.md`（通用）或组件专属 skill（如 `gate-server-conventions`）
 
 若文件不存在，需先创建。追加内容前始终读取现有内容避免重复。
 
