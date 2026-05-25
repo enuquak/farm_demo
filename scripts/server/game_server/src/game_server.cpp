@@ -17,13 +17,15 @@
 
 namespace farm {
 
-GameServer::GameServer(const std::string& ip, uint16_t port)
+GameServer::GameServer(const std::string& ip, uint16_t port,
+                       const std::vector<DBMgrConfig>& dbmgr_configs)
     : ip_(ip)
     , port_(port)
     , base_(nullptr)
     , listener_(nullptr)
     , heartbeat_timer_(nullptr)
     , running_(false)
+    , dbmgr_configs_(dbmgr_configs)
 {
 }
 
@@ -73,6 +75,20 @@ bool GameServer::start() {
     running_ = true;
     std::cout << "[GameServer] Listening on " << ip_ << ":" << port_ << std::endl;
 
+    // 初始化 DBMgr 连接管理器
+    if (!dbmgr_configs_.empty()) {
+        if (!dbmgr_mgr_.init(base_, dbmgr_configs_)) {
+            std::cerr << "[GameServer] Failed to init DBMgrConnectionManager" << std::endl;
+        } else {
+            std::cout << "[GameServer] DBMgr connections initialized ("
+                      << dbmgr_configs_.size() << " DBMgrs)" << std::endl;
+            // 设置 PlayerManager 的 DBMgr 连接管理器
+            player_mgr_.set_dbmgr_manager(&dbmgr_mgr_);
+        }
+    } else {
+        std::cout << "[GameServer] No DBMgr configs, skipping DBMgr connections" << std::endl;
+    }
+
     // 进入事件循环（阻塞）
     event_base_dispatch(base_);
 
@@ -82,6 +98,8 @@ bool GameServer::start() {
 
 void GameServer::stop() {
     running_ = false;
+    // Shutdown DBMgr connections first
+    dbmgr_mgr_.shutdown();
     if (heartbeat_timer_) {
         event_free(heartbeat_timer_);
         heartbeat_timer_ = nullptr;
@@ -195,8 +213,8 @@ void GameServer::handle_disconnect(std::shared_ptr<GateSession> session) {
     std::cout << "[GameServer] Gate disconnected fd=" << fd
               << " gate_id=" << gate_id << std::endl;
 
-    // 清理该 Gate 关联的所有玩家
-    player_mgr_.remove_players_by_gate(session.get());
+    // 清理该 Gate 关联的所有玩家（并保存数据）
+    player_mgr_.remove_players_by_gate_with_save(session.get());
 
     // 移除会话
     gate_sessions_.erase(fd);
@@ -328,24 +346,26 @@ void GameServer::handle_player_join(std::shared_ptr<GateSession> session,
     std::cout << "[GameServer] Player join: player_id=" << player_id
               << " from gate_id=" << session->gate_id() << std::endl;
 
-    farm::PlayerJoinResp resp;
-    resp.set_player_id(player_id);
+    // 创建回调函数，用于数据加载完成后发送响应
+    auto callback = [this, session, player_id](uint64_t pid, bool success, const std::string& msg) {
+        handle_player_join_callback(session, pid, success, msg);
+    };
 
-    bool added = player_mgr_.add_player(player_id, session.get());
-    if (added) {
-        resp.set_code(0);
-        resp.set_msg("joined");
-        std::cout << "[GameServer] Player " << player_id << " added to PlayerManager" << std::endl;
-    } else {
+    bool added = player_mgr_.add_player_with_data_load(player_id, session.get(), std::move(callback));
+    if (!added) {
+        // 玩家已存在，直接回复失败
+        farm::PlayerJoinResp resp;
+        resp.set_player_id(player_id);
         resp.set_code(1);
         resp.set_msg("already joined");
+
+        std::string resp_data;
+        resp.SerializeToString(&resp_data);
+        send_to_gate(session, MSG_ID_PLAYER_JOIN_RESP, resp_data);
+
         std::cout << "[GameServer] Player " << player_id << " already exists" << std::endl;
     }
-
-    std::string resp_data;
-    resp.SerializeToString(&resp_data);
-
-    send_to_gate(session, MSG_ID_PLAYER_JOIN_RESP, resp_data);
+    // 注意：成功添加的情况下，响应会在 handle_player_join_callback 中发送
 }
 
 void GameServer::handle_player_leave(std::shared_ptr<GateSession> session,
@@ -359,7 +379,33 @@ void GameServer::handle_player_leave(std::shared_ptr<GateSession> session,
     std::cout << "[GameServer] Player leave: player_id=" << player_id
               << " from gate_id=" << session->gate_id() << std::endl;
 
-    player_mgr_.remove_player(player_id);
+    // 保存数据并移除玩家
+    player_mgr_.remove_player_with_save(player_id);
+}
+
+void GameServer::handle_player_join_callback(std::shared_ptr<GateSession> session,
+                                             uint64_t player_id, bool success,
+                                             const std::string& msg) {
+    std::cout << "[GameServer] Player join callback: player_id=" << player_id
+              << " success=" << success << " msg=" << msg << std::endl;
+
+    farm::PlayerJoinResp resp;
+    resp.set_player_id(player_id);
+
+    if (success) {
+        resp.set_code(0);
+        resp.set_msg("joined");
+        std::cout << "[GameServer] Player " << player_id << " joined successfully" << std::endl;
+    } else {
+        resp.set_code(1);
+        resp.set_msg(msg);
+        std::cerr << "[GameServer] Player " << player_id << " join failed: " << msg << std::endl;
+    }
+
+    std::string resp_data;
+    resp.SerializeToString(&resp_data);
+
+    send_to_gate(session, MSG_ID_PLAYER_JOIN_RESP, resp_data);
 }
 
 void GameServer::handle_client_msg(std::shared_ptr<GateSession> session,
