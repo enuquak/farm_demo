@@ -4,6 +4,7 @@
 #include "player_manager.h"
 #include "message_handler.h"
 #include "message_parser.h"
+#include "dbmgr_connection_manager.h"
 
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -12,12 +13,18 @@
 #include <cstdint>
 #include <unordered_map>
 #include <memory>
+#include <vector>
+#include <functional>
 
 namespace farm {
 
+// 玩家加入回调类型
+using PlayerJoinCallback = std::function<void(uint64_t player_id, bool success, const std::string& msg)>;
+
 class GameServer {
 public:
-    GameServer(const std::string& ip, uint16_t port);
+    GameServer(const std::string& ip, uint16_t port,
+               const std::vector<DBMgrConfig>& dbmgr_configs = {});
     ~GameServer();
 
     // 启动服务器（阻塞）
@@ -60,6 +67,11 @@ private:
     void handle_client_msg(std::shared_ptr<GateSession> session,
                            const std::vector<uint8_t>& payload);
 
+    // 玩家加入回调处理
+    void handle_player_join_callback(std::shared_ptr<GateSession> session,
+                                     uint64_t player_id, bool success,
+                                     const std::string& msg);
+
     // 发送消息辅助
     void send_to_gate(std::shared_ptr<GateSession> session,
                       uint32_t msg_id, const std::string& payload);
@@ -81,6 +93,10 @@ private:
 
     // 业务消息处理框架
     MessageHandler msg_handler_;
+
+    // DBMgr 连接管理
+    DBMgrConnectionManager dbmgr_mgr_;
+    std::vector<DBMgrConfig> dbmgr_configs_;
 };
 
 }  // namespace farm

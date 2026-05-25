@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package farm;
+
+option optimize_for = LITE_RUNTIME;
+
+// ===========================================
+// DBMgr 消息协议 (Game <-> DBMgr)
+// MsgID 范围: 4000-4299
+// ===========================================
+
+// DBMgr 身份标识 (DBMgr -> Game)
+message DBMgrIdentify {
+    uint32 index = 1;       // DBMgr 实例索引
+    string address = 2;     // DBMgr 监听地址 (ip:port)
+}
+
+// DBMgr 身份标识响应 (Game -> DBMgr)
+message DBMgrIdentifyResp {
+    int32 code = 1;         // 0=成功, 其他=失败
+    string msg = 2;
+}
+
+// DBMgr 心跳 (DBMgr -> Game)
+message DBMgrHeartbeat {
+    uint64 timestamp = 1;
+}
+
+// DBMgr 心跳响应 (Game -> DBMgr)
+message DBMgrHeartbeatResp {
+    uint64 timestamp = 1;
+}
+
+// 数据操作类型
+enum PlayerDataOp {
+    GET = 0;        // 读取指定 key
+    SET = 1;        // 写入指定 key
+    DEL = 2;        // 删除指定 key
+    GET_ALL = 3;    // 读取全部数据
+    SET_ALL = 4;    // 写入全部数据
+}
+
+// 玩家数据请求 (Game -> DBMgr)
+message PlayerDataReq {
+    uint64 request_id = 1;  // 请求 ID，用于异步匹配
+    uint64 player_id = 2;   // 玩家 ID
+    PlayerDataOp op = 3;    // 操作类型
+    string key = 4;         // 数据 key (GET/SET/DEL 时使用)
+    bytes value = 5;        // 数据值 (SET/SET_ALL 时使用)
+}
+
+// 玩家数据响应 (DBMgr -> Game)
+message PlayerDataResp {
+    uint64 request_id = 1;  // 对应请求的 ID
+    int32 code = 2;         // 0=成功, 其他=失败
+    bytes value = 3;        // 数据值 (GET/GET_ALL 时返回)
+}
