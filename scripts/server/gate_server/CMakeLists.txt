@@ -42,6 +42,7 @@ target_include_directories(gate_server PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${PROTOBUF_ROOT}/include
     ${LIBEVENT_ROOT}/include
+    ${COMMON_PROTO_DIR}
     ${COMMON_PROTO_DIR}/generated
 )
 

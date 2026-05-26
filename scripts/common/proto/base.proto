@@ -20,8 +20,17 @@ message LoginResp {
     string msg = 2;
 }
 
-// 通用消息封装
-message Packet {
-    uint32 msg_id = 1;
-    bytes payload = 2;
+// 账号消息封装 (Client -> Gate)
+message AccountMsg {
+    string account_id = 1;      // 账号 ID
+    uint32 msg_id = 2;          // 业务消息 ID
+    bytes payload = 3;          // 业务消息体
+}
+
+// 玩家消息封装 (Client -> Gate)
+message PlayerMsg {
+    uint64 player_id = 1;       // 玩家 ID
+    uint32 server_id = 2;       // 服务器 ID
+    uint32 msg_id = 3;          // 业务消息 ID
+    bytes payload = 4;          // 业务消息体
 }

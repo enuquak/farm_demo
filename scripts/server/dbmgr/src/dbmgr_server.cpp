@@ -14,6 +14,7 @@
 #include <iostream>
 
 #include "dbmgr.pb.h"
+#include "account.pb.h"
 
 namespace farm {
 
@@ -283,6 +284,12 @@ void DbMgrServer::route_message(std::shared_ptr<GameSession> session,
         case MSG_ID_PLAYER_DATA_REQ:
             handle_player_data_req(session, payload);
             break;
+        case MSG_ID_ACCOUNT_DATA_REQ:
+            handle_account_data_req(session, payload);
+            break;
+        case MSG_ID_ACCOUNT_SET_REQ:
+            handle_account_set_req(session, payload);
+            break;
         default:
             std::cout << "[DbMgrServer] Unknown msg_id=" << msg_id
                       << " from fd=" << session->fd() << std::endl;
@@ -376,6 +383,86 @@ void DbMgrServer::handle_player_data_req(std::shared_ptr<GameSession> session,
     std::cout << "[DbMgrServer] PlayerDataResp request_id=" << request_id
               << " code=" << static_cast<int32_t>(result)
               << " value_size=" << result_value.size() << std::endl;
+}
+
+void DbMgrServer::handle_account_data_req(std::shared_ptr<GameSession> session,
+                                           const std::vector<uint8_t>& payload) {
+    farm::AccountDataReq req;
+    if (!payload.empty()) {
+        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    }
+
+    const std::string& account_id = req.account_id();
+
+    std::cout << "[DbMgrServer] AccountDataReq account_id=" << account_id << std::endl;
+
+    // 构造响应
+    farm::AccountDataResp resp;
+
+    std::vector<AccountRole> roles;
+    AccountResult result = data_mgr_.get_account(account_id, roles);
+
+    resp.set_code(static_cast<int32_t>(result));
+    if (result == AccountResult::SUCCESS) {
+        for (const auto& role : roles) {
+            auto* role_info = resp.add_roles();
+            role_info->set_server_id(role.server_id);
+            role_info->set_player_id(role.player_id);
+            role_info->set_role_name(role.role_name);
+        }
+    } else {
+        resp.set_msg("Failed to get account data");
+    }
+
+    std::string resp_data;
+    resp.SerializeToString(&resp_data);
+
+    send_to_game(session, MSG_ID_ACCOUNT_DATA_RESP, resp_data);
+
+    std::cout << "[DbMgrServer] AccountDataResp account_id=" << account_id
+              << " code=" << static_cast<int32_t>(result)
+              << " roles_count=" << roles.size() << std::endl;
+}
+
+void DbMgrServer::handle_account_set_req(std::shared_ptr<GameSession> session,
+                                          const std::vector<uint8_t>& payload) {
+    farm::AccountSetReq req;
+    if (!payload.empty()) {
+        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    }
+
+    const std::string& account_id = req.account_id();
+    const auto& new_role = req.new_role();
+
+    std::cout << "[DbMgrServer] AccountSetReq account_id=" << account_id
+              << " server_id=" << new_role.server_id()
+              << " player_id=" << new_role.player_id()
+              << " role_name=" << new_role.role_name() << std::endl;
+
+    // 构造响应
+    farm::AccountSetResp resp;
+
+    AccountRole role;
+    role.server_id = new_role.server_id();
+    role.player_id = new_role.player_id();
+    role.role_name = new_role.role_name();
+
+    AccountResult result = data_mgr_.set_account(account_id, role);
+
+    resp.set_code(static_cast<int32_t>(result));
+    if (result == AccountResult::ROLE_ALREADY_EXISTS) {
+        resp.set_msg("角色已存在");
+    } else if (result != AccountResult::SUCCESS) {
+        resp.set_msg("Failed to set account data");
+    }
+
+    std::string resp_data;
+    resp.SerializeToString(&resp_data);
+
+    send_to_game(session, MSG_ID_ACCOUNT_SET_RESP, resp_data);
+
+    std::cout << "[DbMgrServer] AccountSetResp account_id=" << account_id
+              << " code=" << static_cast<int32_t>(result) << std::endl;
 }
 
 // ===========================================

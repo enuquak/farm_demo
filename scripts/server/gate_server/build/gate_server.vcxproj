@@ -86,7 +86,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /utf-8</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -114,10 +114,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;NOMINMAX;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -144,7 +144,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /utf-8</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -173,10 +173,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;NOMINMAX;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -203,7 +203,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /utf-8</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -232,10 +232,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;NOMINMAX;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -262,7 +262,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /utf-8</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -290,10 +290,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;NOMINMAX;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\mb_workspace\farm_demo\scripts\server\gate_server\src;C:\protobuf_install\include;C:\libevent_install\include;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto;D:\mb_workspace\farm_demo\scripts\server\gate_server\..\..\common\proto\generated;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -381,8 +381,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\gate_server\src\session.cpp" />
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\gate_server\src\session_manager.cpp" />
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\gate_server\src\message_parser.cpp" />
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\gate_server\src\game_connection.cpp" />
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\gate_server\src\msvc_compat.cpp" />
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\common\proto\generated\base.pb.cc" />
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\common\proto\generated\internal.pb.cc" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

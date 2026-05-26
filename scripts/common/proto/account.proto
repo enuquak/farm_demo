@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package farm;
+
+option optimize_for = LITE_RUNTIME;
+
+// ===========================================
+// 账号消息协议
+// MsgID 范围: 1000-1999 (客户端<->Gate<->Game)
+// ===========================================
+
+// 角色信息
+message RoleInfo {
+    uint32 server_id = 1;       // 服务器 ID
+    uint64 player_id = 2;       // 玩家 ID
+    string role_name = 3;       // 角色名
+}
+
+// 查询角色列表请求 (Client -> Gate -> Game -> DBMgr)
+message QueryRolesReq {
+    string account_id = 1;      // 账号 ID
+}
+
+// 查询角色列表响应 (DBMgr -> Game -> Gate -> Client)
+message QueryRolesResp {
+    int32 code = 1;             // 0=成功, 其他=失败
+    string msg = 2;
+    repeated RoleInfo roles = 3; // 角色列表
+}
+
+// 创建角色请求 (Client -> Gate -> Game -> DBMgr)
+message CreateRoleReq {
+    string account_id = 1;      // 账号 ID
+    uint32 server_id = 2;       // 目标服务器 ID
+    string role_name = 3;       // 角色名
+}
+
+// 创建角色响应 (DBMgr -> Game -> Gate -> Client)
+message CreateRoleResp {
+    int32 code = 1;             // 0=成功, 1=角色已存在, 2=服务器不存在
+    string msg = 2;
+    uint64 player_id = 3;       // 创建成功时返回 player_id
+}
+
+// ===========================================
+// 账号数据消息协议 (Game <-> DBMgr)
+// MsgID 范围: 4200-4299
+// ===========================================
+
+// 账号数据请求 (Game -> DBMgr)
+message AccountDataReq {
+    string account_id = 1;      // 账号 ID
+}
+
+// 账号数据响应 (DBMgr -> Game)
+message AccountDataResp {
+    int32 code = 1;             // 0=成功, 其他=失败
+    string msg = 2;
+    repeated RoleInfo roles = 3; // 角色列表
+}
+
+// 设置账号数据请求 (Game -> DBMgr)
+message AccountSetReq {
+    string account_id = 1;      // 账号 ID
+    RoleInfo new_role = 2;      // 新角色信息
+}
+
+// 设置账号数据响应 (DBMgr -> Game)
+message AccountSetResp {
+    int32 code = 1;             // 0=成功, 1=角色已存在, 其他=失败
+    string msg = 2;
+}

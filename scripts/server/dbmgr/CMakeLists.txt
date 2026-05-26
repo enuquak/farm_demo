@@ -17,10 +17,12 @@ set(PROTO_GENERATED_DIR "${COMMON_PROTO_DIR}/generated")
 set(PROTO_SRCS
     ${PROTO_GENERATED_DIR}/base.pb.cc
     ${PROTO_GENERATED_DIR}/dbmgr.pb.cc
+    ${PROTO_GENERATED_DIR}/account.pb.cc
 )
 set(PROTO_HDRS
     ${PROTO_GENERATED_DIR}/base.pb.h
     ${PROTO_GENERATED_DIR}/dbmgr.pb.h
+    ${PROTO_GENERATED_DIR}/account.pb.h
 )
 
 # 源文件

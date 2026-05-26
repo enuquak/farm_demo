@@ -186,7 +186,7 @@ cmd /c "D:\mb_workspace\farm_demo\tool\build_cpp14.bat" "D:\mb_workspace\farm_de
 **启动与验证**:
 ```bash
 # 启动服务器（默认端口 8080）
-start /B path/to/gate_server.exe 8080 > server_output.txt 2>&1
+./path/to/gate_server.exe 8080 > server_output.txt 2>&1 &
 
 # 验证端口监听（必须确认后再执行测试）
 netstat -ano | grep 8080
@@ -207,7 +207,11 @@ farm_demo/
 │           ├── echo.proto
 │           └── generated/     # 生成的代码
 ├── openspec/                   # OpenSpec 文档
-└── agent_workspace_data/       # 智能体工作数据
+├── agent_workspace_data/       # 智能体工作数据（日志、报告）
+├── pre_knowledge/              # 预知识库
+│   ├── code/                  # 开发预知识
+│   └── test/                  # 测试预知识
+└── tmp/                        # 临时文件（测试脚本、临时输出，已 gitignore）
 ```
 
 **分类原则**:

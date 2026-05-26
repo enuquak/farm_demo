@@ -7,8 +7,16 @@
 #include <string>
 #include <cstdint>
 #include <unordered_map>
+#include <vector>
 
 namespace farm {
+
+// Game Server 配置
+struct GameServerConfig {
+    uint32_t server_id;
+    std::string ip;
+    uint16_t port;
+};
 
 class GateServer {
 public:
@@ -21,8 +29,11 @@ public:
     // 停止服务器
     void stop();
 
-    // 配置 Game Server 连接
+    // 配置 Game Server 连接（单个，向后兼容）
     void set_game_server(const std::string& ip, uint16_t port);
+
+    // 加载 game_servers 配置文件
+    bool load_game_servers_config(const std::string& config_file);
 
 private:
     // libevent 回调
@@ -47,13 +58,22 @@ private:
     void handle_login(std::shared_ptr<Session> session, const std::vector<uint8_t>& payload);
 
     // Game 连接相关
-    void handle_game_message(uint32_t msg_id, const std::vector<uint8_t>& payload);
-    void handle_game_identify_resp(const std::vector<uint8_t>& payload);
-    void handle_game_heartbeat_resp(const std::vector<uint8_t>& payload);
-    void handle_player_join_resp(const std::vector<uint8_t>& payload);
-    void handle_game_msg(const std::vector<uint8_t>& payload);
+    void handle_game_message(uint32_t server_id, uint32_t msg_id, const std::vector<uint8_t>& payload);
+    void handle_game_identify_resp(uint32_t server_id, const std::vector<uint8_t>& payload);
+    void handle_game_heartbeat_resp(uint32_t server_id, const std::vector<uint8_t>& payload);
+    void handle_player_join_resp(uint32_t server_id, const std::vector<uint8_t>& payload);
+    void handle_game_msg(uint32_t server_id, const std::vector<uint8_t>& payload);
+    void handle_account_msg_resp(uint32_t server_id, const std::vector<uint8_t>& payload);
     void forward_to_game(std::shared_ptr<Session> session, uint32_t msg_id,
                          const std::vector<uint8_t>& payload);
+    void forward_account_msg_to_game(std::shared_ptr<Session> session, uint32_t msg_id,
+                                     const std::vector<uint8_t>& payload);
+    void forward_player_msg_to_game(std::shared_ptr<Session> session, uint32_t server_id,
+                                    uint32_t msg_id, const std::vector<uint8_t>& payload);
+
+    // 获取 Game 连接
+    GameConnection* get_game_connection(uint32_t server_id);
+    GameConnection* get_any_game_connection();
 
     std::string ip_;
     uint16_t port_;
@@ -63,13 +83,17 @@ private:
     SessionManager session_mgr_;
     bool running_;
 
-    // Game 连接
-    std::unique_ptr<GameConnection> game_conn_;
-    std::string game_ip_;
-    uint16_t game_port_;
+    // Game Server 配置
+    std::vector<GameServerConfig> game_server_configs_;
 
-    // 玩家路由表: player_id -> game_conn (目前只有一个 Game)
-    std::unordered_map<uint64_t, GameConnection*> player_to_game_;
+    // Game 连接: server_id -> GameConnection
+    std::unordered_map<uint32_t, std::unique_ptr<GameConnection>> game_conns_;
+
+    // 玩家路由表: player_id -> server_id
+    std::unordered_map<uint64_t, uint32_t> player_to_server_;
+
+    // 轮询索引（用于 get_any_game_connection）
+    size_t next_game_index_ = 0;
 };
 
 }  // namespace farm

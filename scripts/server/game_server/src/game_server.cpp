@@ -1,5 +1,8 @@
 #include "game_server.h"
 #include "internal_msg_ids.h"
+#include "dbmgr_msg_ids.h"
+#include "msg_ids.h"
+#include "player_id_generator.h"
 
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
@@ -12,8 +15,12 @@
 #endif
 #include <cstring>
 #include <iostream>
+#include <tuple>
 
 #include "internal.pb.h"
+#include "account.pb.h"
+#include "player.pb.h"
+#include "dbmgr.pb.h"
 
 namespace farm {
 
@@ -280,6 +287,9 @@ void GameServer::route_internal_message(std::shared_ptr<GateSession> session,
         case MSG_ID_CLIENT_MSG:
             handle_client_msg(session, payload);
             break;
+        case MSG_ID_ACCOUNT_MSG:
+            handle_account_msg(session, payload);
+            break;
         default:
             std::cout << "[GameServer] Unknown internal msg_id=" << msg_id
                       << " from fd=" << session->fd() << std::endl;
@@ -419,6 +429,12 @@ void GameServer::handle_client_msg(std::shared_ptr<GateSession> session,
     uint32_t msg_id = req.msg_id();
     const std::string& inner_payload = req.payload();
 
+    // 处理 EnterGameReq
+    if (msg_id == MSG_ID_ENTER_GAME_REQ) {
+        handle_enter_game_req(session, player_id, inner_payload);
+        return;
+    }
+
     // 检查玩家是否存在
     Player* player = player_mgr_.get_player(player_id);
     if (!player) {
@@ -431,6 +447,362 @@ void GameServer::handle_client_msg(std::shared_ptr<GateSession> session,
     msg_handler_.dispatch(msg_id, player_id,
                           reinterpret_cast<const uint8_t*>(inner_payload.data()),
                           inner_payload.size());
+}
+
+void GameServer::handle_enter_game_req(std::shared_ptr<GateSession> session,
+                                        uint64_t player_id, const std::string& payload) {
+    farm::EnterGameReq req;
+    if (!payload.empty()) {
+        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    }
+
+    uint64_t req_player_id = req.player_id();
+    uint32_t server_id = req.server_id();
+
+    std::cout << "[GameServer] EnterGameReq: player_id=" << req_player_id
+              << " server_id=" << server_id << std::endl;
+
+    // 检查 DBMgr 是否可用
+    if (!dbmgr_mgr_.is_connected(0)) {
+        std::cerr << "[GameServer] DBMgr not available for EnterGameReq, player_id=" << req_player_id << std::endl;
+
+        // 回复失败
+        farm::GameMessage game_msg;
+        game_msg.set_player_id(req_player_id);
+        game_msg.set_msg_id(MSG_ID_ENTER_GAME_RESP);
+
+        farm::EnterGameResp resp;
+        resp.set_code(-1);
+        resp.set_msg("DBMgr not available");
+
+        std::string resp_data;
+        resp.SerializeToString(&resp_data);
+        game_msg.set_payload(resp_data);
+
+        std::string final_resp;
+        game_msg.SerializeToString(&final_resp);
+
+        send_to_gate(session, MSG_ID_GAME_MSG, final_resp);
+        return;
+    }
+
+    // 使用 PlayerManager 创建玩家并加载数据
+    auto callback = [this, session, req_player_id](uint64_t pid, bool success, const std::string& msg) {
+        // 构造响应
+        farm::GameMessage game_msg;
+        game_msg.set_player_id(req_player_id);
+        game_msg.set_msg_id(MSG_ID_ENTER_GAME_RESP);
+
+        farm::EnterGameResp resp;
+        if (success) {
+            // 获取玩家数据
+            Player* player = player_mgr_.get_player(pid);
+            if (player) {
+                const PlayerBizData& data = player->player_data();
+                farm::PlayerData player_data;
+                player_data.set_player_id(pid);
+                player_data.set_role_name(data.role_name);
+                player_data.set_level(data.level);
+                player_data.set_exp(data.experience);
+                player_data.set_pos_x(data.pos_x);
+                player_data.set_pos_y(data.pos_y);
+                player_data.set_pos_z(data.pos_z);
+                player_data.set_scene_id(data.scene_id);
+                *resp.mutable_player_data() = player_data;
+                resp.set_code(0);
+                resp.set_msg("success");
+            } else {
+                resp.set_code(-1);
+                resp.set_msg("Player not found after data load");
+            }
+        } else {
+            resp.set_code(-1);
+            resp.set_msg(msg);
+        }
+
+        std::string resp_data;
+        resp.SerializeToString(&resp_data);
+        game_msg.set_payload(resp_data);
+
+        std::string final_resp;
+        game_msg.SerializeToString(&final_resp);
+
+        send_to_gate(session, MSG_ID_GAME_MSG, final_resp);
+    };
+
+    bool added = player_mgr_.add_player_with_data_load(req_player_id, session.get(), std::move(callback));
+    if (!added) {
+        // 玩家已存在，直接回复失败
+        farm::GameMessage game_msg;
+        game_msg.set_player_id(req_player_id);
+        game_msg.set_msg_id(MSG_ID_ENTER_GAME_RESP);
+
+        farm::EnterGameResp resp;
+        resp.set_code(1);
+        resp.set_msg("Player already in game");
+
+        std::string resp_data;
+        resp.SerializeToString(&resp_data);
+        game_msg.set_payload(resp_data);
+
+        std::string final_resp;
+        game_msg.SerializeToString(&final_resp);
+
+        send_to_gate(session, MSG_ID_GAME_MSG, final_resp);
+    }
+}
+
+void GameServer::handle_account_msg(std::shared_ptr<GateSession> session,
+                                    const std::vector<uint8_t>& payload) {
+    farm::AccountMessage req;
+    if (!payload.empty()) {
+        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    }
+
+    const std::string& account_id = req.account_id();
+    uint32_t msg_id = req.msg_id();
+    const std::string& inner_payload = req.payload();
+
+    std::cout << "[GameServer] Account message: account_id=" << account_id
+              << " msg_id=" << msg_id << std::endl;
+
+    // 根据 msg_id 处理不同的账号消息
+    if (msg_id == MSG_ID_QUERY_ROLES_REQ) {
+        // 查询角色列表
+        dbmgr_mgr_.send_account_data_req(account_id,
+            [this, session, account_id](int32_t code, const std::vector<std::tuple<uint32_t, uint64_t, std::string>>& roles) {
+                // 构造响应
+                farm::AccountMessageResp resp;
+                resp.set_account_id(account_id);
+                resp.set_msg_id(MSG_ID_QUERY_ROLES_RESP);
+
+                // 构造 QueryRolesResp
+                farm::QueryRolesResp roles_resp;
+                roles_resp.set_code(code);
+                if (code == 0) {
+                    for (const auto& role : roles) {
+                        auto* r = roles_resp.add_roles();
+                        r->set_server_id(std::get<0>(role));
+                        r->set_player_id(std::get<1>(role));
+                        r->set_role_name(std::get<2>(role));
+                    }
+                } else {
+                    roles_resp.set_msg("Failed to query roles");
+                }
+
+                std::string resp_data;
+                roles_resp.SerializeToString(&resp_data);
+                resp.set_payload(resp_data);
+
+                std::string final_resp;
+                resp.SerializeToString(&final_resp);
+
+                send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
+            });
+    } else if (msg_id == MSG_ID_CREATE_ROLE_REQ) {
+        // 创建角色
+        farm::CreateRoleReq create_req;
+        if (!inner_payload.empty()) {
+            create_req.ParseFromArray(inner_payload.data(), static_cast<int>(inner_payload.size()));
+        }
+
+        uint32_t server_id = create_req.server_id();
+        const std::string& role_name = create_req.role_name();
+
+        // 生成 player_id
+        uint64_t player_id = player_id_gen_.generate(server_id);
+
+        dbmgr_mgr_.send_account_set_req(account_id,
+            server_id, player_id, role_name,
+            [this, session, account_id, player_id](int32_t code, const std::string& msg) {
+                // 构造响应
+                farm::AccountMessageResp resp;
+                resp.set_account_id(account_id);
+                resp.set_msg_id(MSG_ID_CREATE_ROLE_RESP);
+
+                // 构造 CreateRoleResp
+                farm::CreateRoleResp create_resp;
+                create_resp.set_code(code);
+                create_resp.set_msg(msg);
+                if (code == 0) {
+                    create_resp.set_player_id(player_id);
+                }
+
+                std::string resp_data;
+                create_resp.SerializeToString(&resp_data);
+                resp.set_payload(resp_data);
+
+                std::string final_resp;
+                resp.SerializeToString(&final_resp);
+
+                send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
+            });
+    } else if (msg_id == MSG_ID_ACCOUNT_DATA_REQ) {
+        // 查询账号数据（内部使用）
+        dbmgr_mgr_.send_account_data_req(account_id,
+            [this, session, account_id](int32_t code, const std::vector<std::tuple<uint32_t, uint64_t, std::string>>& roles) {
+                // 构造响应
+                farm::AccountMessageResp resp;
+                resp.set_account_id(account_id);
+                resp.set_msg_id(MSG_ID_ACCOUNT_DATA_RESP);
+
+                // 构造 AccountDataResp
+                farm::AccountDataResp data_resp;
+                data_resp.set_code(code);
+                if (code == 0) {
+                    for (const auto& role : roles) {
+                        auto* r = data_resp.add_roles();
+                        r->set_server_id(std::get<0>(role));
+                        r->set_player_id(std::get<1>(role));
+                        r->set_role_name(std::get<2>(role));
+                    }
+                } else {
+                    data_resp.set_msg("Failed to get account data");
+                }
+
+                std::string resp_data;
+                data_resp.SerializeToString(&resp_data);
+                resp.set_payload(resp_data);
+
+                std::string final_resp;
+                resp.SerializeToString(&final_resp);
+
+                send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
+            });
+    } else if (msg_id == MSG_ID_ACCOUNT_SET_REQ) {
+        // 设置账号数据（内部使用）
+        farm::AccountSetReq set_req;
+        if (!inner_payload.empty()) {
+            set_req.ParseFromArray(inner_payload.data(), static_cast<int>(inner_payload.size()));
+        }
+
+        const auto& new_role = set_req.new_role();
+        dbmgr_mgr_.send_account_set_req(account_id,
+            new_role.server_id(), new_role.player_id(), new_role.role_name(),
+            [this, session, account_id](int32_t code, const std::string& msg) {
+                // 构造响应
+                farm::AccountMessageResp resp;
+                resp.set_account_id(account_id);
+                resp.set_msg_id(MSG_ID_ACCOUNT_SET_RESP);
+
+                // 构造 AccountSetResp
+                farm::AccountSetResp set_resp;
+                set_resp.set_code(code);
+                set_resp.set_msg(msg);
+
+                std::string resp_data;
+                set_resp.SerializeToString(&resp_data);
+                resp.set_payload(resp_data);
+
+                std::string final_resp;
+                resp.SerializeToString(&final_resp);
+
+                send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
+            });
+    } else if (msg_id == MSG_ID_ENTER_GAME_REQ) {
+        // 进入游戏（通过账号消息通道）
+        farm::EnterGameReq enter_req;
+        if (!inner_payload.empty()) {
+            enter_req.ParseFromArray(inner_payload.data(), static_cast<int>(inner_payload.size()));
+        }
+
+        uint64_t req_player_id = enter_req.player_id();
+        uint32_t server_id = enter_req.server_id();
+
+        std::cout << "[GameServer] EnterGameReq (account): player_id=" << req_player_id
+                  << " server_id=" << server_id << std::endl;
+
+        // 检查 DBMgr 是否可用
+        if (!dbmgr_mgr_.is_connected(0)) {
+            std::cerr << "[GameServer] DBMgr not available for EnterGameReq (account), player_id=" << req_player_id << std::endl;
+
+            // 回复失败
+            farm::AccountMessageResp resp;
+            resp.set_account_id(account_id);
+            resp.set_msg_id(MSG_ID_ENTER_GAME_RESP);
+
+            farm::EnterGameResp enter_resp;
+            enter_resp.set_code(-1);
+            enter_resp.set_msg("DBMgr not available");
+
+            std::string resp_data;
+            enter_resp.SerializeToString(&resp_data);
+            resp.set_payload(resp_data);
+
+            std::string final_resp;
+            resp.SerializeToString(&final_resp);
+
+            send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
+            return;
+        }
+
+        // 使用 PlayerManager 创建玩家并加载数据
+        auto callback = [this, session, account_id, req_player_id](uint64_t pid, bool success, const std::string& msg) {
+            // 构造响应
+            farm::AccountMessageResp resp;
+            resp.set_account_id(account_id);
+            resp.set_msg_id(MSG_ID_ENTER_GAME_RESP);
+
+            farm::EnterGameResp enter_resp;
+            if (success) {
+                // 获取玩家数据
+                Player* player = player_mgr_.get_player(pid);
+                if (player) {
+                    const PlayerBizData& data = player->player_data();
+                    farm::PlayerData player_data;
+                    player_data.set_player_id(pid);
+                    player_data.set_role_name(data.role_name);
+                    player_data.set_level(data.level);
+                    player_data.set_exp(data.experience);
+                    player_data.set_pos_x(data.pos_x);
+                    player_data.set_pos_y(data.pos_y);
+                    player_data.set_pos_z(data.pos_z);
+                    player_data.set_scene_id(data.scene_id);
+                    *enter_resp.mutable_player_data() = player_data;
+                    enter_resp.set_code(0);
+                    enter_resp.set_msg("success");
+                } else {
+                    enter_resp.set_code(-1);
+                    enter_resp.set_msg("Player not found after data load");
+                }
+            } else {
+                enter_resp.set_code(-1);
+                enter_resp.set_msg(msg);
+            }
+
+            std::string resp_data;
+            enter_resp.SerializeToString(&resp_data);
+            resp.set_payload(resp_data);
+
+            std::string final_resp;
+            resp.SerializeToString(&final_resp);
+
+            send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
+        };
+
+        bool added = player_mgr_.add_player_with_data_load(req_player_id, session.get(), std::move(callback));
+        if (!added) {
+            // 玩家已存在，直接回复失败
+            farm::AccountMessageResp resp;
+            resp.set_account_id(account_id);
+            resp.set_msg_id(MSG_ID_ENTER_GAME_RESP);
+
+            farm::EnterGameResp enter_resp;
+            enter_resp.set_code(1);
+            enter_resp.set_msg("Player already in game");
+
+            std::string resp_data;
+            enter_resp.SerializeToString(&resp_data);
+            resp.set_payload(resp_data);
+
+            std::string final_resp;
+            resp.SerializeToString(&final_resp);
+
+            send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
+        }
+    } else {
+        std::cout << "[GameServer] Unknown account msg_id=" << msg_id << std::endl;
+    }
 }
 
 // ===========================================

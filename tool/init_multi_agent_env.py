@@ -17,3 +17,6 @@ if __name__ == "__main__":
     create_dir("pre_knowledge", "预知识库根目录")
     create_dir("pre_knowledge/code", "开发智能体预知识")
     create_dir("pre_knowledge/test", "测试智能体预知识")
+
+    # 临时文件目录（测试脚本、临时输出等）
+    create_dir("tmp", "临时文件目录")

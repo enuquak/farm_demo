@@ -52,6 +52,10 @@ private:
                                      const std::vector<uint8_t>& payload);
     void handle_player_data_req(std::shared_ptr<GameSession> session,
                                 const std::vector<uint8_t>& payload);
+    void handle_account_data_req(std::shared_ptr<GameSession> session,
+                                 const std::vector<uint8_t>& payload);
+    void handle_account_set_req(std::shared_ptr<GameSession> session,
+                                const std::vector<uint8_t>& payload);
 
     // 发送消息辅助
     void send_to_game(std::shared_ptr<GameSession> session,

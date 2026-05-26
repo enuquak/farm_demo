@@ -8,6 +8,7 @@ Session::Session(evutil_socket_t fd, struct bufferevent* bev)
     , bev_(bev)
     , state_(SessionState::CONNECTED)
     , player_id_(0)
+    , server_id_(0)
     , last_heartbeat_(std::time(nullptr))
     , connect_time_(std::time(nullptr))
 {
