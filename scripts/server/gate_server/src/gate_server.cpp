@@ -14,13 +14,13 @@
 #include <arpa/inet.h>
 #endif
 #include <cstring>
-#include <iostream>
 #include <fstream>
 #include <sstream>
 
 #include "base.pb.h"
 #include "internal.pb.h"
 #include "account.pb.h"
+#include "log_macros.h"
 
 namespace farm {
 
@@ -45,7 +45,7 @@ GateServer::~GateServer() {
 bool GateServer::start() {
     base_ = event_base_new();
     if (!base_) {
-        std::cerr << "[GateServer] Failed to create event_base" << std::endl;
+        SPDLOG_ERROR("[Gate]Failed to create event_base");
         return false;
     }
 
@@ -67,7 +67,7 @@ bool GateServer::start() {
         128, reinterpret_cast<struct sockaddr*>(&sin), sizeof(sin));
 
     if (!listener_) {
-        std::cerr << "[GateServer] Failed to create listener on " << ip_ << ":" << port_ << std::endl;
+        SPDLOG_ERROR("[Gate]Failed to create listener on {}:{}", ip_, port_);
         event_base_free(base_);
         base_ = nullptr;
         return false;
@@ -81,7 +81,7 @@ bool GateServer::start() {
     evtimer_add(heartbeat_timer_, &tv);
 
     running_ = true;
-    std::cout << "[GateServer] Listening on " << ip_ << ":" << port_ << std::endl;
+    SPDLOG_INFO("[Gate]Listening on {}:{}", ip_, port_);
 
     // 连接到所有配置的 Game Server
     if (!game_server_configs_.empty()) {
@@ -94,8 +94,7 @@ bool GateServer::start() {
                 });
             conn->connect(config.ip, config.port);
             game_conns_[server_id] = std::move(conn);
-            std::cout << "[GateServer] Connecting to Game Server " << server_id
-                      << " at " << config.ip << ":" << config.port << std::endl;
+            SPDLOG_INFO("[Gate]Connecting to Game Server {} at {}:{}", server_id, config.ip, config.port);
         }
     }
 
@@ -140,7 +139,7 @@ void GateServer::set_game_server(const std::string& ip, uint16_t port) {
 bool GateServer::load_game_servers_config(const std::string& config_file) {
     std::ifstream file(config_file);
     if (!file.is_open()) {
-        std::cerr << "[GateServer] Failed to open config file: " << config_file << std::endl;
+        SPDLOG_ERROR("[Gate]Failed to open config file: {}", config_file);
         return false;
     }
 
@@ -154,7 +153,7 @@ bool GateServer::load_game_servers_config(const std::string& config_file) {
     size_t array_start = content.find("[");
     size_t array_end = content.find("]");
     if (array_start == std::string::npos || array_end == std::string::npos) {
-        std::cerr << "[GateServer] Invalid config format: missing array" << std::endl;
+        SPDLOG_ERROR("[Gate]Invalid config format: missing array");
         return false;
     }
 
@@ -201,8 +200,7 @@ bool GateServer::load_game_servers_config(const std::string& config_file) {
         config.port = port;
         game_server_configs_.push_back(config);
 
-        std::cout << "[GateServer] Loaded game server config: server_id=" << server_id
-                  << " ip=" << ip << " port=" << port << std::endl;
+        SPDLOG_INFO("[Gate]Loaded game server config: server_id={} ip={} port={}", server_id, ip, port);
 
         pos = port_end;
     }
@@ -251,7 +249,7 @@ void GateServer::handle_accept(evutil_socket_t fd, struct sockaddr* addr) {
     // 创建 bufferevent
     struct bufferevent* bev = bufferevent_socket_new(base_, fd, BEV_OPT_CLOSE_ON_FREE);
     if (!bev) {
-        std::cerr << "[GateServer] Failed to create bufferevent for fd=" << fd << std::endl;
+        SPDLOG_ERROR("[Gate]Failed to create bufferevent for fd={}", fd);
         evutil_closesocket(fd);
         return;
     }
@@ -268,8 +266,7 @@ void GateServer::handle_accept(evutil_socket_t fd, struct sockaddr* addr) {
     if (addr->sa_family == AF_INET) {
         auto* sin = reinterpret_cast<struct sockaddr_in*>(addr);
         inet_ntop(AF_INET, &sin->sin_addr, ip_str, sizeof(ip_str));
-        std::cout << "[GateServer] New connection from " << ip_str << ":" << ntohs(sin->sin_port)
-                  << " fd=" << fd << std::endl;
+        SPDLOG_INFO("[Gate]New connection from {}:{} fd={}", ip_str, ntohs(sin->sin_port), fd);
     }
 }
 
@@ -323,7 +320,7 @@ void GateServer::on_event(struct bufferevent* bev, short events, void* ctx) {
 
 void GateServer::handle_disconnect(std::shared_ptr<Session> session) {
     evutil_socket_t fd = session->fd();
-    std::cout << "[GateServer] Connection closed fd=" << fd << std::endl;
+    SPDLOG_INFO("[Gate]Connection closed fd={}", fd);
 
     // 通知 Game 玩家离开
     if (session->state() == SessionState::LOGGED_IN && session->player_id() != 0) {
@@ -336,8 +333,7 @@ void GateServer::handle_disconnect(std::shared_ptr<Session> session) {
                 std::string payload;
                 leave.SerializeToString(&payload);
                 conn->send(MSG_ID_PLAYER_LEAVE, payload);
-                std::cout << "[GateServer] Notified Game " << it->second
-                          << ": player_id=" << session->player_id() << " left" << std::endl;
+                SPDLOG_INFO("[Gate]Notified Game {}: player_id={} left", it->second, session->player_id());
             }
             player_to_server_.erase(it);
         }
@@ -359,7 +355,7 @@ void GateServer::check_heartbeat() {
         if (session->state() == SessionState::DISCONNECTED) continue;
 
         if (now - session->last_heartbeat() > HEARTBEAT_TIMEOUT) {
-            std::cout << "[GateServer] Heartbeat timeout fd=" << session->fd() << std::endl;
+            SPDLOG_INFO("[Gate]Heartbeat timeout fd={}", session->fd());
             handle_disconnect(session);
         }
     }
@@ -409,7 +405,7 @@ void GateServer::route_message(std::shared_ptr<Session> session, uint32_t msg_id
         return;
     }
 
-    std::cout << "[GateServer] Unknown msg_id=" << msg_id << " from fd=" << session->fd() << std::endl;
+    SPDLOG_INFO("[Gate]Unknown msg_id={} from fd={}", msg_id, session->fd());
 }
 
 void GateServer::handle_heartbeat(std::shared_ptr<Session> session, const std::vector<uint8_t>& payload) {
@@ -437,8 +433,7 @@ void GateServer::handle_login(std::shared_ptr<Session> session, const std::vecto
         req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
     }
 
-    std::cout << "[GateServer] Login request from fd=" << session->fd()
-              << " token=" << req.token() << std::endl;
+    SPDLOG_INFO("[Gate]Login request from fd={} token={}", session->fd(), req.token());
 
     // 简单验证（目前直接通过）
     session->set_state(SessionState::LOGGED_IN);
@@ -463,7 +458,7 @@ void GateServer::handle_login(std::shared_ptr<Session> session, const std::vecto
         std::string join_payload;
         join.SerializeToString(&join_payload);
         conn->send(MSG_ID_PLAYER_JOIN, join_payload);
-        std::cout << "[GateServer] Notified Game: player_id=" << player_id << " joined" << std::endl;
+        SPDLOG_INFO("[Gate]Notified Game: player_id={} joined", player_id);
     }
 }
 
@@ -489,8 +484,7 @@ void GateServer::handle_game_message(uint32_t server_id, uint32_t msg_id, const 
             handle_account_msg_resp(server_id, payload);
             break;
         default:
-            std::cout << "[GateServer] Unknown game msg_id=" << msg_id
-                      << " from server_id=" << server_id << std::endl;
+            SPDLOG_INFO("[Gate]Unknown game msg_id={} from server_id={}", msg_id, server_id);
             break;
     }
 }
@@ -502,14 +496,14 @@ void GateServer::handle_game_identify_resp(uint32_t server_id, const std::vector
     }
 
     if (resp.code() == 0) {
-        std::cout << "[GateServer] Game Server " << server_id << " identified successfully" << std::endl;
+        SPDLOG_INFO("[Gate]Game Server {} identified successfully", server_id);
         // 设置 GameConnection 状态为 IDENTIFIED
         auto it = game_conns_.find(server_id);
         if (it != game_conns_.end()) {
             it->second->set_state(GameConnState::IDENTIFIED);
         }
     } else {
-        std::cout << "[GateServer] Game Server " << server_id << " identification failed: " << resp.msg() << std::endl;
+        SPDLOG_ERROR("[Gate]Game Server {} identification failed: {}", server_id, resp.msg());
     }
 }
 
@@ -524,11 +518,11 @@ void GateServer::handle_player_join_resp(uint32_t server_id, const std::vector<u
     }
 
     if (resp.code() == 0) {
-        std::cout << "[GateServer] Player " << resp.player_id() << " joined Game Server " << server_id << " successfully" << std::endl;
+        SPDLOG_INFO("[Gate]Player {} joined Game Server {} successfully", resp.player_id(), server_id);
         // 注册玩家路由
         player_to_server_[resp.player_id()] = server_id;
     } else {
-        std::cout << "[GateServer] Player " << resp.player_id() << " join Game Server " << server_id << " failed: " << resp.msg() << std::endl;
+        SPDLOG_ERROR("[Gate]Player {} join Game Server {} failed: {}", resp.player_id(), server_id, resp.msg());
     }
 }
 
@@ -545,8 +539,7 @@ void GateServer::handle_game_msg(uint32_t server_id, const std::vector<uint8_t>&
     // 查找客户端 Session
     auto session = session_mgr_.find_by_player_id(player_id);
     if (!session) {
-        std::cout << "[GateServer] Warning: player_id=" << player_id
-                  << " not found, discarding GAME_MSG" << std::endl;
+        SPDLOG_ERROR("[Gate]Warning: player_id={} not found, discarding GAME_MSG", player_id);
         return;
     }
 
@@ -568,8 +561,7 @@ void GateServer::handle_account_msg_resp(uint32_t server_id, const std::vector<u
     // 查找客户端 Session（通过 account_id）
     auto session = session_mgr_.find_by_account_id(account_id);
     if (!session) {
-        std::cout << "[GateServer] Warning: account_id=" << account_id
-                  << " not found, discarding ACCOUNT_MSG_RESP" << std::endl;
+        SPDLOG_ERROR("[Gate]Warning: account_id={} not found, discarding ACCOUNT_MSG_RESP", account_id);
         return;
     }
 
@@ -583,8 +575,7 @@ void GateServer::forward_to_game(std::shared_ptr<Session> session, uint32_t msg_
     // 获取任意 Game 连接
     GameConnection* conn = get_any_game_connection();
     if (!conn) {
-        std::cout << "[GateServer] Warning: No Game connected, discarding msg_id="
-                  << msg_id << " from player_id=" << session->player_id() << std::endl;
+        SPDLOG_ERROR("[Gate]Warning: No Game connected, discarding msg_id={} from player_id={}", msg_id, session->player_id());
         return;
     }
 
@@ -618,8 +609,7 @@ void GateServer::forward_account_msg_to_game(std::shared_ptr<Session> session, u
     // 获取任意 Game 连接
     GameConnection* conn = get_any_game_connection();
     if (!conn) {
-        std::cout << "[GateServer] Warning: No Game connected, discarding AccountMsg from account_id="
-                  << account_id << std::endl;
+        SPDLOG_ERROR("[Gate]Warning: No Game connected, discarding AccountMsg from account_id={}", account_id);
         return;
     }
 
@@ -640,8 +630,7 @@ void GateServer::forward_player_msg_to_game(std::shared_ptr<Session> session, ui
     // 获取指定 server_id 的 Game 连接
     GameConnection* conn = get_game_connection(server_id);
     if (!conn) {
-        std::cout << "[GateServer] Warning: Game Server " << server_id
-                  << " not connected, discarding PlayerMsg from player_id=" << session->player_id() << std::endl;
+        SPDLOG_ERROR("[Gate]Warning: Game Server {} not connected, discarding PlayerMsg from player_id={}", server_id, session->player_id());
         return;
     }
 
@@ -670,7 +659,7 @@ void GateServer::handle_admin_message(uint32_t msg_id, const std::vector<uint8_t
             if (AdminShutdownMsg::deserialize(payload_str, msg)) {
                 handle_shutdown(msg);
             } else {
-                std::cerr << "[GateServer] Failed to parse MSG_ID_SHUTDOWN" << std::endl;
+                SPDLOG_ERROR("[Gate]Failed to parse MSG_ID_SHUTDOWN");
             }
             break;
         }
@@ -679,24 +668,23 @@ void GateServer::handle_admin_message(uint32_t msg_id, const std::vector<uint8_t
             if (AdminShutdownResp::deserialize(payload_str, resp)) {
                 handle_shutdown_resp(resp);
             } else {
-                std::cerr << "[GateServer] Failed to parse MSG_ID_SHUTDOWN_RESP" << std::endl;
+                SPDLOG_ERROR("[Gate]Failed to parse MSG_ID_SHUTDOWN_RESP");
             }
             break;
         }
         default:
-            std::cout << "[GateServer] Unknown admin msg_id=" << msg_id << std::endl;
+            SPDLOG_INFO("[Gate]Unknown admin msg_id={}", msg_id);
             break;
     }
 }
 
 void GateServer::handle_shutdown(const AdminShutdownMsg& msg) {
-    std::cout << "[GateServer] Received shutdown request: reason=" << msg.reason
-              << ", timeout_ms=" << msg.timeout_ms << std::endl;
+    SPDLOG_INFO("[Gate]Received shutdown request: reason={}, timeout_ms={}", msg.reason, msg.timeout_ms);
 
     // 停止接受新连接
     if (listener_) {
         evconnlistener_disable(listener_);
-        std::cout << "[GateServer] Stopped accepting new connections" << std::endl;
+        SPDLOG_INFO("[Gate]Stopped accepting new connections");
     }
 
     // 向所有 Game Server 发送 MSG_ID_SHUTDOWN
@@ -708,13 +696,13 @@ void GateServer::handle_shutdown(const AdminShutdownMsg& msg) {
     for (auto& kv : game_conns_) {
         if (kv.second->is_identified()) {
             kv.second->send(MSG_ID_SHUTDOWN, forward_payload);
-            std::cout << "[GateServer] Forwarded shutdown to Game Server " << kv.first << std::endl;
+            SPDLOG_INFO("[Gate]Forwarded shutdown to Game Server {}", kv.first);
         }
     }
 
     // 等待 Game Server 响应（简化实现：直接退出）
     // 实际实现应该等待 MSG_ID_SHUTDOWN_RESP 或超时
-    std::cout << "[GateServer] Shutdown initiated, stopping server..." << std::endl;
+    SPDLOG_INFO("[Gate]Shutdown initiated, stopping server...");
 
     // 发送响应给调用方
     AdminShutdownResp resp;
@@ -728,12 +716,11 @@ void GateServer::handle_shutdown(const AdminShutdownMsg& msg) {
 }
 
 void GateServer::handle_shutdown_resp(const AdminShutdownResp& resp) {
-    std::cout << "[GateServer] Received shutdown response: code=" << resp.code
-              << ", msg=" << resp.msg << std::endl;
+    SPDLOG_INFO("[Gate]Received shutdown response: code={}, msg={}", resp.code, resp.msg);
 
     // 如果所有 Game Server 都响应了就绪，可以安全退出
     if (resp.code == 0) {
-        std::cout << "[GateServer] Game Server ready to shutdown" << std::endl;
+        SPDLOG_INFO("[Gate]Game Server ready to shutdown");
     }
 }
 

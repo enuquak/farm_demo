@@ -1,6 +1,6 @@
 #include "player.h"
 
-#include <iostream>
+#include "log_macros.h"
 
 namespace farm {
 
@@ -115,7 +115,7 @@ void Player::init_default_data() {
     player_data_.extra_data = "{}";  // 空扩展数据
     dirty_ = true;
 
-    std::cout << "[Player] Initialized default data for player_id=" << player_id_ << std::endl;
+    SPDLOG_INFO("[Player]Initialized default data for player_id={}", player_id_);
 }
 
 }  // namespace farm

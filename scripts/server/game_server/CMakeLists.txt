@@ -43,6 +43,7 @@ set(SOURCES
     src/msvc_compat.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/admin_msg_ids.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/log_init.cpp
 )
 
 add_executable(game_server ${SOURCES})
@@ -58,6 +59,7 @@ target_include_directories(game_server PRIVATE
     ${COMMON_PROTO_DIR}/generated
     ${DBMGR_SRC_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/third_party
 )
 
 # 链接库目录

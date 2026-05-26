@@ -35,6 +35,7 @@ set(SOURCES
     src/msvc_compat.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/admin_msg_ids.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/log_init.cpp
 )
 
 add_executable(dbmgr ${SOURCES})
@@ -46,6 +47,7 @@ target_include_directories(dbmgr PRIVATE
     ${LIBEVENT_ROOT}/include
     ${COMMON_PROTO_DIR}/generated
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/third_party
 )
 
 # 链接库目录

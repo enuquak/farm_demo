@@ -12,9 +12,9 @@
 #include <arpa/inet.h>
 #endif
 #include <cstring>
-#include <iostream>
 
 #include "internal.pb.h"
+#include "log_macros.h"
 
 namespace farm {
 
@@ -43,7 +43,7 @@ bool GameConnection::connect(const std::string& ip, uint16_t port) {
     // 创建 socket
     evutil_socket_t fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
-        std::cerr << "[GameConnection] Failed to create socket" << std::endl;
+        SPDLOG_ERROR("[GameConnection]Failed to create socket");
         return false;
     }
 
@@ -53,7 +53,7 @@ bool GameConnection::connect(const std::string& ip, uint16_t port) {
     // 创建 bufferevent
     bev_ = bufferevent_socket_new(base_, fd, BEV_OPT_CLOSE_ON_FREE);
     if (!bev_) {
-        std::cerr << "[GameConnection] Failed to create bufferevent" << std::endl;
+        SPDLOG_ERROR("[GameConnection]Failed to create bufferevent");
         evutil_closesocket(fd);
         return false;
     }
@@ -73,12 +73,12 @@ bool GameConnection::connect(const std::string& ip, uint16_t port) {
 
     if (bufferevent_socket_connect(bev_,
             reinterpret_cast<struct sockaddr*>(&sin), sizeof(sin)) < 0) {
-        std::cerr << "[GameConnection] Failed to connect to " << ip << ":" << port << std::endl;
+        SPDLOG_ERROR("[GameConnection]Failed to connect to {}:{}", ip, port);
         disconnect();
         return false;
     }
 
-    std::cout << "[GameConnection] Connecting to " << ip << ":" << port << std::endl;
+    SPDLOG_INFO("[GameConnection]Connecting to {}:{}", ip, port);
     return true;
 }
 
@@ -130,7 +130,7 @@ void GameConnection::start_reconnect() {
     tv.tv_usec = 0;
     reconnect_timer_ = event_new(base_, -1, EV_PERSIST, on_reconnect_timer, this);
     evtimer_add(reconnect_timer_, &tv);
-    std::cout << "[GameConnection] Reconnect timer started (5s interval)" << std::endl;
+    SPDLOG_INFO("[GameConnection]Reconnect timer started (5s interval)");
 }
 
 void GameConnection::stop_reconnect() {
@@ -207,7 +207,7 @@ void GameConnection::handle_read() {
 }
 
 void GameConnection::handle_connect_success() {
-    std::cout << "[GameConnection] Connected to " << game_ip_ << ":" << game_port_ << std::endl;
+    SPDLOG_INFO("[GameConnection]Connected to {}:{}", game_ip_, game_port_);
 
     // 发送身份标识
     send_identify();
@@ -220,7 +220,7 @@ void GameConnection::handle_connect_success() {
 }
 
 void GameConnection::handle_disconnect() {
-    std::cout << "[GameConnection] Disconnected from " << game_ip_ << ":" << game_port_ << std::endl;
+    SPDLOG_INFO("[GameConnection]Disconnected from {}:{}", game_ip_, game_port_);
 
     state_ = GameConnState::DISCONNECTED;
     if (bev_) {
@@ -245,7 +245,7 @@ void GameConnection::send_identify() {
     identify.SerializeToString(&payload);
 
     send(MSG_ID_GATE_IDENTIFY, payload);
-    std::cout << "[GameConnection] Sent GATE_IDENTIFY (gate_id=" << gate_id_ << ")" << std::endl;
+    SPDLOG_INFO("[GameConnection]Sent GATE_IDENTIFY (gate_id={})", gate_id_);
 }
 
 void GameConnection::send_heartbeat() {
@@ -263,7 +263,7 @@ void GameConnection::send_heartbeat() {
 void GameConnection::try_reconnect() {
     if (state_ != GameConnState::DISCONNECTED) return;
 
-    std::cout << "[GameConnection] Trying to reconnect to " << game_ip_ << ":" << game_port_ << std::endl;
+    SPDLOG_INFO("[GameConnection]Trying to reconnect to {}:{}", game_ip_, game_port_);
     connect(game_ip_, game_port_);
 }
 

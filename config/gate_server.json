@@ -9,5 +9,11 @@
     "shutdown": {
         "timeout_ms": 60000
     },
-    "pid_file": "./runtimeData/gate_server.pid"
+    "pid_file": "./runtimeData/gate_server.pid",
+    "logging": {
+        "dir": "./runtimeData/logs/server",
+        "level": "info",
+        "max_file_size_mb": 20,
+        "max_files": 7
+    }
 }

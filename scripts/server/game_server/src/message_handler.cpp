@@ -1,5 +1,5 @@
 #include "message_handler.h"
-#include <iostream>
+#include "log_macros.h"
 
 namespace farm {
 
@@ -14,8 +14,7 @@ bool MessageHandler::dispatch(uint32_t msg_id, uint64_t player_id,
         it->second(player_id, payload, payload_len);
         return true;
     }
-    std::cout << "[MessageHandler] Unhandled msg_id=" << msg_id
-              << " from player_id=" << player_id << std::endl;
+    SPDLOG_INFO("[MessageHandler]Unhandled msg_id={} from player_id={}", msg_id, player_id);
     return false;
 }
 

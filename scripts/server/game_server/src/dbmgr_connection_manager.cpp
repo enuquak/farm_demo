@@ -12,10 +12,10 @@
 #include <arpa/inet.h>
 #endif
 #include <cstring>
-#include <iostream>
 
 #include "dbmgr.pb.h"
 #include "account.pb.h"
+#include "log_macros.h"
 
 namespace farm {
 
@@ -34,8 +34,7 @@ DBMgrConnectionManager::~DBMgrConnectionManager() {
 
 bool DBMgrConnectionManager::init(struct event_base* base, const std::vector<DBMgrConfig>& configs) {
     if (!base || configs.empty()) {
-        std::cerr << "[DBMgrConnMgr] Invalid params: base=" << base
-                  << " configs_size=" << configs.size() << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]Invalid params: base={} configs_size={}", fmt::ptr(base), configs.size());
         return false;
     }
 
@@ -58,7 +57,7 @@ bool DBMgrConnectionManager::init(struct event_base* base, const std::vector<DBM
     reconnect_timer_ = event_new(base_, -1, EV_PERSIST, on_reconnect_timer, this);
     evtimer_add(reconnect_timer_, &tv);
 
-    std::cout << "[DBMgrConnMgr] Initialized with " << configs.size() << " DBMgr configs" << std::endl;
+    SPDLOG_INFO("[DBMgrConnection]Initialized with {} DBMgr configs", configs.size());
     return true;
 }
 
@@ -86,7 +85,7 @@ void DBMgrConnectionManager::shutdown() {
     bev_to_index_.clear();
     connections_.clear();
 
-    std::cout << "[DBMgrConnMgr] Shutdown complete" << std::endl;
+    SPDLOG_INFO("[DBMgrConnection]Shutdown complete");
 }
 
 // ===========================================
@@ -97,7 +96,7 @@ void DBMgrConnectionManager::connect_to_dbmgr(uint32_t index, const std::string&
     // Create bufferevent for outbound connection
     struct bufferevent* bev = bufferevent_socket_new(base_, -1, BEV_OPT_CLOSE_ON_FREE);
     if (!bev) {
-        std::cerr << "[DBMgrConnMgr] Failed to create bufferevent for DBMgr index=" << index << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]Failed to create bufferevent for DBMgr index={}", index);
         return;
     }
 
@@ -118,8 +117,7 @@ void DBMgrConnectionManager::connect_to_dbmgr(uint32_t index, const std::string&
 
     int ret = bufferevent_socket_connect(bev, reinterpret_cast<struct sockaddr*>(&sin), sizeof(sin));
     if (ret < 0) {
-        std::cerr << "[DBMgrConnMgr] connect_to_dbmgr failed for index=" << index
-                  << " " << host << ":" << port << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]connect_to_dbmgr failed for index={} {}:{}", index, host, port);
         bev_to_index_.erase(bev);
         return;
     }
@@ -130,13 +128,11 @@ void DBMgrConnectionManager::connect_to_dbmgr(uint32_t index, const std::string&
     }
     connections_[index] = std::move(conn);
 
-    std::cout << "[DBMgrConnMgr] Connecting to DBMgr index=" << index
-              << " at " << host << ":" << port << std::endl;
+    SPDLOG_INFO("[DBMgrConnection]Connecting to DBMgr index={} at {}:{}", index, host, port);
 }
 
 void DBMgrConnectionManager::handle_connected(DBMgrConnection* conn) {
-    std::cout << "[DBMgrConnMgr] TCP connected to DBMgr index=" << conn->config_index()
-              << " at " << conn->host() << ":" << conn->port() << std::endl;
+    SPDLOG_INFO("[DBMgrConnection]TCP connected to DBMgr index={} at {}:{}", conn->config_index(), conn->host(), conn->port());
     // Now waiting for DBMgrIdentify message from DBMgr
 }
 
@@ -145,8 +141,7 @@ void DBMgrConnectionManager::handle_disconnect(DBMgrConnection* conn) {
         return;  // Already handled
     }
 
-    std::cout << "[DBMgrConnMgr] DBMgr disconnected index=" << conn->config_index()
-              << " state=" << static_cast<int>(conn->state()) << std::endl;
+    SPDLOG_INFO("[DBMgrConnection]DBMgr disconnected index={} state={}", conn->config_index(), static_cast<int>(conn->state()));
 
     conn->set_state(DBMgrConnectionState::DISCONNECTED);
 
@@ -242,8 +237,7 @@ void DBMgrConnectionManager::route_message(DBMgrConnection* conn, uint32_t msg_i
         if (msg_id == MSG_ID_DBMGR_IDENTIFY) {
             handle_dbmgr_identify(conn, payload);
         } else {
-            std::cout << "[DBMgrConnMgr] Ignoring msg_id=" << msg_id
-                      << " from unidentified DBMgr index=" << conn->config_index() << std::endl;
+            SPDLOG_INFO("[DBMgrConnection]Ignoring msg_id={} from unidentified DBMgr index={}", msg_id, conn->config_index());
         }
         return;
     }
@@ -263,8 +257,7 @@ void DBMgrConnectionManager::route_message(DBMgrConnection* conn, uint32_t msg_i
             handle_account_set_resp(conn, payload);
             break;
         default:
-            std::cout << "[DBMgrConnMgr] Unknown msg_id=" << msg_id
-                      << " from DBMgr index=" << conn->config_index() << std::endl;
+            SPDLOG_INFO("[DBMgrConnection]Unknown msg_id={} from DBMgr index={}", msg_id, conn->config_index());
             break;
     }
 }
@@ -281,9 +274,7 @@ void DBMgrConnectionManager::handle_dbmgr_identify(DBMgrConnection* conn,
     conn->set_state(DBMgrConnectionState::IDENTIFIED);
     conn->update_heartbeat();
 
-    std::cout << "[DBMgrConnMgr] DBMgr identified: config_index=" << conn->config_index()
-              << " remote_index=" << identify.index()
-              << " address=" << identify.address() << std::endl;
+    SPDLOG_INFO("[DBMgrConnection]DBMgr identified: config_index={} remote_index={} address={}", conn->config_index(), identify.index(), identify.address());
 
     // Send DBMgrIdentifyResp
     farm::DBMgrIdentifyResp resp;
@@ -325,7 +316,7 @@ void DBMgrConnectionManager::handle_player_data_resp(DBMgrConnection* conn,
 
     auto it = pending_requests_.find(request_id);
     if (it == pending_requests_.end()) {
-        std::cout << "[DBMgrConnMgr] No pending request for request_id=" << request_id << std::endl;
+        SPDLOG_INFO("[DBMgrConnection]No pending request for request_id={}", request_id);
         return;
     }
 
@@ -360,7 +351,7 @@ void DBMgrConnectionManager::handle_account_data_resp(DBMgrConnection* conn,
     }
 
     if (request_id == 0) {
-        std::cout << "[DBMgrConnMgr] No pending account request for DBMgr index=" << conn->config_index() << std::endl;
+        SPDLOG_INFO("[DBMgrConnection]No pending account request for DBMgr index={}", conn->config_index());
         return;
     }
 
@@ -399,7 +390,7 @@ void DBMgrConnectionManager::handle_account_set_resp(DBMgrConnection* conn,
     }
 
     if (request_id == 0) {
-        std::cout << "[DBMgrConnMgr] No pending account set request for DBMgr index=" << conn->config_index() << std::endl;
+        SPDLOG_INFO("[DBMgrConnection]No pending account set request for DBMgr index={}", conn->config_index());
         return;
     }
 
@@ -429,8 +420,7 @@ void DBMgrConnectionManager::check_heartbeat() {
         if (conn_ptr->state() != DBMgrConnectionState::IDENTIFIED) continue;
 
         if (now - conn_ptr->last_heartbeat() > HEARTBEAT_TIMEOUT_DBMGR) {
-            std::cout << "[DBMgrConnMgr] Heartbeat timeout for DBMgr index="
-                      << conn_ptr->config_index() << std::endl;
+            SPDLOG_INFO("[DBMgrConnection]Heartbeat timeout for DBMgr index={}", conn_ptr->config_index());
             handle_disconnect(conn_ptr.get());
         }
     }
@@ -449,8 +439,7 @@ void DBMgrConnectionManager::try_reconnect() {
         std::string host = conn_ptr->host();
         uint16_t port = conn_ptr->port();
 
-        std::cout << "[DBMgrConnMgr] Attempting reconnect to DBMgr index=" << idx
-                  << " at " << host << ":" << port << std::endl;
+        SPDLOG_INFO("[DBMgrConnection]Attempting reconnect to DBMgr index={} at {}:{}", idx, host, port);
 
         // Remove old connection
         bev_to_index_.erase(conn_ptr->bev());
@@ -473,7 +462,7 @@ uint64_t DBMgrConnectionManager::send_player_data_req(uint64_t player_id, int32_
                                                         const std::string& key, const std::string& value,
                                                         PlayerDataCallback callback) {
     if (connections_.empty()) {
-        std::cerr << "[DBMgrConnMgr] No DBMgr connections configured" << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]No DBMgr connections configured");
         if (callback) callback(-1, nullptr, 0);
         return 0;
     }
@@ -483,14 +472,14 @@ uint64_t DBMgrConnectionManager::send_player_data_req(uint64_t player_id, int32_
 
     // Find the target connection
     if (dbmgr_index >= connections_.size() || !connections_[dbmgr_index]) {
-        std::cerr << "[DBMgrConnMgr] Invalid dbmgr_index=" << dbmgr_index << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]Invalid dbmgr_index={}", dbmgr_index);
         if (callback) callback(-1, nullptr, 0);
         return 0;
     }
 
     auto& conn = connections_[dbmgr_index];
     if (conn->state() != DBMgrConnectionState::IDENTIFIED) {
-        std::cerr << "[DBMgrConnMgr] DBMgr index=" << dbmgr_index << " not connected" << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]DBMgr index={} not connected", dbmgr_index);
         if (callback) callback(-1, nullptr, 0);
         return 0;
     }
@@ -528,7 +517,7 @@ uint64_t DBMgrConnectionManager::send_player_data_req(uint64_t player_id, int32_
 uint64_t DBMgrConnectionManager::send_account_data_req(const std::string& account_id,
                                                          AccountDataCallback callback) {
     if (connections_.empty()) {
-        std::cerr << "[DBMgrConnMgr] No DBMgr connections configured" << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]No DBMgr connections configured");
         if (callback) callback(-1, {});
         return 0;
     }
@@ -538,14 +527,14 @@ uint64_t DBMgrConnectionManager::send_account_data_req(const std::string& accoun
 
     // Find the target connection
     if (dbmgr_index >= connections_.size() || !connections_[dbmgr_index]) {
-        std::cerr << "[DBMgrConnMgr] Invalid dbmgr_index=" << dbmgr_index << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]Invalid dbmgr_index={}", dbmgr_index);
         if (callback) callback(-1, {});
         return 0;
     }
 
     auto& conn = connections_[dbmgr_index];
     if (conn->state() != DBMgrConnectionState::IDENTIFIED) {
-        std::cerr << "[DBMgrConnMgr] DBMgr index=" << dbmgr_index << " not connected" << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]DBMgr index={} not connected", dbmgr_index);
         if (callback) callback(-1, {});
         return 0;
     }
@@ -579,7 +568,7 @@ uint64_t DBMgrConnectionManager::send_account_set_req(const std::string& account
                                                         const std::string& role_name,
                                                         AccountSetCallback callback) {
     if (connections_.empty()) {
-        std::cerr << "[DBMgrConnMgr] No DBMgr connections configured" << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]No DBMgr connections configured");
         if (callback) callback(-1, "No DBMgr connections");
         return 0;
     }
@@ -589,14 +578,14 @@ uint64_t DBMgrConnectionManager::send_account_set_req(const std::string& account
 
     // Find the target connection
     if (dbmgr_index >= connections_.size() || !connections_[dbmgr_index]) {
-        std::cerr << "[DBMgrConnMgr] Invalid dbmgr_index=" << dbmgr_index << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]Invalid dbmgr_index={}", dbmgr_index);
         if (callback) callback(-1, "Invalid DBMgr index");
         return 0;
     }
 
     auto& conn = connections_[dbmgr_index];
     if (conn->state() != DBMgrConnectionState::IDENTIFIED) {
-        std::cerr << "[DBMgrConnMgr] DBMgr index=" << dbmgr_index << " not connected" << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]DBMgr index={} not connected", dbmgr_index);
         if (callback) callback(-1, "DBMgr not connected");
         return 0;
     }
@@ -655,8 +644,7 @@ void DBMgrConnectionManager::fail_pending_requests_for(uint32_t dbmgr_index) {
     }
 
     if (!to_remove.empty()) {
-        std::cout << "[DBMgrConnMgr] Failed " << to_remove.size()
-                  << " pending requests for DBMgr index=" << dbmgr_index << std::endl;
+        SPDLOG_ERROR("[DBMgrConnection]Failed {} pending requests for DBMgr index={}", to_remove.size(), dbmgr_index);
     }
 }
 
@@ -710,8 +698,7 @@ void DBMgrConnectionManager::broadcast_message(uint32_t msg_id, const std::strin
         if (conn_ptr->state() != DBMgrConnectionState::IDENTIFIED) continue;
 
         send_to_dbmgr(conn_ptr.get(), msg_id, payload);
-        std::cout << "[DBMgrConnMgr] Broadcast msg_id=" << msg_id
-                  << " to DBMgr index=" << conn_ptr->config_index() << std::endl;
+        SPDLOG_INFO("[DBMgrConnection]Broadcast msg_id={} to DBMgr index={}", msg_id, conn_ptr->config_index());
     }
 }
 
