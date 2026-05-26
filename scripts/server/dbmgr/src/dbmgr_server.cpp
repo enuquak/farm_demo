@@ -1,5 +1,6 @@
 #include "dbmgr_server.h"
 #include "internal_msg_ids.h"
+#include "admin_msg_ids.h"
 
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
@@ -265,6 +266,12 @@ void DbMgrServer::send_heartbeat(std::shared_ptr<GameSession> session) {
 void DbMgrServer::route_message(std::shared_ptr<GameSession> session,
                                 uint32_t msg_id,
                                 const std::vector<uint8_t>& payload) {
+    // 管理消息（5000-5999）可以在任何状态下处理
+    if (msg_id >= 5000 && msg_id < 6000) {
+        handle_admin_message(session, msg_id, payload);
+        return;
+    }
+
     // 身份识别前只允许 DBMgr_IDENTIFY_RESP 消息
     if (session->state() == GameSessionState::CONNECTED) {
         if (msg_id == MSG_ID_DBMGR_IDENTIFY_RESP) {
@@ -473,6 +480,71 @@ void DbMgrServer::send_to_game(std::shared_ptr<GameSession> session,
                                uint32_t msg_id, const std::string& payload) {
     auto packed = MessageParser::pack(msg_id, payload);
     bufferevent_write(session->bev(), packed.data(), packed.size());
+}
+
+// ===========================================
+// 管理消息处理
+// ===========================================
+
+void DbMgrServer::handle_admin_message(std::shared_ptr<GameSession> session,
+                                       uint32_t msg_id, const std::vector<uint8_t>& payload) {
+    std::string payload_str(payload.begin(), payload.end());
+
+    switch (msg_id) {
+        case MSG_ID_SHUTDOWN: {
+            AdminShutdownMsg msg;
+            if (AdminShutdownMsg::deserialize(payload_str, msg)) {
+                handle_shutdown(session, msg);
+            } else {
+                std::cerr << "[DbMgrServer] Failed to parse MSG_ID_SHUTDOWN" << std::endl;
+            }
+            break;
+        }
+        case MSG_ID_SHUTDOWN_RESP: {
+            AdminShutdownResp resp;
+            if (AdminShutdownResp::deserialize(payload_str, resp)) {
+                handle_shutdown_resp(session, resp);
+            } else {
+                std::cerr << "[DbMgrServer] Failed to parse MSG_ID_SHUTDOWN_RESP" << std::endl;
+            }
+            break;
+        }
+        default:
+            std::cout << "[DbMgrServer] Unknown admin msg_id=" << msg_id << std::endl;
+            break;
+    }
+}
+
+void DbMgrServer::handle_shutdown(std::shared_ptr<GameSession> session, const AdminShutdownMsg& msg) {
+    std::cout << "[DbMgrServer] Received shutdown request: reason=" << msg.reason
+              << ", timeout_ms=" << msg.timeout_ms << std::endl;
+
+    // 停止接受新连接
+    if (listener_) {
+        evconnlistener_disable(listener_);
+        std::cout << "[DbMgrServer] Stopped accepting new connections" << std::endl;
+    }
+
+    // DataManager 基于文件系统，每次写入都会直接写入文件，无需额外 flush
+    std::cout << "[DbMgrServer] Data is already persisted to disk" << std::endl;
+
+    // 发送响应给 Game
+    AdminShutdownResp resp;
+    resp.code = 0;
+    resp.msg = "DBMgr shutting down";
+    std::string resp_payload = resp.serialize();
+
+    send_to_game(session, MSG_ID_SHUTDOWN_RESP, resp_payload);
+    std::cout << "[DbMgrServer] Sent shutdown response to Game" << std::endl;
+
+    // 退出服务器
+    std::cout << "[DbMgrServer] Shutdown initiated, stopping server..." << std::endl;
+    stop();
+}
+
+void DbMgrServer::handle_shutdown_resp(std::shared_ptr<GameSession> session, const AdminShutdownResp& resp) {
+    std::cout << "[DbMgrServer] Received shutdown response: code=" << resp.code
+              << ", msg=" << resp.msg << std::endl;
 }
 
 }  // namespace farm

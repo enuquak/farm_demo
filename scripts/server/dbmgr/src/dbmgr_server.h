@@ -3,6 +3,7 @@
 #include "game_session.h"
 #include "data_manager.h"
 #include "message_parser.h"
+#include "admin_msg_ids.h"
 
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -60,6 +61,12 @@ private:
     // 发送消息辅助
     void send_to_game(std::shared_ptr<GameSession> session,
                       uint32_t msg_id, const std::string& payload);
+
+    // 管理消息处理
+    void handle_admin_message(std::shared_ptr<GameSession> session,
+                              uint32_t msg_id, const std::vector<uint8_t>& payload);
+    void handle_shutdown(std::shared_ptr<GameSession> session, const AdminShutdownMsg& msg);
+    void handle_shutdown_resp(std::shared_ptr<GameSession> session, const AdminShutdownResp& resp);
 
     uint32_t index_;
     std::string ip_;

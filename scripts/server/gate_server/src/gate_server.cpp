@@ -2,6 +2,7 @@
 #include "message_parser.h"
 #include "internal_msg_ids.h"
 #include "msg_ids.h"
+#include "admin_msg_ids.h"
 
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
@@ -378,6 +379,12 @@ void GateServer::route_message(std::shared_ptr<Session> session, uint32_t msg_id
         return;
     }
 
+    // 管理消息（5000-5999）
+    if (msg_id >= 5000 && msg_id < 6000) {
+        handle_admin_message(msg_id, payload);
+        return;
+    }
+
     // 账号消息（1000-1999）
     if (msg_id >= 1000 && msg_id < 2000) {
         forward_account_msg_to_game(session, msg_id, payload);
@@ -648,6 +655,86 @@ void GateServer::forward_player_msg_to_game(std::shared_ptr<Session> session, ui
     client_msg.SerializeToString(&packed_payload);
 
     conn->send(MSG_ID_CLIENT_MSG, packed_payload);
+}
+
+// ===========================================
+// 管理消息处理
+// ===========================================
+
+void GateServer::handle_admin_message(uint32_t msg_id, const std::vector<uint8_t>& payload) {
+    std::string payload_str(payload.begin(), payload.end());
+
+    switch (msg_id) {
+        case MSG_ID_SHUTDOWN: {
+            AdminShutdownMsg msg;
+            if (AdminShutdownMsg::deserialize(payload_str, msg)) {
+                handle_shutdown(msg);
+            } else {
+                std::cerr << "[GateServer] Failed to parse MSG_ID_SHUTDOWN" << std::endl;
+            }
+            break;
+        }
+        case MSG_ID_SHUTDOWN_RESP: {
+            AdminShutdownResp resp;
+            if (AdminShutdownResp::deserialize(payload_str, resp)) {
+                handle_shutdown_resp(resp);
+            } else {
+                std::cerr << "[GateServer] Failed to parse MSG_ID_SHUTDOWN_RESP" << std::endl;
+            }
+            break;
+        }
+        default:
+            std::cout << "[GateServer] Unknown admin msg_id=" << msg_id << std::endl;
+            break;
+    }
+}
+
+void GateServer::handle_shutdown(const AdminShutdownMsg& msg) {
+    std::cout << "[GateServer] Received shutdown request: reason=" << msg.reason
+              << ", timeout_ms=" << msg.timeout_ms << std::endl;
+
+    // 停止接受新连接
+    if (listener_) {
+        evconnlistener_disable(listener_);
+        std::cout << "[GateServer] Stopped accepting new connections" << std::endl;
+    }
+
+    // 向所有 Game Server 发送 MSG_ID_SHUTDOWN
+    AdminShutdownMsg forward_msg;
+    forward_msg.reason = msg.reason;
+    forward_msg.timeout_ms = msg.timeout_ms;
+    std::string forward_payload = forward_msg.serialize();
+
+    for (auto& kv : game_conns_) {
+        if (kv.second->is_identified()) {
+            kv.second->send(MSG_ID_SHUTDOWN, forward_payload);
+            std::cout << "[GateServer] Forwarded shutdown to Game Server " << kv.first << std::endl;
+        }
+    }
+
+    // 等待 Game Server 响应（简化实现：直接退出）
+    // 实际实现应该等待 MSG_ID_SHUTDOWN_RESP 或超时
+    std::cout << "[GateServer] Shutdown initiated, stopping server..." << std::endl;
+
+    // 发送响应给调用方
+    AdminShutdownResp resp;
+    resp.code = 0;
+    resp.msg = "GateServer shutting down";
+    std::string resp_payload = resp.serialize();
+
+    // 广播给所有客户端（可选）
+    // 这里简化处理，直接停止服务器
+    stop();
+}
+
+void GateServer::handle_shutdown_resp(const AdminShutdownResp& resp) {
+    std::cout << "[GateServer] Received shutdown response: code=" << resp.code
+              << ", msg=" << resp.msg << std::endl;
+
+    // 如果所有 Game Server 都响应了就绪，可以安全退出
+    if (resp.code == 0) {
+        std::cout << "[GateServer] Game Server ready to shutdown" << std::endl;
+    }
 }
 
 }  // namespace farm

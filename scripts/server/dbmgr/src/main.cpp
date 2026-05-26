@@ -1,11 +1,19 @@
 #include "dbmgr_server.h"
+#include <nlohmann/json.hpp>
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <csignal>
 #include <string>
 #include <cstring>
+#include <sys/types.h>
 #ifdef _WIN32
 #include <winsock2.h>
+#include <process.h>
+#include <direct.h>
+#else
+#include <unistd.h>
+#include <sys/stat.h>
 #endif
 
 static farm::DbMgrServer* g_server = nullptr;
@@ -17,18 +25,40 @@ static void signal_handler(int sig) {
     }
 }
 
-static void print_usage(const char* prog) {
-    std::cout << "Usage: " << prog << " [options]" << std::endl;
-    std::cout << "Options:" << std::endl;
-    std::cout << "  --index <N>      DBMgr instance index (default: 0)" << std::endl;
-    std::cout << "  --port <port>    Listen port (default: 5000)" << std::endl;
-    std::cout << "  --data-dir <dir> Data directory (default: ./data)" << std::endl;
-    std::cout << "  --help           Show this help message" << std::endl;
+static bool write_pid_file(const std::string& pid_file) {
+    // Create parent directory if needed
+    size_t last_sep = pid_file.find_last_of("/\\");
+    if (last_sep != std::string::npos) {
+        std::string dir = pid_file.substr(0, last_sep);
+#ifdef _WIN32
+        _mkdir(dir.c_str());
+#else
+        mkdir(dir.c_str(), 0755);
+#endif
+    }
+
+    std::ofstream ofs(pid_file);
+    if (!ofs.is_open()) {
+        std::cerr << "[Main] Failed to write PID file: " << pid_file << std::endl;
+        return false;
+    }
+#ifdef _WIN32
+    ofs << _getpid();
+#else
+    ofs << getpid();
+#endif
+    ofs.close();
+    std::cout << "[Main] PID file written: " << pid_file << std::endl;
+    return true;
+}
+
+static std::string get_config_path() {
+    // Try relative to executable, then relative to CWD
+    return "config/dbmgr.json";
 }
 
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
-    // Initialize Winsock on Windows (required before any Winsock functions)
     WSADATA wsa_data;
     if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
         std::cerr << "[Main] WSAStartup failed" << std::endl;
@@ -36,33 +66,36 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-    // 默认参数
-    uint32_t index = 0;
-    uint16_t port = 5000;
-    std::string data_dir = "./data";
-    std::string ip = "0.0.0.0";
-
-    // 解析命令行参数
-    for (int i = 1; i < argc; i++) {
-        if (std::strcmp(argv[i], "--index") == 0 && i + 1 < argc) {
-            index = static_cast<uint32_t>(std::atoi(argv[++i]));
-        } else if (std::strcmp(argv[i], "--port") == 0 && i + 1 < argc) {
-            port = static_cast<uint16_t>(std::atoi(argv[++i]));
-        } else if (std::strcmp(argv[i], "--data-dir") == 0 && i + 1 < argc) {
-            data_dir = argv[++i];
-        } else if (std::strcmp(argv[i], "--help") == 0) {
-            print_usage(argv[0]);
-            return 0;
-        } else {
-            std::cerr << "[Main] Unknown argument: " << argv[i] << std::endl;
-            print_usage(argv[0]);
-            return 1;
-        }
+    // Load config from JSON file
+    std::string config_path = get_config_path();
+    std::ifstream config_file(config_path);
+    if (!config_file.is_open()) {
+        std::cerr << "[Main] Error: Config file not found: " << config_path << std::endl;
+        return 1;
     }
+
+    nlohmann::json config;
+    try {
+        config_file >> config;
+    } catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "[Main] Error: Failed to parse config file: " << e.what() << std::endl;
+        return 1;
+    }
+    config_file.close();
+
+    // Read config values
+    uint32_t index = config.value("/server/index"_json_pointer, 0);
+    uint16_t port = static_cast<uint16_t>(config.value("/server/port"_json_pointer, 5000));
+    std::string ip = config.value("/server/ip"_json_pointer, "0.0.0.0");
+    std::string data_dir = config.value("/server/data_dir"_json_pointer, "./data");
+    std::string pid_file = config.value("pid_file", "./runtimeData/dbmgr.pid");
 
     // 设置信号处理
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
+
+    // Write PID file
+    write_pid_file(pid_file);
 
     std::cout << "=== DBMgr Server ===" << std::endl;
     std::cout << "Index: " << index << std::endl;

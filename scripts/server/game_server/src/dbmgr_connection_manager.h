@@ -104,6 +104,9 @@ public:
     size_t dbmgr_count() const { return connections_.size(); }
     std::vector<std::pair<uint32_t, DBMgrConnectionState>> get_all_status() const;
 
+    // Broadcast message to all connected DBMgrs
+    void broadcast_message(uint32_t msg_id, const std::string& payload);
+
 private:
     // libevent callbacks (static -> this pointer)
     static void on_read(struct bufferevent* bev, void* ctx);

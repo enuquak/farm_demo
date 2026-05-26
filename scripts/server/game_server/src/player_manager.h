@@ -47,6 +47,9 @@ public:
     // 移除某个 GateSession 关联的所有玩家并保存数据
     void remove_players_by_gate_with_save(GateSession* gate_session);
 
+    // 保存所有玩家数据
+    void save_all_players();
+
     // 当前在线玩家数
     size_t player_count() const;
 

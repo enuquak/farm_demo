@@ -1,13 +1,20 @@
 #include "game_server.h"
 #include "dbmgr_connection_manager.h"
+#include <nlohmann/json.hpp>
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <csignal>
 #include <string>
 #include <vector>
-#include <sstream>
+#include <sys/types.h>
 #ifdef _WIN32
 #include <winsock2.h>
+#include <process.h>
+#include <direct.h>
+#else
+#include <unistd.h>
+#include <sys/stat.h>
 #endif
 
 static farm::GameServer* g_server = nullptr;
@@ -19,42 +26,34 @@ static void signal_handler(int sig) {
     }
 }
 
-/**
- * @brief Parse dbmgr config string.
- * Format: "host1:port1,host2:port2,..."
- * Example: "127.0.0.1:5000,127.0.0.1:5001"
- */
-static std::vector<farm::DBMgrConfig> parse_dbmgr_config(const std::string& config_str) {
-    std::vector<farm::DBMgrConfig> configs;
-    if (config_str.empty()) return configs;
-
-    std::istringstream ss(config_str);
-    std::string token;
-    while (std::getline(ss, token, ',')) {
-        // Trim whitespace
-        size_t start = token.find_first_not_of(" \t");
-        size_t end = token.find_last_not_of(" \t");
-        if (start == std::string::npos) continue;
-        token = token.substr(start, end - start + 1);
-
-        // Parse host:port
-        size_t colon_pos = token.find(':');
-        if (colon_pos == std::string::npos) {
-            std::cerr << "[Main] Invalid dbmgr config entry: " << token << std::endl;
-            continue;
-        }
-
-        farm::DBMgrConfig cfg;
-        cfg.host = token.substr(0, colon_pos);
-        cfg.port = static_cast<uint16_t>(std::atoi(token.substr(colon_pos + 1).c_str()));
-        configs.push_back(cfg);
+static bool write_pid_file(const std::string& pid_file) {
+    size_t last_sep = pid_file.find_last_of("/\\");
+    if (last_sep != std::string::npos) {
+        std::string dir = pid_file.substr(0, last_sep);
+#ifdef _WIN32
+        _mkdir(dir.c_str());
+#else
+        mkdir(dir.c_str(), 0755);
+#endif
     }
-    return configs;
+
+    std::ofstream ofs(pid_file);
+    if (!ofs.is_open()) {
+        std::cerr << "[Main] Failed to write PID file: " << pid_file << std::endl;
+        return false;
+    }
+#ifdef _WIN32
+    ofs << _getpid();
+#else
+    ofs << getpid();
+#endif
+    ofs.close();
+    std::cout << "[Main] PID file written: " << pid_file << std::endl;
+    return true;
 }
 
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
-    // Initialize Winsock on Windows (required before any Winsock functions)
     WSADATA wsa_data;
     if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
         std::cerr << "[Main] WSAStartup failed" << std::endl;
@@ -62,31 +61,45 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-    std::string ip = "127.0.0.1";
-    uint16_t port = 9090;
-    std::string dbmgr_str;
-
-    // 解析命令行参数
-    for (int i = 1; i < argc; i++) {
-        std::string arg = argv[i];
-        if (arg == "--dbmgr" && i + 1 < argc) {
-            dbmgr_str = argv[++i];
-        } else if (arg == "--port" && i + 1 < argc) {
-            port = static_cast<uint16_t>(std::atoi(argv[++i]));
-        } else if (arg == "--ip" && i + 1 < argc) {
-            ip = argv[++i];
-        } else if (port == 9090 && !arg.empty() && arg[0] != '-') {
-            // Legacy: first positional arg is port
-            port = static_cast<uint16_t>(std::atoi(argv[i]));
-        }
+    // Load config from JSON file
+    std::string config_path = "config/game_server.json";
+    std::ifstream config_file(config_path);
+    if (!config_file.is_open()) {
+        std::cerr << "[Main] Error: Config file not found: " << config_path << std::endl;
+        return 1;
     }
 
-    // Parse DBMgr config
-    std::vector<farm::DBMgrConfig> dbmgr_configs = parse_dbmgr_config(dbmgr_str);
+    nlohmann::json config;
+    try {
+        config_file >> config;
+    } catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "[Main] Error: Failed to parse config file: " << e.what() << std::endl;
+        return 1;
+    }
+    config_file.close();
+
+    // Read config values
+    std::string ip = config.value("/server/ip"_json_pointer, "0.0.0.0");
+    uint16_t port = static_cast<uint16_t>(config.value("/server/port"_json_pointer, 9090));
+    std::string pid_file = config.value("pid_file", "./runtimeData/game_server.pid");
+
+    // Parse DBMgr configs from JSON
+    std::vector<farm::DBMgrConfig> dbmgr_configs;
+    if (config.contains("dbmgrs") && config["dbmgrs"].is_array()) {
+        for (const auto& db : config["dbmgrs"]) {
+            farm::DBMgrConfig cfg;
+            cfg.host = db.value("host", "127.0.0.1");
+            cfg.port = static_cast<uint16_t>(db.value("port", 5000));
+            dbmgr_configs.push_back(cfg);
+        }
+    }
 
     // 设置信号处理
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
+
+    // Write PID file
+    write_pid_file(pid_file);
 
     std::cout << "=== Game Server ===" << std::endl;
     std::cout << "IP: " << ip << std::endl;

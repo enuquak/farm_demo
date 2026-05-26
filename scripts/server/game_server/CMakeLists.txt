@@ -42,6 +42,7 @@ set(SOURCES
     src/dbmgr_connection_manager.cpp
     src/msvc_compat.cpp
     ${PROTO_SRCS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/admin_msg_ids.cpp
 )
 
 add_executable(game_server ${SOURCES})
@@ -56,6 +57,7 @@ target_include_directories(game_server PRIVATE
     ${COMMON_PROTO_DIR}
     ${COMMON_PROTO_DIR}/generated
     ${DBMGR_SRC_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include
 )
 
 # 链接库目录
@@ -102,8 +104,8 @@ else()
     )
 endif()
 
-# 输出目录 (use $<0:> to suppress config subdirectory)
+# 输出目录
 set_target_properties(game_server PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Release"
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/Release"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../../../bin"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/../../../bin"
 )

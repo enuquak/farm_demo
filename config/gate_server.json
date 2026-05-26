@@ -1,0 +1,13 @@
+{
+    "server": {
+        "ip": "0.0.0.0",
+        "port": 8080
+    },
+    "game_servers": [
+        { "server_id": 1, "ip": "127.0.0.1", "port": 9090 }
+    ],
+    "shutdown": {
+        "timeout_ms": 60000
+    },
+    "pid_file": "./runtimeData/gate_server.pid"
+}
