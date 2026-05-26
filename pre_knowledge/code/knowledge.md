@@ -197,3 +197,13 @@ Action: 在 player_manager.h 中添加 save_all_players() 声明，在 player_ma
 Description: DBMgrConnectionManager 添加 broadcast_message() 方法，向所有已识别的 DBMgr 连接发送相同的消息。用于优雅停服时向所有 DBMgr 广播停服指令。
 Context: Game Server 需要向所有 DBMgr 发送停服消息。
 Action: 在 dbmgr_connection_manager.h 中添加 broadcast_message(msg_id, payload) 声明，在 cpp 中实现为遍历 connections_ 调用 send_to_dbmgr()。
+
+[2026-05-27] [Pitfall] [MSVC spdlog 宏兼容性]
+Description: MSVC 的 C++17 标准模式预处理器（/Zc:preprocessor）不支持 ##__VA_ARGS__ 语法来消除空参数的尾部逗号。spdlog 的 SPDLOG_INFO 等宏内部已正确处理此问题，但自定义的包装宏（如 FARM_LOG_INFO）使用 ##__VA_ARGS__ 时会编译失败，报 C2059 语法错误。
+Context: 在 MSVC C++17 项目中使用 spdlog，需要定义自定义日志宏来自动添加模块前缀。
+Action: 不要定义包装宏，直接使用 spdlog 原生宏（SPDLOG_INFO/SPDLOG_ERROR）。将模块名作为格式化参数的第一个参数：SPDLOG_INFO("[{}] message", LogModule::Gate, args...)。格式模式中不使用 %n（logger name），避免进程名重复。
+
+[2026-05-27] [Pattern] [spdlog 日志系统集成]
+Description: 使用 spdlog header-only 库实现统一日志系统。日志格式为 [时间][级别][进程名:PID][模块] 内容。spdlog 模式字符串设置为 "[%Y-%m-%d %H:%M:%S.%e][%^%l%$][process:pid] %v"，模块名在各调用点以 "[ModuleName] message" 格式包含在消息中。使用 rotating_file_sink_mt 实现按大小轮转（20MB/文件，保留7个）。日志级别通过配置文件设置，支持 debug/info/error/critical。
+Context: 为 C++ 服务器进程实现统一的日志输出格式和文件轮转。
+Action: 创建 log_config.h（配置结构体）、log_init.h/cpp（初始化函数）、log_modules.h（模块常量和 spdlog include）、log_macros.h（spdlog include 入口头文件）。在 main.cpp 中先用默认配置初始化日志，加载配置文件后再重新初始化。

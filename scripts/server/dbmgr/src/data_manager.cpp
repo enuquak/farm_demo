@@ -1,7 +1,6 @@
 #include "data_manager.h"
 #include <fstream>
 #include <sstream>
-#include <iostream>
 #include <sys/stat.h>
 
 #ifdef _WIN32
@@ -12,6 +11,8 @@
 #include <unistd.h>
 #define MKDIR(path) mkdir(path, 0755)
 #endif
+
+#include "log_macros.h"
 
 namespace farm {
 
@@ -31,19 +32,19 @@ bool DataManager::init() {
     struct stat st;
     if (stat(players_dir_.c_str(), &st) != 0) {
         if (MKDIR(players_dir_.c_str()) != 0) {
-            std::cerr << "[DataManager] Failed to create players directory: " << players_dir_ << std::endl;
+            SPDLOG_ERROR("[DataManager]Failed to create players directory: {}", players_dir_);
             return false;
         }
-        std::cout << "[DataManager] Created players directory: " << players_dir_ << std::endl;
+        SPDLOG_INFO("[DataManager]Created players directory: {}", players_dir_);
     }
 
     // 创建 accounts 目录
     if (stat(accounts_dir_.c_str(), &st) != 0) {
         if (MKDIR(accounts_dir_.c_str()) != 0) {
-            std::cerr << "[DataManager] Failed to create accounts directory: " << accounts_dir_ << std::endl;
+            SPDLOG_ERROR("[DataManager]Failed to create accounts directory: {}", accounts_dir_);
             return false;
         }
-        std::cout << "[DataManager] Created accounts directory: " << accounts_dir_ << std::endl;
+        SPDLOG_INFO("[DataManager]Created accounts directory: {}", accounts_dir_);
     }
 
     return true;
@@ -113,7 +114,7 @@ DataResult DataManager::set_all(uint64_t player_id, const std::vector<uint8_t>& 
     std::string content(value.begin(), value.end());
 
     if (!write_file(path, content)) {
-        std::cerr << "[DataManager] Failed to write file: " << path << std::endl;
+        SPDLOG_ERROR("[DataManager]Failed to write file: {}", path);
         return DataResult::IO_ERROR;
     }
 
@@ -132,12 +133,12 @@ DataResult DataManager::set(uint64_t player_id, const std::string& key, const st
     }
 
     if (!json_set(content, key, json_value, result)) {
-        std::cerr << "[DataManager] Failed to set key: " << key << std::endl;
+        SPDLOG_ERROR("[DataManager]Failed to set key: {}", key);
         return DataResult::PARSE_ERROR;
     }
 
     if (!write_file(path, result)) {
-        std::cerr << "[DataManager] Failed to write file: " << path << std::endl;
+        SPDLOG_ERROR("[DataManager]Failed to write file: {}", path);
         return DataResult::IO_ERROR;
     }
 
@@ -160,7 +161,7 @@ DataResult DataManager::del(uint64_t player_id, const std::string& key) {
     }
 
     if (!write_file(path, result)) {
-        std::cerr << "[DataManager] Failed to write file: " << path << std::endl;
+        SPDLOG_ERROR("[DataManager]Failed to write file: {}", path);
         return DataResult::IO_ERROR;
     }
 
@@ -264,20 +265,20 @@ AccountResult DataManager::set_account(const std::string& account_id, const Acco
     // 添加到 roles 数组
     std::string new_roles_json;
     if (!json_array_append(roles_json, new_role_json, new_roles_json)) {
-        std::cerr << "[DataManager] Failed to append role to array" << std::endl;
+        SPDLOG_ERROR("[DataManager]Failed to append role to array");
         return AccountResult::PARSE_ERROR;
     }
 
     // 更新 roles 字段
     std::string result;
     if (!json_set(content, "roles", new_roles_json, result)) {
-        std::cerr << "[DataManager] Failed to set roles in JSON" << std::endl;
+        SPDLOG_ERROR("[DataManager]Failed to set roles in JSON");
         return AccountResult::PARSE_ERROR;
     }
 
     // 写入文件
     if (!write_file(path, result)) {
-        std::cerr << "[DataManager] Failed to write account file: " << path << std::endl;
+        SPDLOG_ERROR("[DataManager]Failed to write account file: {}", path);
         return AccountResult::IO_ERROR;
     }
 

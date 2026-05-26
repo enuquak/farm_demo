@@ -1,5 +1,10 @@
 #include "dbmgr_server.h"
+#include "log_init.h"
+#include "log_config.h"
+#include "log_macros.h"
+
 #include <nlohmann/json.hpp>
+
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -20,7 +25,7 @@ static farm::DbMgrServer* g_server = nullptr;
 
 static void signal_handler(int sig) {
     if (g_server) {
-        std::cout << "\n[Main] Received signal " << sig << ", shutting down..." << std::endl;
+        SPDLOG_INFO("[Main]Received signal {}, shutting down...", sig);
         g_server->stop();
     }
 }
@@ -39,7 +44,7 @@ static bool write_pid_file(const std::string& pid_file) {
 
     std::ofstream ofs(pid_file);
     if (!ofs.is_open()) {
-        std::cerr << "[Main] Failed to write PID file: " << pid_file << std::endl;
+        SPDLOG_ERROR("[Main]Failed to write PID file: {}", pid_file);
         return false;
     }
 #ifdef _WIN32
@@ -48,7 +53,7 @@ static bool write_pid_file(const std::string& pid_file) {
     ofs << getpid();
 #endif
     ofs.close();
-    std::cout << "[Main] PID file written: " << pid_file << std::endl;
+    SPDLOG_INFO("[Main]PID file written: {}", pid_file);
     return true;
 }
 
@@ -66,11 +71,14 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
+    // 使用默认日志配置初始化（配置文件加载前）
+    farm::init_logging_default("dbmgr");
+
     // Load config from JSON file
     std::string config_path = get_config_path();
     std::ifstream config_file(config_path);
     if (!config_file.is_open()) {
-        std::cerr << "[Main] Error: Config file not found: " << config_path << std::endl;
+        SPDLOG_ERROR("[Main]Config file not found: {}", config_path);
         return 1;
     }
 
@@ -78,10 +86,21 @@ int main(int argc, char* argv[]) {
     try {
         config_file >> config;
     } catch (const nlohmann::json::parse_error& e) {
-        std::cerr << "[Main] Error: Failed to parse config file: " << e.what() << std::endl;
+        SPDLOG_ERROR("[Main]Failed to parse config file: {}", e.what());
         return 1;
     }
     config_file.close();
+
+    // 读取日志配置并重新初始化
+    farm::LoggingConfig log_config;
+    if (config.contains("logging")) {
+        auto& logging = config["logging"];
+        log_config.dir = logging.value("dir", log_config.dir);
+        log_config.level = logging.value("level", log_config.level);
+        log_config.max_file_size_mb = logging.value("max_file_size_mb", log_config.max_file_size_mb);
+        log_config.max_files = logging.value("max_files", log_config.max_files);
+    }
+    farm::init_logging("dbmgr", log_config);
 
     // Read config values
     uint32_t index = config.value("/server/index"_json_pointer, 0);
@@ -97,21 +116,23 @@ int main(int argc, char* argv[]) {
     // Write PID file
     write_pid_file(pid_file);
 
-    std::cout << "=== DBMgr Server ===" << std::endl;
-    std::cout << "Index: " << index << std::endl;
-    std::cout << "IP: " << ip << std::endl;
-    std::cout << "Port: " << port << std::endl;
-    std::cout << "Data Dir: " << data_dir << std::endl;
+    SPDLOG_INFO("[Main]=== DBMgr Server ===");
+    SPDLOG_INFO("[Main]Index: {}", index);
+    SPDLOG_INFO("[Main]IP: {}", ip);
+    SPDLOG_INFO("[Main]Port: {}", port);
+    SPDLOG_INFO("[Main]Data Dir: {}", data_dir);
 
     farm::DbMgrServer server(index, ip, port, data_dir);
     g_server = &server;
 
     if (!server.start()) {
-        std::cerr << "[Main] Server failed to start" << std::endl;
+        SPDLOG_ERROR("[Main]Server failed to start");
         return 1;
     }
 
-    std::cout << "[Main] Server stopped" << std::endl;
+    SPDLOG_INFO("[Main]Server stopped");
+    farm::shutdown_logging();
+
 #ifdef _WIN32
     WSACleanup();
 #endif

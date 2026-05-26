@@ -12,10 +12,10 @@
 #include <arpa/inet.h>
 #endif
 #include <cstring>
-#include <iostream>
 
 #include "dbmgr.pb.h"
 #include "account.pb.h"
+#include "log_macros.h"
 
 namespace farm {
 
@@ -39,13 +39,13 @@ DbMgrServer::~DbMgrServer() {
 bool DbMgrServer::start() {
     // 初始化数据目录
     if (!data_mgr_.init()) {
-        std::cerr << "[DbMgrServer] Failed to initialize data directory" << std::endl;
+        SPDLOG_ERROR("[DBMgr]Failed to initialize data directory");
         return false;
     }
 
     base_ = event_base_new();
     if (!base_) {
-        std::cerr << "[DbMgrServer] Failed to create event_base" << std::endl;
+        SPDLOG_ERROR("[DBMgr]Failed to create event_base");
         return false;
     }
 
@@ -67,8 +67,7 @@ bool DbMgrServer::start() {
         128, reinterpret_cast<struct sockaddr*>(&sin), sizeof(sin));
 
     if (!listener_) {
-        std::cerr << "[DbMgrServer] Failed to create listener on "
-                  << ip_ << ":" << port_ << std::endl;
+        SPDLOG_ERROR("[DBMgr]Failed to create listener on {}:{}", ip_, port_);
         event_base_free(base_);
         base_ = nullptr;
         return false;
@@ -82,9 +81,7 @@ bool DbMgrServer::start() {
     evtimer_add(heartbeat_timer_, &tv);
 
     running_ = true;
-    std::cout << "[DbMgrServer] DBMgr index=" << index_
-              << " listening on " << ip_ << ":" << port_
-              << " data_dir=" << data_dir_ << std::endl;
+    SPDLOG_INFO("[DBMgr]DBMgr index={} listening on {}:{} data_dir={}", index_, ip_, port_, data_dir_);
 
     // 进入事件循环（阻塞）
     event_base_dispatch(base_);
@@ -126,7 +123,7 @@ void DbMgrServer::handle_accept(evutil_socket_t fd, struct sockaddr* addr) {
     // 创建 bufferevent
     struct bufferevent* bev = bufferevent_socket_new(base_, fd, BEV_OPT_CLOSE_ON_FREE);
     if (!bev) {
-        std::cerr << "[DbMgrServer] Failed to create bufferevent for fd=" << fd << std::endl;
+        SPDLOG_ERROR("[DBMgr]Failed to create bufferevent for fd={}", fd);
         evutil_closesocket(fd);
         return;
     }
@@ -144,9 +141,7 @@ void DbMgrServer::handle_accept(evutil_socket_t fd, struct sockaddr* addr) {
     if (addr->sa_family == AF_INET) {
         auto* sin = reinterpret_cast<struct sockaddr_in*>(addr);
         inet_ntop(AF_INET, &sin->sin_addr, ip_str, sizeof(ip_str));
-        std::cout << "[DbMgrServer] New Game connection from "
-                  << ip_str << ":" << ntohs(sin->sin_port)
-                  << " fd=" << fd << std::endl;
+        SPDLOG_INFO("[DBMgr]New Game connection from {}:{} fd={}", ip_str, ntohs(sin->sin_port), fd);
     }
 
     // 发送 DBMgrIdentify 消息
@@ -157,8 +152,7 @@ void DbMgrServer::handle_accept(evutil_socket_t fd, struct sockaddr* addr) {
     identify.SerializeToString(&identify_data);
 
     send_to_game(session, MSG_ID_DBMGR_IDENTIFY, identify_data);
-    std::cout << "[DbMgrServer] Sent DBMgrIdentify to fd=" << fd
-              << " index=" << index_ << std::endl;
+    SPDLOG_INFO("[DBMgr]Sent DBMgrIdentify to fd={} index={}", fd, index_);
 }
 
 void DbMgrServer::on_read(struct bufferevent* bev, void* ctx) {
@@ -211,7 +205,7 @@ void DbMgrServer::on_event(struct bufferevent* bev, short events, void* ctx) {
 
 void DbMgrServer::handle_disconnect(std::shared_ptr<GameSession> session) {
     evutil_socket_t fd = session->fd();
-    std::cout << "[DbMgrServer] Game disconnected fd=" << fd << std::endl;
+    SPDLOG_INFO("[DBMgr]Game disconnected fd={}", fd);
 
     // 移除会话
     game_sessions_.erase(fd);
@@ -237,7 +231,7 @@ void DbMgrServer::check_heartbeat() {
 
         // 检查心跳超时
         if (now - session->last_heartbeat() > HEARTBEAT_TIMEOUT) {
-            std::cout << "[DbMgrServer] Heartbeat timeout fd=" << session->fd() << std::endl;
+            SPDLOG_INFO("[DBMgr]Heartbeat timeout fd={}", session->fd());
             timeout_fds.push_back(kv.first);
         }
     }
@@ -277,8 +271,7 @@ void DbMgrServer::route_message(std::shared_ptr<GameSession> session,
         if (msg_id == MSG_ID_DBMGR_IDENTIFY_RESP) {
             handle_dbmgr_identify_resp(session, payload);
         } else {
-            std::cout << "[DbMgrServer] Ignoring msg_id=" << msg_id
-                      << " from unidentified Game fd=" << session->fd() << std::endl;
+            SPDLOG_INFO("[DBMgr]Ignoring msg_id={} from unidentified Game fd={}", msg_id, session->fd());
         }
         return;
     }
@@ -298,8 +291,7 @@ void DbMgrServer::route_message(std::shared_ptr<GameSession> session,
             handle_account_set_req(session, payload);
             break;
         default:
-            std::cout << "[DbMgrServer] Unknown msg_id=" << msg_id
-                      << " from fd=" << session->fd() << std::endl;
+            SPDLOG_INFO("[DBMgr]Unknown msg_id={} from fd={}", msg_id, session->fd());
             break;
     }
 }
@@ -318,10 +310,9 @@ void DbMgrServer::handle_dbmgr_identify_resp(std::shared_ptr<GameSession> sessio
     if (resp.code() == 0) {
         session->set_state(GameSessionState::IDENTIFIED);
         session->update_heartbeat();
-        std::cout << "[DbMgrServer] Game identified successfully fd=" << session->fd() << std::endl;
+        SPDLOG_INFO("[DBMgr]Game identified successfully fd={}", session->fd());
     } else {
-        std::cerr << "[DbMgrServer] Game identify failed fd=" << session->fd()
-                  << " code=" << resp.code() << " msg=" << resp.msg() << std::endl;
+        SPDLOG_ERROR("[DBMgr]Game identify failed fd={} code={} msg={}", session->fd(), resp.code(), resp.msg());
     }
 }
 
@@ -343,10 +334,7 @@ void DbMgrServer::handle_player_data_req(std::shared_ptr<GameSession> session,
     const std::string& key = req.key();
     const std::string& value = req.value();
 
-    std::cout << "[DbMgrServer] PlayerDataReq request_id=" << request_id
-              << " player_id=" << player_id
-              << " op=" << static_cast<int>(op)
-              << " key=" << key << std::endl;
+    SPDLOG_INFO("[DBMgr]PlayerDataReq request_id={} player_id={} op={} key={}", request_id, player_id, static_cast<int>(op), key);
 
     // 构造响应
     farm::PlayerDataResp resp;
@@ -372,7 +360,7 @@ void DbMgrServer::handle_player_data_req(std::shared_ptr<GameSession> session,
             result = data_mgr_.del(player_id, key);
             break;
         default:
-            std::cerr << "[DbMgrServer] Unknown op=" << static_cast<int>(op) << std::endl;
+            SPDLOG_ERROR("[DBMgr]Unknown op={}", static_cast<int>(op));
             result = DataResult::PARSE_ERROR;
             break;
     }
@@ -387,9 +375,7 @@ void DbMgrServer::handle_player_data_req(std::shared_ptr<GameSession> session,
 
     send_to_game(session, MSG_ID_PLAYER_DATA_RESP, resp_data);
 
-    std::cout << "[DbMgrServer] PlayerDataResp request_id=" << request_id
-              << " code=" << static_cast<int32_t>(result)
-              << " value_size=" << result_value.size() << std::endl;
+    SPDLOG_INFO("[DBMgr]PlayerDataResp request_id={} code={} value_size={}", request_id, static_cast<int32_t>(result), result_value.size());
 }
 
 void DbMgrServer::handle_account_data_req(std::shared_ptr<GameSession> session,
@@ -401,7 +387,7 @@ void DbMgrServer::handle_account_data_req(std::shared_ptr<GameSession> session,
 
     const std::string& account_id = req.account_id();
 
-    std::cout << "[DbMgrServer] AccountDataReq account_id=" << account_id << std::endl;
+    SPDLOG_INFO("[DBMgr]AccountDataReq account_id={}", account_id);
 
     // 构造响应
     farm::AccountDataResp resp;
@@ -426,9 +412,7 @@ void DbMgrServer::handle_account_data_req(std::shared_ptr<GameSession> session,
 
     send_to_game(session, MSG_ID_ACCOUNT_DATA_RESP, resp_data);
 
-    std::cout << "[DbMgrServer] AccountDataResp account_id=" << account_id
-              << " code=" << static_cast<int32_t>(result)
-              << " roles_count=" << roles.size() << std::endl;
+    SPDLOG_INFO("[DBMgr]AccountDataResp account_id={} code={} roles_count={}", account_id, static_cast<int32_t>(result), roles.size());
 }
 
 void DbMgrServer::handle_account_set_req(std::shared_ptr<GameSession> session,
@@ -441,10 +425,7 @@ void DbMgrServer::handle_account_set_req(std::shared_ptr<GameSession> session,
     const std::string& account_id = req.account_id();
     const auto& new_role = req.new_role();
 
-    std::cout << "[DbMgrServer] AccountSetReq account_id=" << account_id
-              << " server_id=" << new_role.server_id()
-              << " player_id=" << new_role.player_id()
-              << " role_name=" << new_role.role_name() << std::endl;
+    SPDLOG_INFO("[DBMgr]AccountSetReq account_id={} server_id={} player_id={} role_name={}", account_id, new_role.server_id(), new_role.player_id(), new_role.role_name());
 
     // 构造响应
     farm::AccountSetResp resp;
@@ -468,8 +449,7 @@ void DbMgrServer::handle_account_set_req(std::shared_ptr<GameSession> session,
 
     send_to_game(session, MSG_ID_ACCOUNT_SET_RESP, resp_data);
 
-    std::cout << "[DbMgrServer] AccountSetResp account_id=" << account_id
-              << " code=" << static_cast<int32_t>(result) << std::endl;
+    SPDLOG_INFO("[DBMgr]AccountSetResp account_id={} code={}", account_id, static_cast<int32_t>(result));
 }
 
 // ===========================================
@@ -496,7 +476,7 @@ void DbMgrServer::handle_admin_message(std::shared_ptr<GameSession> session,
             if (AdminShutdownMsg::deserialize(payload_str, msg)) {
                 handle_shutdown(session, msg);
             } else {
-                std::cerr << "[DbMgrServer] Failed to parse MSG_ID_SHUTDOWN" << std::endl;
+                SPDLOG_ERROR("[DBMgr]Failed to parse MSG_ID_SHUTDOWN");
             }
             break;
         }
@@ -505,28 +485,27 @@ void DbMgrServer::handle_admin_message(std::shared_ptr<GameSession> session,
             if (AdminShutdownResp::deserialize(payload_str, resp)) {
                 handle_shutdown_resp(session, resp);
             } else {
-                std::cerr << "[DbMgrServer] Failed to parse MSG_ID_SHUTDOWN_RESP" << std::endl;
+                SPDLOG_ERROR("[DBMgr]Failed to parse MSG_ID_SHUTDOWN_RESP");
             }
             break;
         }
         default:
-            std::cout << "[DbMgrServer] Unknown admin msg_id=" << msg_id << std::endl;
+            SPDLOG_INFO("[DBMgr]Unknown admin msg_id={}", msg_id);
             break;
     }
 }
 
 void DbMgrServer::handle_shutdown(std::shared_ptr<GameSession> session, const AdminShutdownMsg& msg) {
-    std::cout << "[DbMgrServer] Received shutdown request: reason=" << msg.reason
-              << ", timeout_ms=" << msg.timeout_ms << std::endl;
+    SPDLOG_INFO("[DBMgr]Received shutdown request: reason={}, timeout_ms={}", msg.reason, msg.timeout_ms);
 
     // 停止接受新连接
     if (listener_) {
         evconnlistener_disable(listener_);
-        std::cout << "[DbMgrServer] Stopped accepting new connections" << std::endl;
+        SPDLOG_INFO("[DBMgr]Stopped accepting new connections");
     }
 
     // DataManager 基于文件系统，每次写入都会直接写入文件，无需额外 flush
-    std::cout << "[DbMgrServer] Data is already persisted to disk" << std::endl;
+    SPDLOG_INFO("[DBMgr]Data is already persisted to disk");
 
     // 发送响应给 Game
     AdminShutdownResp resp;
@@ -535,16 +514,15 @@ void DbMgrServer::handle_shutdown(std::shared_ptr<GameSession> session, const Ad
     std::string resp_payload = resp.serialize();
 
     send_to_game(session, MSG_ID_SHUTDOWN_RESP, resp_payload);
-    std::cout << "[DbMgrServer] Sent shutdown response to Game" << std::endl;
+    SPDLOG_INFO("[DBMgr]Sent shutdown response to Game");
 
     // 退出服务器
-    std::cout << "[DbMgrServer] Shutdown initiated, stopping server..." << std::endl;
+    SPDLOG_INFO("[DBMgr]Shutdown initiated, stopping server...");
     stop();
 }
 
 void DbMgrServer::handle_shutdown_resp(std::shared_ptr<GameSession> session, const AdminShutdownResp& resp) {
-    std::cout << "[DbMgrServer] Received shutdown response: code=" << resp.code
-              << ", msg=" << resp.msg << std::endl;
+    SPDLOG_INFO("[DBMgr]Received shutdown response: code={}, msg={}", resp.code, resp.msg);
 }
 
 }  // namespace farm

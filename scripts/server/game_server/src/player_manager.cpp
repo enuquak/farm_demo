@@ -3,11 +3,11 @@
 #include "dbmgr_connection_manager.h"
 #include "dbmgr_msg_ids.h"
 
-#include <iostream>
 #include <cstring>
 
 #include "dbmgr.pb.h"
 #include "player.pb.h"
+#include "log_macros.h"
 
 namespace farm {
 
@@ -53,7 +53,7 @@ bool PlayerManager::add_player_with_data_load(uint64_t player_id, GateSession* g
 
         if (request_id == 0) {
             // 发送失败
-            std::cerr << "[PlayerManager] Failed to send data load request for player_id=" << player_id << std::endl;
+            SPDLOG_ERROR("[Player]Failed to send data load request for player_id={}", player_id);
             player->set_data_state(PlayerBizDataState::FAILED);
 
             // 调用回调通知失败
@@ -67,11 +67,10 @@ bool PlayerManager::add_player_with_data_load(uint64_t player_id, GateSession* g
             return true;
         }
 
-        std::cout << "[PlayerManager] Data load request sent for player_id=" << player_id
-                  << " request_id=" << request_id << std::endl;
+        SPDLOG_INFO("[Player]Data load request sent for player_id={} request_id={}", player_id, request_id);
     } else {
         // 没有 DBMgr 连接，直接使用默认数据
-        std::cout << "[PlayerManager] No DBMgr manager, using default data for player_id=" << player_id << std::endl;
+        SPDLOG_INFO("[Player]No DBMgr manager, using default data for player_id={}", player_id);
         player->init_default_data();
         player->set_data_state(PlayerBizDataState::LOADED);
 
@@ -128,8 +127,7 @@ void PlayerManager::remove_players_by_gate(GateSession* gate_session) {
         }
     }
     for (uint64_t pid : to_remove) {
-        std::cout << "[PlayerManager] Removing player " << pid
-                  << " due to Gate disconnect" << std::endl;
+        SPDLOG_INFO("[Player]Removing player {} due to Gate disconnect", pid);
         players_.erase(pid);
     }
 }
@@ -142,8 +140,7 @@ void PlayerManager::remove_players_by_gate_with_save(GateSession* gate_session) 
         }
     }
     for (uint64_t pid : to_remove) {
-        std::cout << "[PlayerManager] Removing player " << pid
-                  << " due to Gate disconnect (with save)" << std::endl;
+        SPDLOG_INFO("[Player]Removing player {} due to Gate disconnect (with save)", pid);
         save_player_data(pid);
         players_.erase(pid);
     }
@@ -157,7 +154,7 @@ void PlayerManager::handle_player_data_loaded(uint64_t player_id, int32_t code,
                                                const uint8_t* value_data, size_t value_len) {
     auto it = players_.find(player_id);
     if (it == players_.end()) {
-        std::cout << "[PlayerManager] Player not found for data loaded callback, player_id=" << player_id << std::endl;
+        SPDLOG_INFO("[Player]Player not found for data loaded callback, player_id={}", player_id);
         return;
     }
 
@@ -185,20 +182,16 @@ void PlayerManager::handle_player_data_loaded(uint64_t player_id, int32_t code,
             player->set_player_data(std::move(data));
             player->set_data_state(PlayerBizDataState::LOADED);
 
-            std::cout << "[PlayerManager] Data loaded successfully for player_id=" << player_id
-                      << " role_name=" << player_data.role_name()
-                      << " level=" << player_data.level()
-                      << " scene_id=" << player_data.scene_id() << std::endl;
+            SPDLOG_INFO("[Player]Data loaded successfully for player_id={} role_name={} level={} scene_id={}", player_id, player_data.role_name(), player_data.level(), player_data.scene_id());
         } else {
             // protobuf 解析失败，使用默认数据
-            std::cerr << "[PlayerManager] Failed to parse PlayerData proto for player_id=" << player_id << std::endl;
+            SPDLOG_ERROR("[Player]Failed to parse PlayerData proto for player_id={}", player_id);
             player->init_default_data();
             player->set_data_state(PlayerBizDataState::LOADED);
         }
     } else if (code == 0 && (!value_data || value_len == 0)) {
         // 数据为空（新玩家），初始化默认数据
-        std::cout << "[PlayerManager] No data found for player_id=" << player_id
-                  << ", initializing default data" << std::endl;
+        SPDLOG_INFO("[Player]No data found for player_id={}, initializing default data", player_id);
 
         player->init_default_data();
         player->set_data_state(PlayerBizDataState::LOADED);
@@ -207,8 +200,7 @@ void PlayerManager::handle_player_data_loaded(uint64_t player_id, int32_t code,
         save_player_data(player_id);
     } else {
         // 数据加载失败
-        std::cerr << "[PlayerManager] Data load failed for player_id=" << player_id
-                  << " code=" << code << std::endl;
+        SPDLOG_ERROR("[Player]Data load failed for player_id={} code={}", player_id, code);
 
         player->set_data_state(PlayerBizDataState::FAILED);
 
@@ -229,16 +221,15 @@ void PlayerManager::handle_player_data_loaded(uint64_t player_id, int32_t code,
 
 void PlayerManager::handle_player_data_saved(uint64_t player_id, int32_t code) {
     if (code == 0) {
-        std::cout << "[PlayerManager] Data saved successfully for player_id=" << player_id << std::endl;
+        SPDLOG_INFO("[Player]Data saved successfully for player_id={}", player_id);
     } else {
-        std::cerr << "[PlayerManager] Data save failed for player_id=" << player_id
-                  << " code=" << code << std::endl;
+        SPDLOG_ERROR("[Player]Data save failed for player_id={} code={}", player_id, code);
     }
 }
 
 void PlayerManager::save_player_data(uint64_t player_id) {
     if (!dbmgr_mgr_) {
-        std::cout << "[PlayerManager] No DBMgr manager, skipping data save for player_id=" << player_id << std::endl;
+        SPDLOG_INFO("[Player]No DBMgr manager, skipping data save for player_id={}", player_id);
         return;
     }
 
@@ -251,7 +242,7 @@ void PlayerManager::save_player_data(uint64_t player_id) {
 
     // 检查数据是否需要保存
     if (!player->is_dirty()) {
-        std::cout << "[PlayerManager] Data not dirty, skipping save for player_id=" << player_id << std::endl;
+        SPDLOG_INFO("[Player]Data not dirty, skipping save for player_id={}", player_id);
         return;
     }
 
@@ -283,22 +274,21 @@ void PlayerManager::save_player_data(uint64_t player_id) {
         std::move(save_callback));
 
     if (request_id == 0) {
-        std::cerr << "[PlayerManager] Failed to send data save request for player_id=" << player_id << std::endl;
+        SPDLOG_ERROR("[Player]Failed to send data save request for player_id={}", player_id);
     } else {
-        std::cout << "[PlayerManager] Data save request sent for player_id=" << player_id
-                  << " request_id=" << request_id << std::endl;
+        SPDLOG_INFO("[Player]Data save request sent for player_id={} request_id={}", player_id, request_id);
         player->set_dirty(false);
     }
 }
 
 void PlayerManager::save_all_players() {
-    std::cout << "[PlayerManager] Saving all players data..." << std::endl;
+    SPDLOG_INFO("[Player]Saving all players data...");
 
     for (auto& kv : players_) {
         save_player_data(kv.first);
     }
 
-    std::cout << "[PlayerManager] All players data save requests sent" << std::endl;
+    SPDLOG_INFO("[Player]All players data save requests sent");
 }
 
 }  // namespace farm
