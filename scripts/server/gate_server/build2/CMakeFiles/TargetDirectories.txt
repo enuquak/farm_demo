@@ -1,0 +1,3 @@
+D:/mb_workspace/farm_demo/scripts/server/gate_server/build2/CMakeFiles/gate_server.dir
+D:/mb_workspace/farm_demo/scripts/server/gate_server/build2/CMakeFiles/ALL_BUILD.dir
+D:/mb_workspace/farm_demo/scripts/server/gate_server/build2/CMakeFiles/ZERO_CHECK.dir

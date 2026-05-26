@@ -15,6 +15,7 @@
 #include <iostream>
 
 #include "dbmgr.pb.h"
+#include "account.pb.h"
 
 namespace farm {
 
@@ -255,6 +256,12 @@ void DBMgrConnectionManager::route_message(DBMgrConnection* conn, uint32_t msg_i
         case MSG_ID_PLAYER_DATA_RESP:
             handle_player_data_resp(conn, payload);
             break;
+        case MSG_ID_ACCOUNT_DATA_RESP:
+            handle_account_data_resp(conn, payload);
+            break;
+        case MSG_ID_ACCOUNT_SET_RESP:
+            handle_account_set_resp(conn, payload);
+            break;
         default:
             std::cout << "[DBMgrConnMgr] Unknown msg_id=" << msg_id
                       << " from DBMgr index=" << conn->config_index() << std::endl;
@@ -332,6 +339,82 @@ void DBMgrConnectionManager::handle_player_data_resp(DBMgrConnection* conn,
 
     // Remove from pending
     pending_requests_.erase(it);
+}
+
+void DBMgrConnectionManager::handle_account_data_resp(DBMgrConnection* conn,
+                                                        const std::vector<uint8_t>& payload) {
+    farm::AccountDataResp resp;
+    if (!payload.empty()) {
+        resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    }
+
+    // Find pending request by account_id (stored in request_id for simplicity)
+    // We need to find the matching request - for now we'll use a simple approach
+    // In a real implementation, we'd need a better matching mechanism
+    uint64_t request_id = 0;
+    for (auto& kv : pending_account_requests_) {
+        if (kv.second.dbmgr_index == conn->config_index()) {
+            request_id = kv.first;
+            break;
+        }
+    }
+
+    if (request_id == 0) {
+        std::cout << "[DBMgrConnMgr] No pending account request for DBMgr index=" << conn->config_index() << std::endl;
+        return;
+    }
+
+    auto it = pending_account_requests_.find(request_id);
+    if (it == pending_account_requests_.end()) {
+        return;
+    }
+
+    // Invoke callback
+    if (it->second.data_callback) {
+        std::vector<std::tuple<uint32_t, uint64_t, std::string>> roles;
+        for (const auto& role : resp.roles()) {
+            roles.emplace_back(role.server_id(), role.player_id(), role.role_name());
+        }
+        it->second.data_callback(resp.code(), roles);
+    }
+
+    // Remove from pending
+    pending_account_requests_.erase(it);
+}
+
+void DBMgrConnectionManager::handle_account_set_resp(DBMgrConnection* conn,
+                                                       const std::vector<uint8_t>& payload) {
+    farm::AccountSetResp resp;
+    if (!payload.empty()) {
+        resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    }
+
+    // Find pending request
+    uint64_t request_id = 0;
+    for (auto& kv : pending_account_requests_) {
+        if (kv.second.dbmgr_index == conn->config_index()) {
+            request_id = kv.first;
+            break;
+        }
+    }
+
+    if (request_id == 0) {
+        std::cout << "[DBMgrConnMgr] No pending account set request for DBMgr index=" << conn->config_index() << std::endl;
+        return;
+    }
+
+    auto it = pending_account_requests_.find(request_id);
+    if (it == pending_account_requests_.end()) {
+        return;
+    }
+
+    // Invoke callback
+    if (it->second.set_callback) {
+        it->second.set_callback(resp.code(), resp.msg());
+    }
+
+    // Remove from pending
+    pending_account_requests_.erase(it);
 }
 
 // ===========================================
@@ -440,6 +523,119 @@ uint64_t DBMgrConnectionManager::send_player_data_req(uint64_t player_id, int32_
     send_to_dbmgr(conn.get(), MSG_ID_PLAYER_DATA_REQ, req_data);
 
     return request_id;
+}
+
+uint64_t DBMgrConnectionManager::send_account_data_req(const std::string& account_id,
+                                                         AccountDataCallback callback) {
+    if (connections_.empty()) {
+        std::cerr << "[DBMgrConnMgr] No DBMgr connections configured" << std::endl;
+        if (callback) callback(-1, {});
+        return 0;
+    }
+
+    // Route by hash(account_id) % dbmgr_count
+    uint32_t dbmgr_index = hash_account_id(account_id);
+
+    // Find the target connection
+    if (dbmgr_index >= connections_.size() || !connections_[dbmgr_index]) {
+        std::cerr << "[DBMgrConnMgr] Invalid dbmgr_index=" << dbmgr_index << std::endl;
+        if (callback) callback(-1, {});
+        return 0;
+    }
+
+    auto& conn = connections_[dbmgr_index];
+    if (conn->state() != DBMgrConnectionState::IDENTIFIED) {
+        std::cerr << "[DBMgrConnMgr] DBMgr index=" << dbmgr_index << " not connected" << std::endl;
+        if (callback) callback(-1, {});
+        return 0;
+    }
+
+    // Generate request_id
+    uint64_t request_id = generate_request_id();
+
+    // Build AccountDataReq
+    farm::AccountDataReq req;
+    req.set_account_id(account_id);
+
+    std::string req_data;
+    req.SerializeToString(&req_data);
+
+    // Register pending request
+    PendingAccountRequest pending;
+    pending.request_id = request_id;
+    pending.dbmgr_index = dbmgr_index;
+    pending.data_callback = std::move(callback);
+    pending.send_time = std::time(nullptr);
+    pending_account_requests_[request_id] = std::move(pending);
+
+    // Send
+    send_to_dbmgr(conn.get(), MSG_ID_ACCOUNT_DATA_REQ, req_data);
+
+    return request_id;
+}
+
+uint64_t DBMgrConnectionManager::send_account_set_req(const std::string& account_id,
+                                                        uint32_t server_id, uint64_t player_id,
+                                                        const std::string& role_name,
+                                                        AccountSetCallback callback) {
+    if (connections_.empty()) {
+        std::cerr << "[DBMgrConnMgr] No DBMgr connections configured" << std::endl;
+        if (callback) callback(-1, "No DBMgr connections");
+        return 0;
+    }
+
+    // Route by hash(account_id) % dbmgr_count
+    uint32_t dbmgr_index = hash_account_id(account_id);
+
+    // Find the target connection
+    if (dbmgr_index >= connections_.size() || !connections_[dbmgr_index]) {
+        std::cerr << "[DBMgrConnMgr] Invalid dbmgr_index=" << dbmgr_index << std::endl;
+        if (callback) callback(-1, "Invalid DBMgr index");
+        return 0;
+    }
+
+    auto& conn = connections_[dbmgr_index];
+    if (conn->state() != DBMgrConnectionState::IDENTIFIED) {
+        std::cerr << "[DBMgrConnMgr] DBMgr index=" << dbmgr_index << " not connected" << std::endl;
+        if (callback) callback(-1, "DBMgr not connected");
+        return 0;
+    }
+
+    // Generate request_id
+    uint64_t request_id = generate_request_id();
+
+    // Build AccountSetReq
+    farm::AccountSetReq req;
+    req.set_account_id(account_id);
+    auto* new_role = req.mutable_new_role();
+    new_role->set_server_id(server_id);
+    new_role->set_player_id(player_id);
+    new_role->set_role_name(role_name);
+
+    std::string req_data;
+    req.SerializeToString(&req_data);
+
+    // Register pending request
+    PendingAccountRequest pending;
+    pending.request_id = request_id;
+    pending.dbmgr_index = dbmgr_index;
+    pending.set_callback = std::move(callback);
+    pending.send_time = std::time(nullptr);
+    pending_account_requests_[request_id] = std::move(pending);
+
+    // Send
+    send_to_dbmgr(conn.get(), MSG_ID_ACCOUNT_SET_REQ, req_data);
+
+    return request_id;
+}
+
+uint32_t DBMgrConnectionManager::hash_account_id(const std::string& account_id) const {
+    // Simple hash algorithm (djb2)
+    uint32_t hash = 5381;
+    for (char c : account_id) {
+        hash = ((hash << 5) + hash) + c;
+    }
+    return hash % connections_.size();
 }
 
 void DBMgrConnectionManager::fail_pending_requests_for(uint32_t dbmgr_index) {

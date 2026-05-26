@@ -61,3 +61,21 @@ message GameMessage {
     uint32 msg_id = 2;
     bytes payload = 3;
 }
+
+// ===========================================
+// 账号消息转发 (Gate <-> Game)
+// ===========================================
+
+// 账号消息转发 (Gate -> Game)
+message AccountMessage {
+    string account_id = 1;
+    uint32 msg_id = 2;
+    bytes payload = 3;
+}
+
+// 账号消息响应 (Game -> Gate)
+message AccountMessageResp {
+    string account_id = 1;
+    uint32 msg_id = 2;
+    bytes payload = 3;
+}

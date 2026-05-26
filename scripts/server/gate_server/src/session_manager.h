@@ -25,6 +25,7 @@ public:
     // 查找会话
     std::shared_ptr<Session> find_by_fd(evutil_socket_t fd) const;
     std::shared_ptr<Session> find_by_player_id(uint64_t player_id) const;
+    std::shared_ptr<Session> find_by_account_id(const std::string& account_id) const;
 
     // 获取所有会话（用于心跳检测遍历）
     std::vector<std::shared_ptr<Session>> get_all_sessions() const;

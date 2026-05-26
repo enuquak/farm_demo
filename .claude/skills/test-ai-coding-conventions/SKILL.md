@@ -15,17 +15,17 @@ metadata:
 
 ## 一、Windows 后台进程启动与验证
 
-### 1.1 `start /B` 的静默失败陷阱
+### 1.1 后台进程启动的静默失败陷阱
 
-Windows 下 `start /B` 启动后台进程时，即使 exe 因 DLL 缺失弹窗阻塞或进程立即退出，命令本身仍返回成功码 0。
+Windows 下启动后台进程时，即使 exe 因 DLL 缺失弹窗阻塞或进程立即退出，命令本身仍可能返回成功码 0。
 
 ```bash
 # ❌ 危险：仅依赖返回值判断
-start /B gate_server.exe 8080
+./gate_server.exe 8080 &
 echo $?  # 返回 0，但进程可能已死
 
 # ✅ 正确：必须验证进程实际存活
-start /B gate_server.exe 8080 > server_output.txt 2>&1
+./gate_server.exe 8080 > server_output.txt 2>&1 &
 sleep 2
 netstat -ano | grep 8080        # 确认端口监听
 tasklist | grep gate_server     # 确认进程存活
@@ -70,7 +70,7 @@ int main() {
 
 ```bash
 # 1. 启动进程，输出重定向到文件
-start /B path/to/server.exe 8080 > server_output.txt 2>&1
+./path/to/server.exe 8080 > server_output.txt 2>&1 &
 
 # 2. 等待进程初始化
 sleep 2
@@ -110,7 +110,7 @@ PORT=8080
 netstat -ano | grep ":$PORT " && { echo "FAIL: port in use"; exit 1; }
 
 # 启动
-start /B "$EXE_PATH" $PORT > server_output.txt 2>&1
+"$EXE_PATH" $PORT > server_output.txt 2>&1 &
 sleep 2
 
 # 检查 3: 端口已监听
@@ -278,3 +278,32 @@ sock.sendall(full_msg[8:])      # 第三段
 ## 建议
 - 修复建议
 ```
+
+---
+
+## 六、常见测试陷阱汇总
+
+### 6.1 DLL 依赖缺失
+- **现象**: exe 启动失败或弹窗报"找不到 xxx.dll"
+- **原因**: 编译脚本只负责编译，未将第三方库的 DLL 复制到输出目录
+- **解决**: 编译后检查 exe 目录是否包含所有依赖 DLL（如 event.dll, event_core.dll, event_extra.dll）
+
+### 6.2 后台进程启动假成功
+- **现象**: 后台启动命令返回成功，但进程实际未存活
+- **原因**: Windows 下 DLL 缺失会弹窗阻塞，启动命令仍返回 0
+- **解决**: 启动后必须用 `netstat -ano | grep <端口>` 验证端口监听
+
+### 6.3 消息 ID 定义不一致
+- **现象**: 服务器返回 "Unknown msg_id" 错误
+- **原因**: 测试脚本使用的消息 ID 与服务器 internal_msg_ids.h 定义不一致
+- **解决**: 测试前查看服务器的 internal_msg_ids.h 文件获取准确的消息 ID 值
+
+### 6.4 相对路径解析错误
+- **现象**: 服务器启动后目录创建失败
+- **原因**: 相对路径基于 exe 所在目录解析，而不是当前工作目录
+- **解决**: 启动服务器时始终使用绝对路径作为文件路径参数
+
+### 6.5 Protobuf repeated 字段数据位置错误
+- **现象**: 响应中 repeated 字段为空，数据在 msg 字段中
+- **原因**: 开发者直接将 JSON 字符串设置到 msg 字段，而不是解析并添加到 repeated 字段
+- **解决**: 测试时必须验证 repeated 字段是否包含预期数据，检查 msg 字段是否包含 JSON 格式数据

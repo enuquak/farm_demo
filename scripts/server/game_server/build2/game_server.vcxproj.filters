@@ -22,6 +22,12 @@
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\game_server\src\message_parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\game_server\src\dbmgr_connection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\game_server\src\dbmgr_connection_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\game_server\src\msvc_compat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -29,6 +35,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\common\proto\generated\internal.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\common\proto\generated\dbmgr.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\common\proto\generated\account.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\common\proto\generated\player.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

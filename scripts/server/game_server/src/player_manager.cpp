@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include "dbmgr.pb.h"
+#include "player.pb.h"
 
 namespace farm {
 
@@ -30,7 +31,7 @@ bool PlayerManager::add_player_with_data_load(uint64_t player_id, GateSession* g
 
     // 创建玩家对象
     auto player = std::make_unique<Player>(player_id, gate_session);
-    player->set_data_state(PlayerDataState::LOADING);
+    player->set_data_state(PlayerBizDataState::LOADING);
 
     // 存储回调
     if (callback) {
@@ -53,7 +54,7 @@ bool PlayerManager::add_player_with_data_load(uint64_t player_id, GateSession* g
         if (request_id == 0) {
             // 发送失败
             std::cerr << "[PlayerManager] Failed to send data load request for player_id=" << player_id << std::endl;
-            player->set_data_state(PlayerDataState::FAILED);
+            player->set_data_state(PlayerBizDataState::FAILED);
 
             // 调用回调通知失败
             if (callback) {
@@ -72,7 +73,7 @@ bool PlayerManager::add_player_with_data_load(uint64_t player_id, GateSession* g
         // 没有 DBMgr 连接，直接使用默认数据
         std::cout << "[PlayerManager] No DBMgr manager, using default data for player_id=" << player_id << std::endl;
         player->init_default_data();
-        player->set_data_state(PlayerDataState::LOADED);
+        player->set_data_state(PlayerBizDataState::LOADED);
 
         // 调用回调通知成功
         if (callback) {
@@ -163,33 +164,44 @@ void PlayerManager::handle_player_data_loaded(uint64_t player_id, int32_t code,
     Player* player = it->second.get();
 
     if (code == 0 && value_data && value_len > 0) {
-        // 数据加载成功，解析 PlayerData
-        // 这里假设 value 是序列化的 PlayerData（JSON 或 protobuf）
-        // 简单实现：直接使用 JSON 字符串
+        // 数据加载成功，解析 PlayerData protobuf
         std::string data_str(reinterpret_cast<const char*>(value_data), value_len);
+        farm::PlayerData player_data;
+        if (player_data.ParseFromString(data_str)) {
+            // 将 protobuf 数据转换为 PlayerBizData
+            PlayerBizData data;
+            data.role_name = player_data.role_name();
+            data.level = player_data.level();
+            data.gold = 0;  // PlayerData 中没有 gold 字段，使用默认值
+            data.experience = player_data.exp();
+            data.pos_x = player_data.pos_x();
+            data.pos_y = player_data.pos_y();
+            data.pos_z = player_data.pos_z();
+            data.scene_id = player_data.scene_id();
+            data.inventory = "{}";
+            data.farm_state = "{}";
+            data.extra_data = "{}";
 
-        // 解析 JSON 数据（简化实现，实际应使用 JSON 库）
-        // 这里假设数据格式为：{"level":1,"gold":100,"experience":0,"inventory":"{}","farm_state":"{}","extra_data":"{}"}
-        // 简单实现：直接设置默认数据，实际应解析 JSON
-        PlayerData data;
-        data.level = 1;
-        data.gold = 100;
-        data.experience = 0;
-        data.inventory = "{}";
-        data.farm_state = "{}";
-        data.extra_data = "{}";
+            player->set_player_data(std::move(data));
+            player->set_data_state(PlayerBizDataState::LOADED);
 
-        player->set_player_data(std::move(data));
-        player->set_data_state(PlayerDataState::LOADED);
-
-        std::cout << "[PlayerManager] Data loaded successfully for player_id=" << player_id << std::endl;
+            std::cout << "[PlayerManager] Data loaded successfully for player_id=" << player_id
+                      << " role_name=" << player_data.role_name()
+                      << " level=" << player_data.level()
+                      << " scene_id=" << player_data.scene_id() << std::endl;
+        } else {
+            // protobuf 解析失败，使用默认数据
+            std::cerr << "[PlayerManager] Failed to parse PlayerData proto for player_id=" << player_id << std::endl;
+            player->init_default_data();
+            player->set_data_state(PlayerBizDataState::LOADED);
+        }
     } else if (code == 0 && (!value_data || value_len == 0)) {
         // 数据为空（新玩家），初始化默认数据
         std::cout << "[PlayerManager] No data found for player_id=" << player_id
                   << ", initializing default data" << std::endl;
 
         player->init_default_data();
-        player->set_data_state(PlayerDataState::LOADED);
+        player->set_data_state(PlayerBizDataState::LOADED);
 
         // 保存默认数据到 DBMgr
         save_player_data(player_id);
@@ -198,11 +210,11 @@ void PlayerManager::handle_player_data_loaded(uint64_t player_id, int32_t code,
         std::cerr << "[PlayerManager] Data load failed for player_id=" << player_id
                   << " code=" << code << std::endl;
 
-        player->set_data_state(PlayerDataState::FAILED);
+        player->set_data_state(PlayerBizDataState::FAILED);
 
         // 使用默认数据作为降级策略
         player->init_default_data();
-        player->set_data_state(PlayerDataState::LOADED);
+        player->set_data_state(PlayerBizDataState::LOADED);
     }
 
     // 调用玩家加入回调
@@ -243,14 +255,21 @@ void PlayerManager::save_player_data(uint64_t player_id) {
         return;
     }
 
-    // 序列化玩家数据（简化实现，实际应使用 JSON 库）
-    const PlayerData& data = player->player_data();
-    std::string value = "{\"level\":" + std::to_string(data.level) +
-                        ",\"gold\":" + std::to_string(data.gold) +
-                        ",\"experience\":" + std::to_string(data.experience) +
-                        ",\"inventory\":\"" + data.inventory + "\"" +
-                        ",\"farm_state\":\"" + data.farm_state + "\"" +
-                        ",\"extra_data\":\"" + data.extra_data + "\"}";
+    // 使用 protobuf 序列化玩家数据
+    const PlayerBizData& data = player->player_data();
+    farm::PlayerData player_data;
+    player_data.set_player_id(player_id);
+    player_data.set_role_name(data.role_name);
+    player_data.set_level(data.level);
+    player_data.set_exp(data.experience);
+    player_data.set_pos_x(data.pos_x);
+    player_data.set_pos_y(data.pos_y);
+    player_data.set_pos_z(data.pos_z);
+    player_data.set_scene_id(data.scene_id);
+    player_data.set_created_at(static_cast<uint64_t>(std::time(nullptr)));
+
+    std::string value;
+    player_data.SerializeToString(&value);
 
     auto save_callback = [this, player_id](int32_t code, const uint8_t* /*value_data*/, size_t /*value_len*/) {
         handle_player_data_saved(player_id, code);

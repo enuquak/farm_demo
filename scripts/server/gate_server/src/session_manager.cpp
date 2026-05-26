@@ -65,4 +65,14 @@ void SessionManager::bind_player_id(evutil_socket_t fd, uint64_t player_id) {
     }
 }
 
+std::shared_ptr<Session> SessionManager::find_by_account_id(const std::string& account_id) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto& kv : sessions_) {
+        if (kv.second->account_id() == account_id) {
+            return kv.second;
+        }
+    }
+    return nullptr;
+}
+
 }  // namespace farm

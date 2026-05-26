@@ -5,6 +5,7 @@
 #include "message_handler.h"
 #include "message_parser.h"
 #include "dbmgr_connection_manager.h"
+#include "player_id_generator.h"
 
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -66,6 +67,10 @@ private:
                              const std::vector<uint8_t>& payload);
     void handle_client_msg(std::shared_ptr<GateSession> session,
                            const std::vector<uint8_t>& payload);
+    void handle_account_msg(std::shared_ptr<GateSession> session,
+                            const std::vector<uint8_t>& payload);
+    void handle_enter_game_req(std::shared_ptr<GateSession> session,
+                               uint64_t player_id, const std::string& payload);
 
     // 玩家加入回调处理
     void handle_player_join_callback(std::shared_ptr<GateSession> session,
@@ -97,6 +102,9 @@ private:
     // DBMgr 连接管理
     DBMgrConnectionManager dbmgr_mgr_;
     std::vector<DBMgrConfig> dbmgr_configs_;
+
+    // Player ID 生成器
+    PlayerIdGenerator player_id_gen_;
 };
 
 }  // namespace farm

@@ -19,6 +19,12 @@ static constexpr uint32_t MSG_ID_DBMGR_HEARTBEAT_RESP    = 4004;
 static constexpr uint32_t MSG_ID_PLAYER_DATA_REQ         = 4101;
 static constexpr uint32_t MSG_ID_PLAYER_DATA_RESP        = 4102;
 
+// 账号数据操作 (4200-4299)
+static constexpr uint32_t MSG_ID_ACCOUNT_DATA_REQ        = 4201;
+static constexpr uint32_t MSG_ID_ACCOUNT_DATA_RESP       = 4202;
+static constexpr uint32_t MSG_ID_ACCOUNT_SET_REQ         = 4203;
+static constexpr uint32_t MSG_ID_ACCOUNT_SET_RESP        = 4204;
+
 // 身份识别超时时间（秒）
 static constexpr int DBMGR_IDENTIFY_TIMEOUT = 10;
 

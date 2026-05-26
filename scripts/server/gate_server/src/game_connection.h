@@ -36,6 +36,7 @@ public:
 
     // 状态查询
     GameConnState state() const { return state_; }
+    void set_state(GameConnState state) { state_ = state; }
     bool is_identified() const { return state_ == GameConnState::IDENTIFIED; }
     const std::string& game_address() const { return game_ip_ + ":" + std::to_string(game_port_); }
 

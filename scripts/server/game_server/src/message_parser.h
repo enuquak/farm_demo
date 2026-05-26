@@ -13,14 +13,6 @@ static constexpr size_t MSG_HEADER_SIZE = 8;  // 4 (length) + 4 (msg_id)
 static constexpr size_t MSG_LENGTH_SIZE = 4;
 static constexpr size_t MSG_ID_SIZE = 4;
 
-// 心跳相关
-static constexpr uint32_t MSG_ID_HEARTBEAT = 1001;
-static constexpr uint32_t MSG_ID_HEARTBEAT_RESP = 1002;
-
-// 登录相关
-static constexpr uint32_t MSG_ID_LOGIN_REQ = 2001;
-static constexpr uint32_t MSG_ID_LOGIN_RESP = 2002;
-
 // 每条解析出来的消息
 struct ParsedMessage {
     uint32_t msg_id;

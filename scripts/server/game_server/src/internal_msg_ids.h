@@ -24,6 +24,10 @@ static constexpr uint32_t MSG_ID_PLAYER_LEAVE          = 3103;
 static constexpr uint32_t MSG_ID_CLIENT_MSG            = 3201;
 static constexpr uint32_t MSG_ID_GAME_MSG              = 3202;
 
+// 账号消息转发 (3300-3399)
+static constexpr uint32_t MSG_ID_ACCOUNT_MSG           = 3301;
+static constexpr uint32_t MSG_ID_ACCOUNT_MSG_RESP      = 3302;
+
 // 身份识别超时时间（秒）
 static constexpr int GATE_IDENTIFY_TIMEOUT = 10;
 

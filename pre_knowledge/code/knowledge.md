@@ -92,3 +92,68 @@ Action: 在 handle_player_data_loaded() 中区分三种情况：(1) code=0 且�
 Description: Player 对象维护 dirty_ 标记，任何 set_xxx() 方法在数据实际变化时设置 dirty=true。save_player_data() 检查 dirty 标记，未修改则跳过保存。保存成功后重置 dirty=false。这避免了玩家离开时的不必要 DBMgr 写入。
 Context: Game Server 需要在玩家离开时保存数据，但大部分玩家可能未修改任何数据。
 Action: Player 的每个 setter 方法先检查新旧值是否相同，不同才设置 dirty=true。save_player_data() 在发送 SET_ALL 请求前检查 dirty 标记。回调中不重置 dirty（已在发送前重置），避免异步期间的修改丢失。
+
+[2026-05-25] [Pattern] [账号系统架构设计]
+Description: 账号系统采用与玩家数据相同的异步请求-回调模式。账号数据存储在 DBMgr 的 accounts/ 目录下，按 hash(account_id) % dbmgr_count 路由到不同的 JSON 文件。每个账号文件包含 account_id 和 roles 数组，roles 数组中的每个元素包含 server_id、player_id、role_name。
+Context: 实现玩家登录时的账号角色查询和创建功能。
+Action: 在 account.proto 中定义 AccountDataReq/Resp（查询角色列表）和 AccountSetReq/Resp（添加角色），消息 ID 范围 4200-4299。DBMgr 的 DataManager 扩展 get_account/set_account 方法，Game Server 的 DBMgrConnectionManager 扩展 send_account_data_req/set_account_set_req 方法。
+
+[2026-05-25] [Pattern] [DBMgr 账号数据存储]
+Description: DBMgr 的 DataManager 类扩展账号数据存储功能。账号数据文件路径为 accounts/{hash(account_id) % dbmgr_count}.json，使用 djb2 哈希算法。get_account 方法读取账号文件并解析 roles 数组，set_account 方法检查角色是否已存在（相同 server_id），不存在则添加新角色。
+Context: DBMgr 需要支持账号数据的存储和读取。
+Action: 在 DataManager 中添加 accounts_dir_ 成员变量和 get_account_file_path/hash_account_id 辅助方法。使用 json_array_contains_server_id 和 json_array_append 辅助函数处理 JSON 数组操作。AccountResult 枚举定义 SUCCESS、ROLE_ALREADY_EXISTS、IO_ERROR、PARSE_ERROR 四种结果码。
+
+[2026-05-25] [Pattern] [Game Server 账号消息处理]
+Description: Game Server 通过 AccountMessage（Gate->Game）接收账号相关请求，通过 AccountMessageResp（Game->Gate）返回响应。handle_account_msg 方法根据 msg_id 分发到不同的处理逻辑：MSG_ID_ACCOUNT_DATA_REQ 查询角色列表，MSG_ID_ACCOUNT_SET_REQ 添加新角色。
+Context: Game Server 需要处理 Gate 转发的账号消息。
+Action: 在 game_server.cpp 中添加 handle_account_msg 方法，使用 dbmgr_mgr_.send_account_data_req/set_account_set_req 发送异步请求到 DBMgr。回调中构造 AccountDataResp/AccountSetResp，打包为 AccountMessageResp 发送回 Gate。
+
+[2026-05-25] [Pattern] [跨组件消息 ID 同步]
+Description: 当多个组件（如 DBMgr 和 Game Server）需要使用相同的消息 ID 常量时，需要在各自的头文件中定义相同的常量值。Game Server 的 dbmgr_msg_ids.h 文件需要与 DBMgr 的 internal_msg_ids.h 保持同步。
+Context: Game Server 需要使用 DBMgr 定义的消息 ID（4201-4204）。
+Action: 在 game_server/src/dbmgr_msg_ids.h 中添加账号数据操作的消息 ID 常量（MSG_ID_ACCOUNT_DATA_REQ=4201、MSG_ID_ACCOUNT_DATA_RESP=4202、MSG_ID_ACCOUNT_SET_REQ=4203、MSG_ID_ACCOUNT_SET_RESP=4204），确保与 dbmgr/src/internal_msg_ids.h 中的定义一致。
+
+[2026-05-25] [Pattern] [Protobuf 消息生成流程]
+Description: 修改 .proto 文件后，需要重新生成对应的 .pb.cc/.pb.h 文件。使用 protoc 命令生成 C++ 和 Python 文件：protoc --cpp_out=generated --python_out=generated xxx.proto。生成的文件需要添加到 CMakeLists.txt 的 PROTO_SRCS 和 PROTO_HDRS 中。
+Context: 添加新的 protobuf 消息定义（如 account.proto）。
+Action: 在 scripts/common/proto/ 目录下执行 protoc 命令生成文件，然后更新 DBMgr 和 Game Server 的 CMakeLists.txt，将 account.pb.cc/h 添加到编译依赖中。
+
+[2026-05-26] [Pattern] [Gate Server 多 Game 连接管理]
+Description: Gate Server 支持连接多个 Game Server，通过 server_id 索引。使用 GameServerConfig 结构体存储配置（server_id、ip、port），game_conns_ map 存储 server_id -> GameConnection 映射。提供 get_game_connection(server_id) 获取指定 Game 连接，get_any_game_connection() 轮询获取任意可用连接。
+Context: 实现玩家登录流程，需要根据 server_id 路由消息到不同的 Game Server。
+Action: 在 gate_server.h 中添加 GameServerConfig 结构体和 game_conns_ 成员，修改 start() 方法连接所有配置的 Game Server，更新消息回调绑定 server_id。
+
+[2026-05-26] [Pattern] [消息路由按 ID 范围分发]
+Description: Gate Server 的消息路由按 msg_id 范围分发：心跳（1-2）直接处理、登录（3-4）处理后通知 Game、账号消息（1000-1999）转发给任意 Game、玩家消息（2000-2999）根据 server_id 路由到指定 Game、内部消息（3000+）转发到 Game。账号消息使用 AccountMessage 包装，玩家消息使用 PlayerMsg 包装。
+Context: Gate Server 需要处理多种类型的消息并正确路由。
+Action: 在 route_message() 中按 msg_id 范围分发，账号消息调用 forward_account_msg_to_game()，玩家消息解析 server_id 后调用 forward_player_msg_to_game()。
+
+[2026-05-26] [Pattern] [Player ID 生成策略]
+Description: Player ID 使用 (server_id << 20) | sequence 格式生成，支持最多 4096 个服务器，每个服务器 1048576 个玩家。PlayerIdGenerator 类使用 mutex 保证线程安全，sequences_ map 存储每个 server_id 的当前序列号。
+Context: Game Server 需要在创建角色时生成唯一的 player_id。
+Action: 在 player_id_generator.h 中实现 PlayerIdGenerator 类，提供 generate(server_id) 方法。Game Server 持有 PlayerIdGenerator 实例，在处理 CreateRoleReq 时调用。
+
+[2026-05-26] [Pattern] [Session 扩展字段]
+Description: Session 类扩展 server_id_ 和 account_id_ 字段，用于记录玩家选择的服务器和登录的账号。server_id_ 用于 PlayerMsg 路由，account_id_ 用于 AccountMsg 响应查找。
+Context: Gate Server 需要记录玩家的服务器选择和账号信息。
+Action: 在 session.h 中添加 server_id_ 和 account_id_ 成员变量及 getter/setter，在 session.cpp 中初始化为 0 和空字符串。
+
+[2026-05-26] [Pattern] [EnterGameReq 处理流程]
+Description: Game Server 处理 EnterGameReq 时，从 DBMgr 加载玩家数据，构造 EnterGameResp 返回。响应通过 GameMessage 包装，包含完整的 PlayerData（player_id、server_id、role_name、level、exp、pos_x、pos_y、created_at）。
+Context: 玩家选择角色后进入游戏，需要加载角色数据。
+Action: 在 game_server.cpp 中添加 handle_enter_game_req 方法，使用 dbmgr_mgr_.send_player_data_req 加载数据，回调中构造 PlayerData 和 EnterGameResp，打包为 GameMessage 发送回 Gate。
+
+[2026-05-26] [Pattern] [Player 实体数据扩展]
+Description: PlayerBizData 结构体扩展为包含完整的游戏业务数据：role_name（角色名）、level（等级）、gold（金币）、experience（经验值）、pos_x/pos_y/pos_z（三维坐标）、scene_id（场景ID）、inventory（背包JSON）、farm_state（农场JSON）、extra_data（扩展JSON）。每个字段都有对应的 getter/setter 方法，setter 在值变化时自动设置 dirty 标记。
+Context: Game Server 需要维护玩家的完整业务数据，支持数据加载、保存和运行时修改。
+Action: 在 player.h 的 PlayerBizData 结构体中添加新字段，在 Player 类中添加对应的 getter/setter 方法。init_default_data() 设置合理的默认值（level=1、gold=100、scene_id="farm_main"）。
+
+[2026-05-26] [Pattern] [Player 数据 Protobuf 序列化]
+Description: PlayerBizData 与 PlayerData protobuf 之间的转换：加载时从 PlayerData proto 解析到 PlayerBizData 结构体，保存时从 PlayerBizData 序列化为 PlayerData proto。使用 PlayerData.ParseFromString() 和 SerializeToString() 进行序列化。
+Context: Game Server 需要与 DBMgr 交换玩家数据，DBMgr 存储的是 protobuf 序列化的 PlayerData。
+Action: 在 PlayerManager::handle_player_data_loaded() 中使用 farm::PlayerData::ParseFromString() 解析数据，在 save_player_data() 中使用 farm::PlayerData::SerializeToString() 序列化数据。注意处理 protobuf 解析失败的情况。
+
+[2026-05-26] [Pattern] [EnterGameReq PlayerManager 集成]
+Description: EnterGameReq 处理改为通过 PlayerManager::add_player_with_data_load() 创建 Player 对象并异步加载数据，而非直接调用 DBMgrConnectionManager。回调中从 Player 对象获取数据构造 EnterGameResp，包含完整的 PlayerData 字段。同时处理 DBMgr 不可用和玩家已存在的情况。
+Context: Game Server 需要在玩家进入游戏时创建 Player 对象并加载数据。
+Action: 在 handle_enter_game_req 中先检查 DBMgr 连接状态，不可用时回复失败。使用 player_mgr_.add_player_with_data_load() 创建玩家，回调中获取 Player 对象数据构造响应。account 消息通道的 ENTER_GAME_REQ 也使用相同的模式。

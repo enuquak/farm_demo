@@ -15,9 +15,11 @@
 
 namespace farm {
 
-DataManager::DataManager(const std::string& data_dir)
+DataManager::DataManager(const std::string& data_dir, uint32_t dbmgr_count)
     : data_dir_(data_dir)
     , players_dir_(data_dir + "/players")
+    , accounts_dir_(data_dir + "/accounts")
+    , dbmgr_count_(dbmgr_count)
 {
 }
 
@@ -34,6 +36,16 @@ bool DataManager::init() {
         }
         std::cout << "[DataManager] Created players directory: " << players_dir_ << std::endl;
     }
+
+    // 创建 accounts 目录
+    if (stat(accounts_dir_.c_str(), &st) != 0) {
+        if (MKDIR(accounts_dir_.c_str()) != 0) {
+            std::cerr << "[DataManager] Failed to create accounts directory: " << accounts_dir_ << std::endl;
+            return false;
+        }
+        std::cout << "[DataManager] Created accounts directory: " << accounts_dir_ << std::endl;
+    }
+
     return true;
 }
 
@@ -153,6 +165,123 @@ DataResult DataManager::del(uint64_t player_id, const std::string& key) {
     }
 
     return DataResult::SUCCESS;
+}
+
+std::string DataManager::get_account_file_path(const std::string& account_id) const {
+    uint32_t hash = hash_account_id(account_id);
+    return accounts_dir_ + "/" + std::to_string(hash) + ".json";
+}
+
+uint32_t DataManager::hash_account_id(const std::string& account_id) const {
+    // 简单的哈希算法（djb2）
+    uint32_t hash = 5381;
+    for (char c : account_id) {
+        hash = ((hash << 5) + hash) + c;
+    }
+    return hash % dbmgr_count_;
+}
+
+AccountResult DataManager::get_account(const std::string& account_id, std::vector<AccountRole>& roles) {
+    std::string path = get_account_file_path(account_id);
+    std::string content;
+
+    if (!read_file(path, content)) {
+        // 文件不存在，返回空角色列表（新账号）
+        roles.clear();
+        return AccountResult::SUCCESS;
+    }
+
+    // 解析 JSON 获取 roles 数组
+    std::string roles_json;
+    if (!json_get(content, "roles", roles_json)) {
+        // roles 字段不存在，返回空角色列表
+        roles.clear();
+        return AccountResult::SUCCESS;
+    }
+
+    // 解析 roles 数组
+    roles.clear();
+    size_t pos = 0;
+    while (pos < roles_json.length()) {
+        // 查找角色对象开始
+        size_t obj_start = roles_json.find('{', pos);
+        if (obj_start == std::string::npos) break;
+
+        // 查找角色对象结束
+        size_t obj_end = roles_json.find('}', obj_start);
+        if (obj_end == std::string::npos) break;
+
+        std::string role_json = roles_json.substr(obj_start, obj_end - obj_start + 1);
+
+        // 解析角色字段
+        AccountRole role;
+        std::string value;
+
+        if (json_get(role_json, "server_id", value)) {
+            role.server_id = std::stoul(value);
+        }
+        if (json_get(role_json, "player_id", value)) {
+            role.player_id = std::stoull(value);
+        }
+        if (json_get(role_json, "role_name", value)) {
+            // 去掉引号
+            if (value.length() >= 2 && value.front() == '"' && value.back() == '"') {
+                role.role_name = value.substr(1, value.length() - 2);
+            } else {
+                role.role_name = value;
+            }
+        }
+
+        roles.push_back(role);
+        pos = obj_end + 1;
+    }
+
+    return AccountResult::SUCCESS;
+}
+
+AccountResult DataManager::set_account(const std::string& account_id, const AccountRole& new_role) {
+    std::string path = get_account_file_path(account_id);
+    std::string content;
+
+    if (!read_file(path, content)) {
+        // 文件不存在，创建新账号文件
+        content = "{\"account_id\":\"" + account_id + "\",\"roles\":[]}";
+    }
+
+    // 检查角色是否已存在（相同 server_id）
+    std::string roles_json;
+    if (json_get(content, "roles", roles_json)) {
+        if (json_array_contains_server_id(roles_json, new_role.server_id)) {
+            return AccountResult::ROLE_ALREADY_EXISTS;
+        }
+    }
+
+    // 构建新角色 JSON
+    std::string new_role_json = "{\"server_id\":" + std::to_string(new_role.server_id) +
+                                ",\"player_id\":" + std::to_string(new_role.player_id) +
+                                ",\"role_name\":\"" + new_role.role_name + "\"}";
+
+    // 添加到 roles 数组
+    std::string new_roles_json;
+    if (!json_array_append(roles_json, new_role_json, new_roles_json)) {
+        std::cerr << "[DataManager] Failed to append role to array" << std::endl;
+        return AccountResult::PARSE_ERROR;
+    }
+
+    // 更新 roles 字段
+    std::string result;
+    if (!json_set(content, "roles", new_roles_json, result)) {
+        std::cerr << "[DataManager] Failed to set roles in JSON" << std::endl;
+        return AccountResult::PARSE_ERROR;
+    }
+
+    // 写入文件
+    if (!write_file(path, result)) {
+        std::cerr << "[DataManager] Failed to write account file: " << path << std::endl;
+        return AccountResult::IO_ERROR;
+    }
+
+    return AccountResult::SUCCESS;
 }
 
 // JSON 辅助函数实现
@@ -341,6 +470,36 @@ bool DataManager::json_del(const std::string& json, const std::string& key, std:
     }
 
     result = json.substr(0, pair_start) + json.substr(pair_end);
+    return true;
+}
+
+bool DataManager::json_array_contains_server_id(const std::string& json_array, uint32_t server_id) {
+    // 查找 server_id 字段
+    std::string search = "\"server_id\":" + std::to_string(server_id);
+    return json_array.find(search) != std::string::npos;
+}
+
+bool DataManager::json_array_append(const std::string& json_array, const std::string& new_item, std::string& result) {
+    // 去掉末尾的 ]
+    size_t last_bracket = json_array.rfind(']');
+    if (last_bracket == std::string::npos) {
+        return false;
+    }
+
+    std::string prefix = json_array.substr(0, last_bracket);
+    std::string suffix = json_array.substr(last_bracket);
+
+    // 去掉前缀末尾的空白
+    while (!prefix.empty() && (prefix.back() == ' ' || prefix.back() == '\n' || prefix.back() == '\r')) {
+        prefix.pop_back();
+    }
+
+    // 如果不是空数组，添加逗号
+    if (!prefix.empty() && prefix.back() != '[') {
+        prefix += ",";
+    }
+
+    result = prefix + new_item + suffix;
     return true;
 }
 

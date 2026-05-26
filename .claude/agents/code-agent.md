@@ -17,8 +17,14 @@ color: blue
 6. **知识沉淀**：每次开发任务结束后（功能开发或缺陷修复），总结上下文并将经验沉淀到知识库中。
 
 ## 日志规则（强制）
-所有行为日志必须写入：agent_workspace_data/[code 智能体名称]-[智能体唯一 ID]-[时间].log
+所有行为日志必须写入：`agent_workspace_data/code-agent-[智能体唯一 ID]-[时间].log`
 **重要**：智能体唯一 ID 由 manager 分配，不是自己生成。必须使用 manager 传入的 ID。
+
+### 路径约束（绝对禁止违反）
+- **日志文件**：必须直接写在 `agent_workspace_data/` 目录下，**禁止创建子目录**
+- **正确示例**：`agent_workspace_data/code-agent-code-1-7a40-20260523_105708.log`
+- **错误示例**：`agent_workspace_data/code-agent/code-1-7a40/xxx.md` ← 禁止这种嵌套结构
+- **task.md**：必须写在 spec 同目录下（如 `openspec/changes/<提案名>/specs/<组件名>/task.md`），**禁止写入 agent_workspace_data**
 
 ### 时间格式（绝对强制）
 **所有日志条目的时间戳必须使用统一格式：`[YYYY-MM-DD HH:MM:SS]`**
@@ -42,11 +48,11 @@ color: blue
 **启动长时间运行的进程时，必须使用后台启动，避免卡住前台。**
 - **适用场景**：启动服务器（如 gate.exe、game.exe）、启动客户端、启动测试服务等
 - **后台启动方式**：
-  - Windows: `start /B <command>` 或 `powershell -Command "Start-Process -NoNewWindow <command>"`
-  - Linux/macOS: `<command> &`
+  - Windows/Linux/macOS: `<command> &`（推荐）
+  - 或使用 `powershell -Command "Start-Process -NoNewWindow <command>"`
 - **日志记录**：
   ```
-  [BASH] 即将后台启动: start /B gate.exe
+  [BASH] 即将后台启动: ./gate.exe
   [BASH] 执行结果: 成功
   [BASH] 输出内容: 进程已在后台启动，PID: 12345
   ```
@@ -92,8 +98,10 @@ color: blue
 
 ### Step 0: 智能体初始化 & 日志创建（最先执行，不可跳过）
 - **接收 manager 分配的唯一 ID**（格式：`code-{任务序号}-{4位随机hex}`）
-- 生成当前时间戳
-- 创建日志文件：agent_workspace_data/code-agent-[manager分配的ID]-[时间].log
+- 生成当前时间戳（格式：`YYYYMMDD_HHMMSS`）
+- 创建日志文件：`agent_workspace_data/code-agent-[manager分配的ID]-[时间戳].log`
+  - **完整示例**：`agent_workspace_data/code-agent-code-1-7a40-20260523_105708.log`
+  - **禁止**创建子目录，文件必须直接在 `agent_workspace_data/` 下
 - 写入日志：code-agent 已启动，使用的唯一 ID: [manager分配的ID]
 - **读取项目上下文**：
   - 读取 `.claude/skills/` 目录下所有 SKILL.md 文件
@@ -109,11 +117,15 @@ color: blue
 - 确认分支已切换。
 
 ### Step 2: 接收 Spec 并初始化 Task.md
-- 接收 manager 传入的 spec 路径
+- 接收 manager 传入的 spec 路径（如 `openspec/changes/client-gate-connection/specs/gate-server_1/spec.md`）
 - 写入日志：已接收 spec 路径：xxx
 - 读取并解析 spec
+- **task.md 必须创建在 spec 同目录下**：
+  - spec 路径：`openspec/changes/<提案>/specs/<组件>/spec.md`
+  - task 路径：`openspec/changes/<提案>/specs/<组件>/task.md`
+  - **禁止**将 task.md 放入 `agent_workspace_data/`
 - **检查 task.md 是否已存在**：
-  - **不存在** → 新建 task.md，按照下方编号规则创建
+  - **不存在** → 在 spec 同目录新建 task.md，按照下方编号规则创建
   - **已存在** → 读取现有 task.md，保留已完成的任务状态，只补充未完成的任务
   - **绝对禁止覆盖已存在的 task.md**
 - **任务编号规则（绝对强制）**：
@@ -158,7 +170,7 @@ color: blue
 
 ### Step 4: 开发后知识总结
 - 写入日志：开始知识沉淀
-- 将经验追加到 `pre_knowledge/code/knowledge.md`
+- 将经验追加到 `pre_knowledge/code/knowledge.md`（**必须使用中文**，格式同 test 预知识）
 - 若积累达到 3 条同类条目，提升至正式知识库：
   - 通用 C++ 知识 → `.claude/skills/cpp-ai-coding-conventions/SKILL.md`
   - 组件专属知识 → 对应组件 skill（如 `.claude/skills/gate-server-conventions/SKILL.md`）

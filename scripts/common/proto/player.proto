@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package farm;
+
+option optimize_for = LITE_RUNTIME;
+
+// ===========================================
+// 玩家消息协议
+// MsgID 范围: 2000-2999 (客户端<->Gate<->Game)
+// ===========================================
+
+// 玩家数据
+message PlayerData {
+    uint64 player_id = 1;       // 玩家 ID
+    uint32 server_id = 2;       // 服务器 ID
+    string role_name = 3;       // 角色名
+    uint32 level = 4;           // 等级
+    uint64 exp = 5;             // 经验值
+    float pos_x = 6;            // 位置 X
+    float pos_y = 7;            // 位置 Y
+    uint64 created_at = 8;      // 创建时间
+    float pos_z = 9;            // 位置 Z
+    string scene_id = 10;       // 场景 ID
+}
+
+// 进入游戏请求 (Client -> Gate -> Game)
+message EnterGameReq {
+    uint64 player_id = 1;       // 玩家 ID
+    uint32 server_id = 2;       // 服务器 ID
+}
+
+// 进入游戏响应 (Game -> Gate -> Client)
+message EnterGameResp {
+    int32 code = 1;             // 0=成功, 1=角色不存在, 2=服务器不可用
+    string msg = 2;
+    PlayerData player_data = 3; // 玩家数据
+}

@@ -11,11 +11,18 @@
 #include <functional>
 #include <memory>
 #include <atomic>
+#include <tuple>
 
 namespace farm {
 
 // Callback for async PlayerDataResp: (code, value_data, value_len)
 using PlayerDataCallback = std::function<void(int32_t code, const uint8_t* value_data, size_t value_len)>;
+
+// Callback for async AccountDataResp: (code, roles)
+using AccountDataCallback = std::function<void(int32_t code, const std::vector<std::tuple<uint32_t, uint64_t, std::string>>& roles)>;
+
+// Callback for async AccountSetResp: (code, msg)
+using AccountSetCallback = std::function<void(int32_t code, const std::string& msg)>;
 
 // Config entry for a single DBMgr instance
 struct DBMgrConfig {
@@ -29,6 +36,15 @@ struct PendingRequest {
     uint32_t dbmgr_index;       // Which DBMgr this request was sent to
     PlayerDataCallback callback;
     time_t send_time;           // For timeout detection
+};
+
+// Pending account request tracking
+struct PendingAccountRequest {
+    uint64_t request_id;
+    uint32_t dbmgr_index;
+    AccountDataCallback data_callback;
+    AccountSetCallback set_callback;
+    time_t send_time;
 };
 
 class DBMgrConnectionManager {
@@ -60,6 +76,29 @@ public:
                                    const std::string& key, const std::string& value,
                                    PlayerDataCallback callback);
 
+    /**
+     * @brief Send an AccountDataReq to the appropriate DBMgr.
+     * @param account_id  Used to route: dbmgr_index = hash(account_id) % dbmgr_count
+     * @param callback    Called when response arrives or on error
+     * @return request_id (>0) on success, 0 on failure
+     */
+    uint64_t send_account_data_req(const std::string& account_id,
+                                    AccountDataCallback callback);
+
+    /**
+     * @brief Send an AccountSetReq to the appropriate DBMgr.
+     * @param account_id  Used to route: dbmgr_index = hash(account_id) % dbmgr_count
+     * @param server_id   Server ID for the new role
+     * @param player_id   Player ID for the new role
+     * @param role_name   Role name for the new role
+     * @param callback    Called when response arrives or on error
+     * @return request_id (>0) on success, 0 on failure
+     */
+    uint64_t send_account_set_req(const std::string& account_id,
+                                   uint32_t server_id, uint64_t player_id,
+                                   const std::string& role_name,
+                                   AccountSetCallback callback);
+
     // Status queries
     bool is_connected(uint32_t dbmgr_index) const;
     size_t dbmgr_count() const { return connections_.size(); }
@@ -87,6 +126,10 @@ private:
                                  const std::vector<uint8_t>& payload);
     void handle_player_data_resp(DBMgrConnection* conn,
                                   const std::vector<uint8_t>& payload);
+    void handle_account_data_resp(DBMgrConnection* conn,
+                                   const std::vector<uint8_t>& payload);
+    void handle_account_set_resp(DBMgrConnection* conn,
+                                  const std::vector<uint8_t>& payload);
 
     // Heartbeat and reconnect
     void check_heartbeat();
@@ -96,6 +139,9 @@ private:
     uint64_t generate_request_id();
     void fail_pending_requests_for(uint32_t dbmgr_index);
     void cleanup_stale_requests();
+
+    // Account ID hash
+    uint32_t hash_account_id(const std::string& account_id) const;
 
     // Send helper
     void send_to_dbmgr(DBMgrConnection* conn, uint32_t msg_id, const std::string& payload);
@@ -114,6 +160,9 @@ private:
     // Async request tracking: request_id -> PendingRequest
     std::unordered_map<uint64_t, PendingRequest> pending_requests_;
     std::atomic<uint64_t> next_request_id_;
+
+    // Async account request tracking: request_id -> PendingAccountRequest
+    std::unordered_map<uint64_t, PendingAccountRequest> pending_account_requests_;
 
     // Reverse lookup: bev -> connection index (for fast callback dispatch)
     std::unordered_map<struct bufferevent*, uint32_t> bev_to_index_;

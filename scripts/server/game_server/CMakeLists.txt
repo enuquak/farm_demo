@@ -18,11 +18,15 @@ set(PROTO_SRCS
     ${PROTO_GENERATED_DIR}/base.pb.cc
     ${PROTO_GENERATED_DIR}/internal.pb.cc
     ${PROTO_GENERATED_DIR}/dbmgr.pb.cc
+    ${PROTO_GENERATED_DIR}/account.pb.cc
+    ${PROTO_GENERATED_DIR}/player.pb.cc
 )
 set(PROTO_HDRS
     ${PROTO_GENERATED_DIR}/base.pb.h
     ${PROTO_GENERATED_DIR}/internal.pb.h
     ${PROTO_GENERATED_DIR}/dbmgr.pb.h
+    ${PROTO_GENERATED_DIR}/account.pb.h
+    ${PROTO_GENERATED_DIR}/player.pb.h
 )
 
 # 源文件
@@ -49,6 +53,7 @@ target_include_directories(game_server PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${PROTOBUF_ROOT}/include
     ${LIBEVENT_ROOT}/include
+    ${COMMON_PROTO_DIR}
     ${COMMON_PROTO_DIR}/generated
     ${DBMGR_SRC_DIR}
 )

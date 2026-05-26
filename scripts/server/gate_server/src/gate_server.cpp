@@ -1,6 +1,7 @@
 #include "gate_server.h"
 #include "message_parser.h"
 #include "internal_msg_ids.h"
+#include "msg_ids.h"
 
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
@@ -13,9 +14,12 @@
 #endif
 #include <cstring>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 #include "base.pb.h"
 #include "internal.pb.h"
+#include "account.pb.h"
 
 namespace farm {
 
@@ -29,7 +33,7 @@ GateServer::GateServer(const std::string& ip, uint16_t port)
     , listener_(nullptr)
     , heartbeat_timer_(nullptr)
     , running_(false)
-    , game_port_(0)
+    , next_game_index_(0)
 {
 }
 
@@ -78,14 +82,20 @@ bool GateServer::start() {
     running_ = true;
     std::cout << "[GateServer] Listening on " << ip_ << ":" << port_ << std::endl;
 
-    // 连接到 Game Server（如果配置了）
-    if (!game_ip_.empty() && game_port_ > 0) {
-        game_conn_ = std::make_unique<GameConnection>(base_, "gate-1");
-        game_conn_->set_message_callback(
-            [this](uint32_t msg_id, const std::vector<uint8_t>& payload) {
-                handle_game_message(msg_id, payload);
-            });
-        game_conn_->connect(game_ip_, game_port_);
+    // 连接到所有配置的 Game Server
+    if (!game_server_configs_.empty()) {
+        for (const auto& config : game_server_configs_) {
+            auto conn = std::make_unique<GameConnection>(base_, "gate-1");
+            uint32_t server_id = config.server_id;
+            conn->set_message_callback(
+                [this, server_id](uint32_t msg_id, const std::vector<uint8_t>& payload) {
+                    handle_game_message(server_id, msg_id, payload);
+                });
+            conn->connect(config.ip, config.port);
+            game_conns_[server_id] = std::move(conn);
+            std::cout << "[GateServer] Connecting to Game Server " << server_id
+                      << " at " << config.ip << ":" << config.port << std::endl;
+        }
     }
 
     // 进入事件循环（阻塞）
@@ -97,10 +107,11 @@ bool GateServer::start() {
 
 void GateServer::stop() {
     running_ = false;
-    if (game_conn_) {
-        game_conn_->disconnect();
-        game_conn_.reset();
+    // 断开所有 Game 连接
+    for (auto& kv : game_conns_) {
+        kv.second->disconnect();
     }
+    game_conns_.clear();
     if (heartbeat_timer_) {
         event_free(heartbeat_timer_);
         heartbeat_timer_ = nullptr;
@@ -117,8 +128,116 @@ void GateServer::stop() {
 }
 
 void GateServer::set_game_server(const std::string& ip, uint16_t port) {
-    game_ip_ = ip;
-    game_port_ = port;
+    // 向后兼容：添加为 server_id=1 的配置
+    GameServerConfig config;
+    config.server_id = 1;
+    config.ip = ip;
+    config.port = port;
+    game_server_configs_.push_back(config);
+}
+
+bool GateServer::load_game_servers_config(const std::string& config_file) {
+    std::ifstream file(config_file);
+    if (!file.is_open()) {
+        std::cerr << "[GateServer] Failed to open config file: " << config_file << std::endl;
+        return false;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string content = buffer.str();
+    file.close();
+
+    // 简单的 JSON 解析（不依赖外部库）
+    // 查找 "game_servers" 数组
+    size_t array_start = content.find("[");
+    size_t array_end = content.find("]");
+    if (array_start == std::string::npos || array_end == std::string::npos) {
+        std::cerr << "[GateServer] Invalid config format: missing array" << std::endl;
+        return false;
+    }
+
+    std::string array_content = content.substr(array_start + 1, array_end - array_start - 1);
+
+    // 解析每个 server 对象
+    size_t pos = 0;
+    while (pos < array_content.size()) {
+        // 查找 server_id
+        size_t id_pos = array_content.find("\"server_id\"", pos);
+        if (id_pos == std::string::npos) break;
+
+        size_t id_colon = array_content.find(":", id_pos);
+        size_t id_end = array_content.find(",", id_colon);
+        if (id_end == std::string::npos) id_end = array_content.find("}", id_colon);
+        std::string id_str = array_content.substr(id_colon + 1, id_end - id_colon - 1);
+        // 去除空格
+        id_str.erase(std::remove_if(id_str.begin(), id_str.end(), ::isspace), id_str.end());
+        uint32_t server_id = static_cast<uint32_t>(std::stoul(id_str));
+
+        // 查找 ip
+        size_t ip_pos = array_content.find("\"ip\"", id_end);
+        if (ip_pos == std::string::npos) break;
+
+        size_t ip_colon = array_content.find(":", ip_pos);
+        size_t ip_quote_start = array_content.find("\"", ip_colon);
+        size_t ip_quote_end = array_content.find("\"", ip_quote_start + 1);
+        std::string ip = array_content.substr(ip_quote_start + 1, ip_quote_end - ip_quote_start - 1);
+
+        // 查找 port
+        size_t port_pos = array_content.find("\"port\"", ip_quote_end);
+        if (port_pos == std::string::npos) break;
+
+        size_t port_colon = array_content.find(":", port_pos);
+        size_t port_end = array_content.find(",", port_colon);
+        if (port_end == std::string::npos) port_end = array_content.find("}", port_colon);
+        std::string port_str = array_content.substr(port_colon + 1, port_end - port_colon - 1);
+        port_str.erase(std::remove_if(port_str.begin(), port_str.end(), ::isspace), port_str.end());
+        uint16_t port = static_cast<uint16_t>(std::stoul(port_str));
+
+        GameServerConfig config;
+        config.server_id = server_id;
+        config.ip = ip;
+        config.port = port;
+        game_server_configs_.push_back(config);
+
+        std::cout << "[GateServer] Loaded game server config: server_id=" << server_id
+                  << " ip=" << ip << " port=" << port << std::endl;
+
+        pos = port_end;
+    }
+
+    return true;
+}
+
+GameConnection* GateServer::get_game_connection(uint32_t server_id) {
+    auto it = game_conns_.find(server_id);
+    if (it != game_conns_.end() && it->second->is_identified()) {
+        return it->second.get();
+    }
+    return nullptr;
+}
+
+GameConnection* GateServer::get_any_game_connection() {
+    if (game_conns_.empty()) {
+        return nullptr;
+    }
+
+    // 轮询选择
+    size_t count = 0;
+    size_t size = game_conns_.size();
+    while (count < size) {
+        size_t index = next_game_index_ % size;
+        next_game_index_++;
+
+        auto it = game_conns_.begin();
+        std::advance(it, index);
+        if (it->second->is_identified()) {
+            return it->second.get();
+        }
+        count++;
+    }
+
+    return nullptr;
 }
 
 void GateServer::on_accept(struct evconnlistener* listener, evutil_socket_t fd,
@@ -207,15 +326,20 @@ void GateServer::handle_disconnect(std::shared_ptr<Session> session) {
 
     // 通知 Game 玩家离开
     if (session->state() == SessionState::LOGGED_IN && session->player_id() != 0) {
-        if (game_conn_ && game_conn_->is_identified()) {
-            farm::PlayerLeave leave;
-            leave.set_player_id(session->player_id());
-            std::string payload;
-            leave.SerializeToString(&payload);
-            game_conn_->send(MSG_ID_PLAYER_LEAVE, payload);
-            std::cout << "[GateServer] Notified Game: player_id=" << session->player_id() << " left" << std::endl;
+        auto it = player_to_server_.find(session->player_id());
+        if (it != player_to_server_.end()) {
+            GameConnection* conn = get_game_connection(it->second);
+            if (conn) {
+                farm::PlayerLeave leave;
+                leave.set_player_id(session->player_id());
+                std::string payload;
+                leave.SerializeToString(&payload);
+                conn->send(MSG_ID_PLAYER_LEAVE, payload);
+                std::cout << "[GateServer] Notified Game " << it->second
+                          << ": player_id=" << session->player_id() << " left" << std::endl;
+            }
+            player_to_server_.erase(it);
         }
-        player_to_game_.erase(session->player_id());
     }
 
     session_mgr_.remove_session(fd);
@@ -254,8 +378,26 @@ void GateServer::route_message(std::shared_ptr<Session> session, uint32_t msg_id
         return;
     }
 
-    // 游戏逻辑消息（4000+）转发到 Game
-    if (msg_id >= 4000) {
+    // 账号消息（1000-1999）
+    if (msg_id >= 1000 && msg_id < 2000) {
+        forward_account_msg_to_game(session, msg_id, payload);
+        return;
+    }
+
+    // 玩家消息（2000-2999）
+    if (msg_id >= 2000 && msg_id < 3000) {
+        // 解析 PlayerMsg 获取 server_id
+        farm::PlayerMsg player_msg;
+        if (!payload.empty()) {
+            player_msg.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+        }
+        uint32_t server_id = player_msg.server_id();
+        forward_player_msg_to_game(session, server_id, msg_id, payload);
+        return;
+    }
+
+    // 内部消息（3000+）转发到 Game
+    if (msg_id >= 3000) {
         forward_to_game(session, msg_id, payload);
         return;
     }
@@ -307,12 +449,13 @@ void GateServer::handle_login(std::shared_ptr<Session> session, const std::vecto
     bufferevent_write(session->bev(), packed.data(), packed.size());
 
     // 通知 Game 玩家上线
-    if (game_conn_ && game_conn_->is_identified()) {
+    GameConnection* conn = get_any_game_connection();
+    if (conn) {
         farm::PlayerJoin join;
         join.set_player_id(player_id);
         std::string join_payload;
         join.SerializeToString(&join_payload);
-        game_conn_->send(MSG_ID_PLAYER_JOIN, join_payload);
+        conn->send(MSG_ID_PLAYER_JOIN, join_payload);
         std::cout << "[GateServer] Notified Game: player_id=" << player_id << " joined" << std::endl;
     }
 }
@@ -321,60 +464,68 @@ void GateServer::handle_login(std::shared_ptr<Session> session, const std::vecto
 // Game 连接相关
 // ===========================================
 
-void GateServer::handle_game_message(uint32_t msg_id, const std::vector<uint8_t>& payload) {
+void GateServer::handle_game_message(uint32_t server_id, uint32_t msg_id, const std::vector<uint8_t>& payload) {
     switch (msg_id) {
         case MSG_ID_GATE_IDENTIFY_RESP:
-            handle_game_identify_resp(payload);
+            handle_game_identify_resp(server_id, payload);
             break;
         case MSG_ID_INTERN_HEARTBEAT_RESP:
-            handle_game_heartbeat_resp(payload);
+            handle_game_heartbeat_resp(server_id, payload);
             break;
         case MSG_ID_PLAYER_JOIN_RESP:
-            handle_player_join_resp(payload);
+            handle_player_join_resp(server_id, payload);
             break;
         case MSG_ID_GAME_MSG:
-            handle_game_msg(payload);
+            handle_game_msg(server_id, payload);
+            break;
+        case MSG_ID_ACCOUNT_MSG_RESP:
+            handle_account_msg_resp(server_id, payload);
             break;
         default:
-            std::cout << "[GateServer] Unknown game msg_id=" << msg_id << std::endl;
+            std::cout << "[GateServer] Unknown game msg_id=" << msg_id
+                      << " from server_id=" << server_id << std::endl;
             break;
     }
 }
 
-void GateServer::handle_game_identify_resp(const std::vector<uint8_t>& payload) {
+void GateServer::handle_game_identify_resp(uint32_t server_id, const std::vector<uint8_t>& payload) {
     farm::GateIdentifyResp resp;
     if (!payload.empty()) {
         resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
     }
 
     if (resp.code() == 0) {
-        std::cout << "[GateServer] Game identified successfully" << std::endl;
-        // GameConnection 内部已设置状态为 IDENTIFIED
+        std::cout << "[GateServer] Game Server " << server_id << " identified successfully" << std::endl;
+        // 设置 GameConnection 状态为 IDENTIFIED
+        auto it = game_conns_.find(server_id);
+        if (it != game_conns_.end()) {
+            it->second->set_state(GameConnState::IDENTIFIED);
+        }
     } else {
-        std::cout << "[GateServer] Game identification failed: " << resp.msg() << std::endl;
+        std::cout << "[GateServer] Game Server " << server_id << " identification failed: " << resp.msg() << std::endl;
     }
 }
 
-void GateServer::handle_game_heartbeat_resp(const std::vector<uint8_t>& payload) {
+void GateServer::handle_game_heartbeat_resp(uint32_t server_id, const std::vector<uint8_t>& payload) {
     // 心跳响应，GameConnection 内部已处理
 }
 
-void GateServer::handle_player_join_resp(const std::vector<uint8_t>& payload) {
+void GateServer::handle_player_join_resp(uint32_t server_id, const std::vector<uint8_t>& payload) {
     farm::PlayerJoinResp resp;
     if (!payload.empty()) {
         resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
     }
 
     if (resp.code() == 0) {
-        std::cout << "[GateServer] Player " << resp.player_id() << " joined Game successfully" << std::endl;
+        std::cout << "[GateServer] Player " << resp.player_id() << " joined Game Server " << server_id << " successfully" << std::endl;
         // 注册玩家路由
-        player_to_game_[resp.player_id()] = game_conn_.get();
+        player_to_server_[resp.player_id()] = server_id;
     } else {
-        std::cout << "[GateServer] Player " << resp.player_id() << " join Game failed: " << resp.msg() << std::endl;
+        std::cout << "[GateServer] Player " << resp.player_id() << " join Game Server " << server_id << " failed: " << resp.msg() << std::endl;
     }
 }
 
-void GateServer::handle_game_msg(const std::vector<uint8_t>& payload) {
+void GateServer::handle_game_msg(uint32_t server_id, const std::vector<uint8_t>& payload) {
     farm::GameMessage game_msg;
     if (!payload.empty()) {
         game_msg.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
@@ -397,11 +548,35 @@ void GateServer::handle_game_msg(const std::vector<uint8_t>& payload) {
     bufferevent_write(session->bev(), packed.data(), packed.size());
 }
 
+void GateServer::handle_account_msg_resp(uint32_t server_id, const std::vector<uint8_t>& payload) {
+    farm::AccountMessageResp resp;
+    if (!payload.empty()) {
+        resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    }
+
+    const std::string& account_id = resp.account_id();
+    uint32_t msg_id = resp.msg_id();
+    const std::string& inner_payload = resp.payload();
+
+    // 查找客户端 Session（通过 account_id）
+    auto session = session_mgr_.find_by_account_id(account_id);
+    if (!session) {
+        std::cout << "[GateServer] Warning: account_id=" << account_id
+                  << " not found, discarding ACCOUNT_MSG_RESP" << std::endl;
+        return;
+    }
+
+    // 发送给客户端
+    auto packed = MessageParser::pack(msg_id, inner_payload);
+    bufferevent_write(session->bev(), packed.data(), packed.size());
+}
+
 void GateServer::forward_to_game(std::shared_ptr<Session> session, uint32_t msg_id,
                                   const std::vector<uint8_t>& payload) {
-    // 检查 Game 连接
-    if (!game_conn_ || !game_conn_->is_identified()) {
-        std::cout << "[GateServer] Warning: Game not connected, discarding msg_id="
+    // 获取任意 Game 连接
+    GameConnection* conn = get_any_game_connection();
+    if (!conn) {
+        std::cout << "[GateServer] Warning: No Game connected, discarding msg_id="
                   << msg_id << " from player_id=" << session->player_id() << std::endl;
         return;
     }
@@ -415,7 +590,64 @@ void GateServer::forward_to_game(std::shared_ptr<Session> session, uint32_t msg_
     std::string packed_payload;
     client_msg.SerializeToString(&packed_payload);
 
-    game_conn_->send(MSG_ID_CLIENT_MSG, packed_payload);
+    conn->send(MSG_ID_CLIENT_MSG, packed_payload);
+}
+
+void GateServer::forward_account_msg_to_game(std::shared_ptr<Session> session, uint32_t msg_id,
+                                              const std::vector<uint8_t>& payload) {
+    // 解析 AccountMsg
+    farm::AccountMsg account_msg;
+    if (!payload.empty()) {
+        account_msg.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    }
+
+    const std::string& account_id = account_msg.account_id();
+    uint32_t inner_msg_id = account_msg.msg_id();
+    const std::string& inner_payload = account_msg.payload();
+
+    // 绑定 account_id 到 session（用于响应路由）
+    session->set_account_id(account_id);
+
+    // 获取任意 Game 连接
+    GameConnection* conn = get_any_game_connection();
+    if (!conn) {
+        std::cout << "[GateServer] Warning: No Game connected, discarding AccountMsg from account_id="
+                  << account_id << std::endl;
+        return;
+    }
+
+    // 打包为 AccountMessage（内部协议）
+    farm::AccountMessage internal_msg;
+    internal_msg.set_account_id(account_id);
+    internal_msg.set_msg_id(inner_msg_id);
+    internal_msg.set_payload(inner_payload);
+
+    std::string packed_payload;
+    internal_msg.SerializeToString(&packed_payload);
+
+    conn->send(MSG_ID_ACCOUNT_MSG, packed_payload);
+}
+
+void GateServer::forward_player_msg_to_game(std::shared_ptr<Session> session, uint32_t server_id,
+                                             uint32_t msg_id, const std::vector<uint8_t>& payload) {
+    // 获取指定 server_id 的 Game 连接
+    GameConnection* conn = get_game_connection(server_id);
+    if (!conn) {
+        std::cout << "[GateServer] Warning: Game Server " << server_id
+                  << " not connected, discarding PlayerMsg from player_id=" << session->player_id() << std::endl;
+        return;
+    }
+
+    // 打包为 ClientMessage
+    farm::ClientMessage client_msg;
+    client_msg.set_player_id(session->player_id());
+    client_msg.set_msg_id(msg_id);
+    client_msg.set_payload(payload.data(), payload.size());
+
+    std::string packed_payload;
+    client_msg.SerializeToString(&packed_payload);
+
+    conn->send(MSG_ID_CLIENT_MSG, packed_payload);
 }
 
 }  // namespace farm
