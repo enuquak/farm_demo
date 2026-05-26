@@ -162,3 +162,18 @@ Action: 在测试脚本中，发送 EnterGameReq 后解析 EnterGameResp，检�
 Description: Game Server 的 save_player_data() 函数在序列化 PlayerData protobuf 时未设置 server_id 字段，导致保存的数据中 server_id 为 0。这是因为 PlayerBizData 结构体不包含 server_id 字段。
 Context: 测试玩家数据持久化功能。
 Action: 测试时需要了解这个已知问题。验证玩家数据文件内容时，不要检查 server_id 字段，或者接受 server_id=0 作为预期值。这是一个低严重程度的缺陷，不影响核心功能。
+
+[2026-05-27] [Pattern] [Server Lifecycle Script Testing]
+Description: Testing server lifecycle scripts (start_all.bat, stop_graceful.bat, stop_force.bat) requires verifying: 1) Script existence; 2) Correct service start order; 3) PID file management; 4) Graceful shutdown message flow; 5) Force shutdown with taskkill.
+Context: Testing any server management scripts that handle startup, graceful shutdown, and force shutdown of multiple services.
+Action: Test plan should include: 1) Verify script file existence and content; 2) Check config files for pid_file paths; 3) Verify main.cpp has write_pid_file() function; 4) Check admin message protocol definitions; 5) Verify cascade shutdown logic in server implementation files.
+
+[2026-05-27] [Pattern] [Admin Message Protocol Testing]
+Description: Testing admin message protocol (MSG_ID_SHUTDOWN=5001, MSG_ID_SHUTDOWN_RESP=5002) requires verifying: 1) Message ID constants in admin_msg_ids.h; 2) Message struct definitions with correct field types; 3) Serialize/deserialize methods; 4) Message routing in server code (msg_id >= 5000 && msg_id < 6000).
+Context: Testing any custom admin/management message protocol for server management.
+Action: Test plan should verify: 1) Header file defines correct message IDs; 2) Struct definitions match spec (reason, timeout_ms for shutdown; code, msg for response); 3) Server code routes admin messages correctly; 4) Server handles MSG_ID_SHUTDOWN by stopping listener and forwarding to downstream services.
+
+[2026-05-27] [Pattern] [Cascade Shutdown Logic Testing]
+Description: Testing cascade shutdown (Gate→Game→DBMgr) requires verifying: 1) GateServer stops listener and forwards MSG_ID_SHUTDOWN to game servers; 2) GameServer stops listener, saves players, broadcasts to DBMgrs, sends response; 3) DbMgrServer stops listener, sends response, calls stop().
+Context: Testing any multi-service shutdown cascade where services have dependencies.
+Action: Test plan should verify each server's handle_shutdown() implementation: 1) Stops accepting new connections; 2) Performs cleanup (save data, close connections); 3) Forwards shutdown to downstream services; 4) Sends response to upstream service; 5) Calls stop().

@@ -291,4 +291,14 @@ void PlayerManager::save_player_data(uint64_t player_id) {
     }
 }
 
+void PlayerManager::save_all_players() {
+    std::cout << "[PlayerManager] Saving all players data..." << std::endl;
+
+    for (auto& kv : players_) {
+        save_player_data(kv.first);
+    }
+
+    std::cout << "[PlayerManager] All players data save requests sent" << std::endl;
+}
+
 }  // namespace farm

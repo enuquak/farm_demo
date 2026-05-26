@@ -1,0 +1,16 @@
+{
+    "server": {
+        "index": 0,
+        "ip": "0.0.0.0",
+        "port": 5000,
+        "data_dir": "./data"
+    },
+    "database": {
+        "uri": "",
+        "type": "file"
+    },
+    "shutdown": {
+        "timeout_ms": 60000
+    },
+    "pid_file": "./runtimeData/dbmgr.pid"
+}

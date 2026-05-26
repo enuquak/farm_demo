@@ -2,6 +2,7 @@
 
 #include "session_manager.h"
 #include "game_connection.h"
+#include "admin_msg_ids.h"
 #include <event2/event.h>
 #include <event2/listener.h>
 #include <string>
@@ -70,6 +71,11 @@ private:
                                      const std::vector<uint8_t>& payload);
     void forward_player_msg_to_game(std::shared_ptr<Session> session, uint32_t server_id,
                                     uint32_t msg_id, const std::vector<uint8_t>& payload);
+
+    // 管理消息处理
+    void handle_admin_message(uint32_t msg_id, const std::vector<uint8_t>& payload);
+    void handle_shutdown(const AdminShutdownMsg& msg);
+    void handle_shutdown_resp(const AdminShutdownResp& resp);
 
     // 获取 Game 连接
     GameConnection* get_game_connection(uint32_t server_id);

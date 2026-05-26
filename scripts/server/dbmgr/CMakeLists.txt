@@ -34,6 +34,7 @@ set(SOURCES
     src/message_parser.cpp
     src/msvc_compat.cpp
     ${PROTO_SRCS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/admin_msg_ids.cpp
 )
 
 add_executable(dbmgr ${SOURCES})
@@ -44,6 +45,7 @@ target_include_directories(dbmgr PRIVATE
     ${PROTOBUF_ROOT}/include
     ${LIBEVENT_ROOT}/include
     ${COMMON_PROTO_DIR}/generated
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include
 )
 
 # 链接库目录
@@ -92,5 +94,6 @@ endif()
 
 # 输出目录
 set_target_properties(dbmgr PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Release"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../../../bin"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/../../../bin"
 )

@@ -6,6 +6,7 @@
 #include "message_parser.h"
 #include "dbmgr_connection_manager.h"
 #include "player_id_generator.h"
+#include "admin_msg_ids.h"
 
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -82,6 +83,12 @@ private:
                       uint32_t msg_id, const std::string& payload);
     void send_game_msg(uint64_t player_id, uint32_t msg_id,
                        const uint8_t* payload, size_t payload_len);
+
+    // 管理消息处理
+    void handle_admin_message(std::shared_ptr<GateSession> session,
+                              uint32_t msg_id, const std::vector<uint8_t>& payload);
+    void handle_shutdown(std::shared_ptr<GateSession> session, const AdminShutdownMsg& msg);
+    void handle_shutdown_resp(std::shared_ptr<GateSession> session, const AdminShutdownResp& resp);
 
     std::string ip_;
     uint16_t port_;

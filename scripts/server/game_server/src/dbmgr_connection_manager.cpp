@@ -704,4 +704,15 @@ DBMgrConnection* DBMgrConnectionManager::find_connection_by_bev(struct buffereve
     return connections_[idx].get();
 }
 
+void DBMgrConnectionManager::broadcast_message(uint32_t msg_id, const std::string& payload) {
+    for (auto& conn_ptr : connections_) {
+        if (!conn_ptr) continue;
+        if (conn_ptr->state() != DBMgrConnectionState::IDENTIFIED) continue;
+
+        send_to_dbmgr(conn_ptr.get(), msg_id, payload);
+        std::cout << "[DBMgrConnMgr] Broadcast msg_id=" << msg_id
+                  << " to DBMgr index=" << conn_ptr->config_index() << std::endl;
+    }
+}
+
 }  // namespace farm

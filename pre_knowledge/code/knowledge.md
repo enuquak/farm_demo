@@ -157,3 +157,43 @@ Action: 在 PlayerManager::handle_player_data_loaded() 中使用 farm::PlayerDat
 Description: EnterGameReq 处理改为通过 PlayerManager::add_player_with_data_load() 创建 Player 对象并异步加载数据，而非直接调用 DBMgrConnectionManager。回调中从 Player 对象获取数据构造 EnterGameResp，包含完整的 PlayerData 字段。同时处理 DBMgr 不可用和玩家已存在的情况。
 Context: Game Server 需要在玩家进入游戏时创建 Player 对象并加载数据。
 Action: 在 handle_enter_game_req 中先检查 DBMgr 连接状态，不可用时回复失败。使用 player_mgr_.add_player_with_data_load() 创建玩家，回调中获取 Player 对象数据构造响应。account 消息通道的 ENTER_GAME_REQ 也使用相同的模式。
+
+[2026-05-27] [Pattern] [JSON 配置文件管理]
+Description: 使用 nlohmann/json 库实现服务进程的 JSON 配置文件管理。每个服务有独立的配置文件（config/目录下），包含 server、database、shutdown、pid_file 等配置块。配置文件不存在或格式错误时，服务应输出明确的错误信息并退出。
+Context: 实现 Gate、Game、DBMgr 三个服务的配置文件加载功能。
+Action: 在 main.cpp 中使用 nlohmann::json 解析配置文件，使用 json_pointer 访问嵌套字段，提供合理的默认值。配置文件路径使用相对路径（相对于可执行文件工作目录）。
+
+[2026-05-27] [Pattern] [PID 文件写入]
+Description: 服务进程启动时写入 PID 文件，便于进程管理和监控。PID 文件路径在配置文件中指定（pid_file 字段），默认放在 runtimeData/ 目录下。写入前自动创建父目录，写入后输出日志。
+Context: 实现 Gate、Game、DBMgr 三个服务的 PID 文件写入功能。
+Action: 在 main.cpp 中实现 write_pid_file() 函数，使用 _mkdir/mkdir 创建目录，ofstream 写入 PID。跨平台兼容 Windows 和 Linux。
+
+[2026-05-27] [Pattern] [统一编译输出目录]
+Description: 使用 CMake 的 RUNTIME_OUTPUT_DIRECTORY 属性将所有服务的可执行文件输出到项目根目录的 bin/ 目录。DLL 文件（如 libevent）也复制到 bin/ 目录，确保 exe 运行时能找到依赖。
+Context: 统一管理多个服务的编译输出。
+Action: 在 CMakeLists.txt 中设置 RUNTIME_OUTPUT_DIRECTORY 为 "${CMAKE_CURRENT_SOURCE_DIR}/../../../bin"，build 脚本中添加 DLL 复制逻辑。
+
+[2026-05-27] [Pattern] [管理消息协议设计]
+Description: 管理消息使用独立的 ID 范围（5000-5999），与业务消息（1-4999）分离。管理消息在任何连接状态下都可以处理，不依赖身份识别。使用 JSON 格式序列化消息体，便于跨语言解析。
+Context: 实现服务的优雅停服功能，需要在 Gate、Game、DBMgr 之间传递停服指令。
+Action: 在 common/include/admin_msg_ids.h 中定义管理消息 ID 和消息结构体，使用 nlohmann/json 进行序列化。在各服务的 route_message 中添加 5000-5999 范围的消息路由。
+
+[2026-05-27] [Pattern] [级联停服流程]
+Description: 优雅停服采用级联模式：外部工具发送 MSG_ID_SHUTDOWN 到 Gate，Gate 停止接受新连接并转发到 Game，Game 保存玩家数据并转发到 DBMgr，DBMgr 保存数据后发送 MSG_ID_SHUTDOWN_RESP，逐级确认后退出。
+Context: 实现多服务架构的优雅停服功能。
+Action: 在各服务的 handle_shutdown 方法中：(1) 停止接受新连接；(2) 保存数据（如有）；(3) 向下游服务转发停服消息；(4) 发送响应给上游；(5) 调用 stop() 退出。
+
+[2026-05-27] [Pattern] [工具脚本目录结构]
+Description: 将运维工具脚本统一放在 tools/ 目录下，包括 start_all.bat（启动）、stop_graceful.bat（优雅停服）、stop_force.bat（强制停服）、build_all.bat（编译）。脚本使用相对路径访问项目文件，便于在不同环境下使用。
+Context: 提供服务的启动、停止、编译等运维功能。
+Action: 创建 tools/ 目录，编写 .bat 脚本。start_all.bat 按依赖顺序启动服务（dbmgr -> game_server -> gate_server），stop_graceful.bat 通过 TCP 发送停服消息，stop_force.bat 使用 taskkill 强制终止进程。
+
+[2026-05-27] [Pattern] [PlayerManager 批量保存]
+Description: PlayerManager 添加 save_all_players() 方法，遍历所有在线玩家并调用 save_player_data() 保存数据。该方法在优雅停服时调用，确保玩家数据不丢失。
+Context: Game Server 收到停服消息时需要保存所有玩家数据。
+Action: 在 player_manager.h 中添加 save_all_players() 声明，在 player_manager.cpp 中实现为遍历 players_ 调用 save_player_data()。
+
+[2026-05-27] [Pattern] [DBMgrConnectionManager 广播消息]
+Description: DBMgrConnectionManager 添加 broadcast_message() 方法，向所有已识别的 DBMgr 连接发送相同的消息。用于优雅停服时向所有 DBMgr 广播停服指令。
+Context: Game Server 需要向所有 DBMgr 发送停服消息。
+Action: 在 dbmgr_connection_manager.h 中添加 broadcast_message(msg_id, payload) 声明，在 cpp 中实现为遍历 connections_ 调用 send_to_dbmgr()。
