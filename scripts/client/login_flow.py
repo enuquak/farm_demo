@@ -323,6 +323,15 @@ class LoginFlowManager:
                 "scene_id": player_data.scene_id,
                 "connection": self._connection,  # 传递连接对象供后续使用
             }
+
+            # 提取能量数据
+            if enter_resp.HasField("energy"):
+                success_data["energy_current"] = enter_resp.energy.current
+                success_data["energy_max"] = enter_resp.energy.max
+            else:
+                success_data["energy_current"] = 100
+                success_data["energy_max"] = 100
+
             self._on_success(success_data)
 
     def _on_disconnect(self, reason: str):

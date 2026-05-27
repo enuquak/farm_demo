@@ -21,9 +21,14 @@ from .constants import (
 from .tmx_map import TmxMapLoader
 from .player_sprite import PlayerSprite
 from .hud import HUD
-from .msg_ids import MSG_ID_MAP_DATA_NOTIFY, MSG_ID_POSITION_UPDATE, MSG_ID_POSITION_CORRECT
+from .msg_ids import (
+    MSG_ID_MAP_DATA_NOTIFY, MSG_ID_POSITION_UPDATE, MSG_ID_POSITION_CORRECT,
+    MSG_ID_ITEM_USE_RESP
+)
 from .input_manager import InputManager, check_distance, get_interact_range
 from .interaction import ITEM_EFFECTS, match_item_effect
+from .ui.energy_bar import EnergyBar
+from .ui.exhaustion_modal import ExhaustionModal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'common', 'proto', 'generated'))
 import player_pb2
@@ -99,6 +104,16 @@ class GameScene:
         # HUD
         self._hud = HUD(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
 
+        # 能量条
+        self._energy_bar = EnergyBar(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+        self._energy_bar.set_energy(
+            player_data.get('energy_current', 100),
+            player_data.get('energy_max', 100)
+        )
+
+        # 精疲力尽弹窗
+        self._exhaustion_modal = ExhaustionModal(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+
         # 玩家朝向
         self._facing_direction: str = Direction.DOWN
 
@@ -146,6 +161,11 @@ class GameScene:
                 if event.type == pygame.QUIT:
                     running = False
                     break
+
+                # 弹窗优先处理事件
+                if self._exhaustion_modal.handle_event(event):
+                    continue
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         running = False
@@ -195,6 +215,11 @@ class GameScene:
         Args:
             dt: 距离上一帧的时间（秒）
         """
+        # 弹窗显示时屏蔽游戏输入
+        if self._exhaustion_modal.is_visible:
+            self._player_sprite.set_moving(False)
+            return
+
         # 处理鼠标点击交互
         self._handle_mouse_click()
 
@@ -458,6 +483,8 @@ class GameScene:
                 self._handle_map_data_notify(payload)
             elif msg_id == MSG_ID_POSITION_CORRECT:
                 self._handle_position_correct(payload)
+            elif msg_id == MSG_ID_ITEM_USE_RESP:
+                self._handle_item_use_resp(payload)
 
     def _handle_map_data_notify(self, payload: bytes):
         """
@@ -490,6 +517,35 @@ class GameScene:
         except Exception as e:
             logger.error(f"[GameScene]Failed to parse PositionCorrect: {e}")
 
+    def _handle_item_use_resp(self, payload: bytes):
+        """
+        处理物品使用响应
+
+        Args:
+            payload: 消息负载（PlayerMsg 包装）
+        """
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            item_resp = player_pb2.ItemUseResp()
+            item_resp.ParseFromString(player_msg.payload)
+
+            logger.info(f"[GameScene]ItemUseResp received: code={item_resp.code}, msg={item_resp.msg}")
+
+            # 更新能量数据
+            if item_resp.HasField("energy"):
+                self._energy_bar.set_energy(item_resp.energy.current, item_resp.energy.max)
+                logger.debug(f"[GameScene]Energy updated: {item_resp.energy.current}/{item_resp.energy.max}")
+
+            # 处理精疲力尽
+            if item_resp.code == 3:  # ENERGY_EXHAUSTED
+                self._exhaustion_modal.show()
+                logger.info("[GameScene]Energy exhausted, showing modal")
+
+        except Exception as e:
+            logger.error(f"[GameScene]Failed to parse ItemUseResp: {e}")
+
     # ========== 渲染 ==========
 
     def _render(self, dt: float):
@@ -515,6 +571,12 @@ class GameScene:
             scene_id=self._player_data.get('scene_id', 'farm'),
         )
         self._hud.draw(self.screen)
+
+        # 能量条渲染（右下角）
+        self._energy_bar.draw(self.screen)
+
+        # 精疲力尽弹窗渲染（最顶层）
+        self._exhaustion_modal.draw(self.screen)
 
         # 刷新显示
         pygame.display.flip()

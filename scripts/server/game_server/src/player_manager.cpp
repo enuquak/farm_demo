@@ -175,6 +175,7 @@ void PlayerManager::handle_player_data_loaded(uint64_t player_id, int32_t code,
             data.pos_y = player_data.pos_y();
             data.pos_z = player_data.pos_z();
             data.scene_id = player_data.scene_id();
+            data.energy = player_data.energy();
             data.inventory = "{}";
             data.farm_state = "{}";
             data.extra_data = "{}";
@@ -257,6 +258,7 @@ void PlayerManager::save_player_data(uint64_t player_id) {
     player_data.set_pos_y(data.pos_y);
     player_data.set_pos_z(data.pos_z);
     player_data.set_scene_id(data.scene_id);
+    player_data.set_energy(data.energy);
     player_data.set_created_at(static_cast<uint64_t>(std::time(nullptr)));
 
     std::string value;

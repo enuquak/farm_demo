@@ -197,3 +197,28 @@ Action: 直接从 pyscroll 顶层模块导入：renderer = pyscroll.BufferedRend
 Description: Testing timer-driven game systems (like crop growth) requires simulating time passage rather than waiting real-time. Key techniques: 1) Use planted_at parameter to set historical timestamps; 2) Use simulate_elapsed() for freeze/resume scenarios; 3) Test exact boundary conditions (now - planted_at == grow_time); 4) Test stale data cleanup when objects change externally.
 Context: Testing any server-side timer system that checks elapsed time against thresholds.
 Action: Test plan should cover: 1) Not-yet-mature (elapsed < threshold); 2) Exactly-mature (elapsed == threshold); 3) Over-mature (elapsed > threshold); 4) Freeze/resume catch-up; 5) Zero/negative elapsed edge cases; 6) Null world pointer safety; 7) Stale data cleanup.
+
+[2026-05-28] [Pitfall] [服务器忽略客户端 active_slot 参数]
+Description: Game Server 的 ItemInteractionHandler 使用服务器存储的 active_slot（默认 0），忽略 ItemUseReq 中客户端报告的 active_slot 参数。且无 MSG_ID_ACTIVE_SLOT_CHANGE 处理器，客户端无法切换活动格子。
+Context: 测试物品交互系统时，需要使用特定格子的物品（如面包恢复能量）。
+Action: 测试前需要了解此设计限制。如需测试特定格子的物品，需要通过其他方式修改服务器的 active_slot（如直接修改玩家数据文件）。或者在测试计划中注明此限制，将相关测试标记为 SKIP。
+
+[2026-05-28] [Pitfall] [服务端能量恢复未封顶]
+Description: item_interaction_handler.cpp 中能量恢复代码 `new_energy = player->get_energy() + effect->energy_restore` 未限制 new_energy <= max_energy，导致能量可超过 100 上限。违反 Spec 要求"恢复不超过上限"。
+Context: 测试任何涉及能量恢复的功能（如吃食物）。
+Action: 代码审查时发现此 Bug。修复方案：添加 `new_energy = std::min(new_energy, max_energy)`。测试时需要验证能量不会超过上限。
+
+[2026-05-28] [Pattern] [能量系统集成测试]
+Description: 测试能量系统需要验证：1) 登录时 EnergySync 数据正确；2) ItemUseResp 包含 EnergySync；3) 能量消耗正确；4) 能量不足时返回 ENERGY_EXHAUSTED；5) 食物恢复能量；6) 能量不超过上限。
+Context: 测试任何涉及玩家能量的系统。
+Action: 测试脚本需要：1) 创建新角色验证初始能量；2) 使用物品验证能量消耗；3) 消耗能量至不足验证错误码；4) 使用食物验证恢复；5) 多次恢复验证上限。注意服务器的 active_slot 限制可能影响测试。
+
+[2026-05-28] [Pitfall] [交互范围检查先于能量检查]
+Description: item_interaction_handler.cpp 中，交互范围检查（Chebyshev distance > interact_range）在能量检查之前执行。当测试 ENERGY_EXHAUSTED 错误码时，如果目标超出范围，会返回 INVALID_TARGET (code=4) 而非 ENERGY_EXHAUSTED (code=3)，即使能量为 0。
+Context: 测试能量耗尽场景时，需要确保测试目标在交互范围内。
+Action: 测试 ENERGY_EXHAUSTED 时，必须选择在 interact_range 范围内的目标。例如锄头 range=50，测试目标应选择 Chebyshev 距离 <= 50 的位置（如 (30,30)），而非 (55,55)。代码执行顺序：范围检查 → 能量检查 → 执行效果。
+
+[2026-05-28] [Pattern] [修复后重测流程]
+Description: 对修复后的代码进行重测时，应：1) 确认服务器已重启（清除内存中的旧状态）；2) 验证编译成功；3) 按优先级测试修复项；4) 同时验证回归（未修复的功能不受影响）。
+Context: Bug 修复后的回归测试。
+Action: 重测流程：重启服务器 → 编译验证 → DLL 检查 → 逐项测试修复点 → 验证能量上限 → 生成报告。注意：服务器重启会清除玩家在线状态，但持久化数据（如玩家存档）仍保留。

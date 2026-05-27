@@ -227,3 +227,38 @@ Action: 使用 tmx.get_tile_properties(x, y, layer_index) 获取 tile 属性，�
 Description: pyscroll.BufferedRenderer 的 zoom 参数只缩放地图渲染，不自动缩放精灵图像。精灵需要预缩放（image = pygame.transform.scale(image, (w*zoom, h*zoom))）以匹配地图缩放。精灵的 rect 使用地图像素坐标（非屏幕坐标），pyscroll 内部通过 translate_rect 转换为屏幕坐标。精灵的 _layer 属性控制与地图图层的混合渲染顺序。
 Context: 使用 pyscroll.PyscrollGroup 渲染带有缩放的地图和精灵。
 Action: PlayerSprite 在加载精灵表时预缩放所有帧（zoom 倍数），rect.topleft 使用地图像素坐标。设置 _layer=1 使玩家渲染在地面层（layer 0）之上、地物层（layer 1）之下。
+
+[2026-05-28] [Pattern] [能量系统跨端实现模式]
+Description: 能量系统的数据流：服务端管理能量数据（PlayerBizData.energy），客户端负责 UI 展示。能量变更通过 EnergySync protobuf 消息同步，嵌入在 EnterGameResp（登录时）和 ItemUseResp（交互时）中。能量检查在服务端 item_interaction_handler 中执行，不足时返回 ENERGY_EXHAUSTED 错误码，客户端收到后显示模态弹窗。
+Context: 实现跨 C++ 服务端 + Python 客户端的游戏资源系统（能量/体力）。
+Action: (1) 在 proto 文件中定义 EnergySync 消息并嵌入到响应消息中；(2) 服务端在交互处理中检查能量，不足时返回错误码；(3) 客户端在消息处理中提取 EnergySync 更新 UI，收到错误码时显示弹窗；(4) 能量值通过 PlayerData proto 持久化到 DBMgr。
+
+[2026-05-28] [Pattern] [PyGame 模态弹窗实现]
+Description: PyGame 中实现模态弹窗的模式：(1) 使用 SRCALPHA Surface 绘制半透明遮罩；(2) 弹窗类维护 is_visible 状态；(3) handle_event 方法消费事件（返回 True 表示已处理）；(4) 在游戏主循环中，事件处理阶段先将事件传给弹窗，弹窗可见时屏蔽游戏输入；(5) draw 方法在所有游戏元素之后绘制（最顶层）。
+Context: 客户端需要显示模态弹窗（如能量不足提示），暂停游戏交互。
+Action: 创建独立的 Modal 类，提供 show/hide/is_visible/handle_event/draw 接口。在 GameScene 的事件循环中先调用 modal.handle_event()，在 _handle_input 中检查 modal.is_visible 阻止输入，在 _render 最后调用 modal.draw()。
+
+[2026-05-28] [Pattern] [PyGame 竖条能量条 UI]
+Description: PyGame 实现竖条能量条的绘制步骤：(1) 绘制背景矩形；(2) 根据比例计算填充高度，从底部向上绘制填充矩形；(3) 绘制空白部分（填充上方）；(4) 绘制边框；(5) 居中绘制文字标签。颜色根据比例分段：>=0.6 绿色、>=0.3 橙黄、<0.3 红色。
+Context: 客户端右下角显示 40x120px 的竖条能量条。
+Action: 创建 EnergyBar 类，__init__ 中计算位置（screen_width - width - margin），set_energy 更新数据，draw 方法按上述步骤绘制。使用 pygame.font 渲染 "current/max" 文字。
+
+[2026-05-28] [Pattern] [Protobuf 嵌入消息扩展模式]
+Description: 扩展已有 protobuf 消息添加新功能时，使用嵌入消息而非新增独立消息 ID。例如能量同步不需要独立的 MSG_ID_ENERGY_SYNC，而是将 EnergySync 消息嵌入到 EnterGameResp 和 ItemUseResp 中。这样避免增加消息 ID 管理复杂度，客户端只需在现有消息处理中提取嵌入数据。
+Context: 需要在不改变消息路由架构的情况下添加新功能的数据同步。
+Action: (1) 定义新的嵌入消息类型（如 EnergySync）；(2) 在需要携带数据的响应消息中添加该类型的字段；(3) 服务端在构造响应时填充嵌入消息；(4) 客户端在处理响应时使用 HasField() 检查并提取嵌入数据。
+
+[2026-05-28] [Pattern] [C++ 能量系统封顶]
+Description: 实现能量恢复时必须封顶（不超过 max_energy）。常见遗漏是直接 `player->energy += restore` 而不检查上限。
+Context: C++ 游戏服务器中实现食物/药水恢复能量/血量等属性。
+Action: 始终使用 `std::min(new_value, MAX_VALUE)` 进行封顶。建议将 MAX_VALUE 定义为常量或从配置读取。
+
+[2026-05-28] [Pattern] [C++ 客户端参数验证]
+Description: 服务端应尊重客户端请求中的关键参数（如 active_slot），而不是忽略它们。原设计出于安全考虑忽略客户端参数，但导致客户端无法切换物品槽位。
+Context: C++ 游戏服务器处理客户端 ItemUseReq 消息。
+Action: 接受客户端的 active_slot 参数，但进行范围验证（0-9）。安全关键操作仍需服务端验证，但 UI 状态切换应尊重客户端请求。
+
+[2026-05-28] [Pattern] [测试环境世界状态]
+Description: 集成测试依赖世界状态中的可交互对象位置。如果测试玩家出生点附近没有可交互对象，物品使用测试会因 INVALID_TARGET 失败。
+Context: C++ 游戏服务器集成测试，需要测试物品交互功能。
+Action: 在 generate_default() 中确保玩家出生点附近（range=1 内）有至少一个可交互对象（如石头）。测试脚本也需要根据世界状态调整目标坐标。

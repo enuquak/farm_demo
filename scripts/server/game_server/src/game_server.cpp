@@ -603,6 +603,12 @@ void GameServer::handle_enter_game_req(std::shared_ptr<GateSession> session,
                 player_data.set_pos_z(data.pos_z);
                 player_data.set_scene_id(data.scene_id);
                 *resp.mutable_player_data() = player_data;
+
+                // Include energy data
+                farm::EnergySync* energy_sync = resp.mutable_energy();
+                energy_sync->set_current(data.energy);
+                energy_sync->set_max(100);  // TODO: make max energy configurable
+
                 resp.set_code(0);
                 resp.set_msg("success");
             } else {
@@ -697,6 +703,11 @@ void GameServer::handle_item_use_req(uint64_t player_id,
             resp.set_msg("internal error");
             break;
     }
+
+    // Include energy data in response
+    farm::EnergySync* energy_sync = resp.mutable_energy();
+    energy_sync->set_current(player->get_energy());
+    energy_sync->set_max(100);  // TODO: make max energy configurable
 
     // Send response via PlayerMsg wrapper
     std::string resp_data;
@@ -916,6 +927,12 @@ void GameServer::handle_account_msg(std::shared_ptr<GateSession> session,
                     player_data.set_pos_z(data.pos_z);
                     player_data.set_scene_id(data.scene_id);
                     *enter_resp.mutable_player_data() = player_data;
+
+                    // Include energy data
+                    farm::EnergySync* energy_sync = enter_resp.mutable_energy();
+                    energy_sync->set_current(data.energy);
+                    energy_sync->set_max(100);  // TODO: make max energy configurable
+
                     enter_resp.set_code(0);
                     enter_resp.set_msg("success");
                 } else {

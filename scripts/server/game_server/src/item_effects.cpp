@@ -68,16 +68,16 @@ const std::unordered_map<int32_t, ItemEffects::EffectMap>& ItemEffects::get_effe
         // Hoe (id=4): till grass/dirt
         {4, {
             {"gnd:GRASS", ItemEffect{
-                false, false, "TILLED", "", 0, 0, 1, {}
+                false, false, "TILLED", "", 2, 0, 50, {}
             }},
             {"gnd:DIRT", ItemEffect{
-                false, false, "TILLED", "", 0, 0, 1, {}
+                false, false, "TILLED", "", 2, 0, 50, {}
             }},
         }},
         // Seed (id=5): plant on tilled soil
         {5, {
             {"gnd:TILLED", ItemEffect{
-                false, true, "", "CROP_GROWING", 0, 0, 1, {}
+                false, true, "", "CROP_GROWING", 1, 0, 1, {}
             }},
         }},
         // Bread (id=6): eat anywhere

@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cplayer.proto\x12\x04\x66\x61rm\"\xb4\x01\n\nPlayerData\x12\x11\n\tplayer_id\x18\x01 \x01(\x04\x12\x11\n\tserver_id\x18\x02 \x01(\r\x12\x11\n\trole_name\x18\x03 \x01(\t\x12\r\n\x05level\x18\x04 \x01(\r\x12\x0b\n\x03\x65xp\x18\x05 \x01(\x04\x12\r\n\x05pos_x\x18\x06 \x01(\x02\x12\r\n\x05pos_y\x18\x07 \x01(\x02\x12\x12\n\ncreated_at\x18\x08 \x01(\x04\x12\r\n\x05pos_z\x18\t \x01(\x02\x12\x10\n\x08scene_id\x18\n \x01(\t\"4\n\x0c\x45nterGameReq\x12\x11\n\tplayer_id\x18\x01 \x01(\x04\x12\x11\n\tserver_id\x18\x02 \x01(\r\"Q\n\rEnterGameResp\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\x12%\n\x0bplayer_data\x18\x03 \x01(\x0b\x32\x10.farm.PlayerData\"X\n\nItemUseReq\x12\x10\n\x08target_x\x18\x01 \x01(\x05\x12\x10\n\x08target_y\x18\x02 \x01(\x05\x12\x11\n\tdirection\x18\x03 \x01(\t\x12\x13\n\x0b\x61\x63tive_slot\x18\x04 \x01(\x05\"(\n\x0bItemUseResp\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\"\'\n\rInventoryData\x12\x16\n\x0einventory_json\x18\x01 \x01(\t\"6\n\rFarmStateSync\x12\x12\n\nworld_json\x18\x01 \x01(\t\x12\x11\n\tcrop_json\x18\x02 \x01(\tB\x02H\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cplayer.proto\x12\x04\x66\x61rm\"\xc4\x01\n\nPlayerData\x12\x11\n\tplayer_id\x18\x01 \x01(\x04\x12\x11\n\tserver_id\x18\x02 \x01(\r\x12\x11\n\trole_name\x18\x03 \x01(\t\x12\r\n\x05level\x18\x04 \x01(\r\x12\x0b\n\x03\x65xp\x18\x05 \x01(\x04\x12\r\n\x05pos_x\x18\x06 \x01(\x02\x12\r\n\x05pos_y\x18\x07 \x01(\x02\x12\x12\n\ncreated_at\x18\x08 \x01(\x04\x12\r\n\x05pos_z\x18\t \x01(\x02\x12\x10\n\x08scene_id\x18\n \x01(\t\x12\x0e\n\x06\x65nergy\x18\x0b \x01(\x05\"4\n\x0c\x45nterGameReq\x12\x11\n\tplayer_id\x18\x01 \x01(\x04\x12\x11\n\tserver_id\x18\x02 \x01(\r\"s\n\rEnterGameResp\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\x12%\n\x0bplayer_data\x18\x03 \x01(\x0b\x32\x10.farm.PlayerData\x12 \n\x06\x65nergy\x18\x04 \x01(\x0b\x32\x10.farm.EnergySync\"X\n\nItemUseReq\x12\x10\n\x08target_x\x18\x01 \x01(\x05\x12\x10\n\x08target_y\x18\x02 \x01(\x05\x12\x11\n\tdirection\x18\x03 \x01(\t\x12\x13\n\x0b\x61\x63tive_slot\x18\x04 \x01(\x05\"*\n\nEnergySync\x12\x0f\n\x07\x63urrent\x18\x01 \x01(\x05\x12\x0b\n\x03max\x18\x02 \x01(\x05\"J\n\x0bItemUseResp\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\x12 \n\x06\x65nergy\x18\x05 \x01(\x0b\x32\x10.farm.EnergySync\"\'\n\rInventoryData\x12\x16\n\x0einventory_json\x18\x01 \x01(\t\"6\n\rFarmStateSync\x12\x12\n\nworld_json\x18\x01 \x01(\t\x12\x11\n\tcrop_json\x18\x02 \x01(\tB\x02H\x03\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,17 +33,19 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'H\003'
   _globals['_PLAYERDATA']._serialized_start=23
-  _globals['_PLAYERDATA']._serialized_end=203
-  _globals['_ENTERGAMEREQ']._serialized_start=205
-  _globals['_ENTERGAMEREQ']._serialized_end=257
-  _globals['_ENTERGAMERESP']._serialized_start=259
-  _globals['_ENTERGAMERESP']._serialized_end=340
-  _globals['_ITEMUSEREQ']._serialized_start=342
-  _globals['_ITEMUSEREQ']._serialized_end=430
-  _globals['_ITEMUSERESP']._serialized_start=432
-  _globals['_ITEMUSERESP']._serialized_end=472
-  _globals['_INVENTORYDATA']._serialized_start=474
-  _globals['_INVENTORYDATA']._serialized_end=513
-  _globals['_FARMSTATESYNC']._serialized_start=515
-  _globals['_FARMSTATESYNC']._serialized_end=569
+  _globals['_PLAYERDATA']._serialized_end=219
+  _globals['_ENTERGAMEREQ']._serialized_start=221
+  _globals['_ENTERGAMEREQ']._serialized_end=273
+  _globals['_ENTERGAMERESP']._serialized_start=275
+  _globals['_ENTERGAMERESP']._serialized_end=390
+  _globals['_ITEMUSEREQ']._serialized_start=392
+  _globals['_ITEMUSEREQ']._serialized_end=480
+  _globals['_ENERGYSYNC']._serialized_start=482
+  _globals['_ENERGYSYNC']._serialized_end=524
+  _globals['_ITEMUSERESP']._serialized_start=526
+  _globals['_ITEMUSERESP']._serialized_end=600
+  _globals['_INVENTORYDATA']._serialized_start=602
+  _globals['_INVENTORYDATA']._serialized_end=641
+  _globals['_FARMSTATESYNC']._serialized_start=643
+  _globals['_FARMSTATESYNC']._serialized_end=697
 # @@protoc_insertion_point(module_scope)
