@@ -177,3 +177,28 @@ Action: Test plan should verify: 1) Header file defines correct message IDs; 2) 
 Description: Testing cascade shutdown (Gate→Game→DBMgr) requires verifying: 1) GateServer stops listener and forwards MSG_ID_SHUTDOWN to game servers; 2) GameServer stops listener, saves players, broadcasts to DBMgrs, sends response; 3) DbMgrServer stops listener, sends response, calls stop().
 Context: Testing any multi-service shutdown cascade where services have dependencies.
 Action: Test plan should verify each server's handle_shutdown() implementation: 1) Stops accepting new connections; 2) Performs cleanup (save data, close connections); 3) Forwards shutdown to downstream services; 4) Sends response to upstream service; 5) Calls stop().
+
+[2026-05-28] [Pattern] [Python Module Boundary Testing]
+Description: Testing Python utility modules with boundary cases (None, empty string, invalid inputs) is essential for robustness. Use unittest.mock.patch to isolate external dependencies (file system, subprocess) and test edge cases systematically.
+Context: Testing any Python utility module that handles file I/O, process management, or network operations.
+Action: Create comprehensive boundary test cases for each public function: 1) None input; 2) Empty string input; 3) Invalid service names; 4) Out-of-range values (negative PID, zero PID); 5) Non-existent files/paths. Use mock.patch to simulate file system and process states without requiring actual services to be running.
+
+[2026-05-28] [Technique] [Python Module Self-Test Pattern]
+Description: Python modules with __main__ block can serve as integration tests. The self-test should display service status, read logs, and verify core functionality without requiring external test frameworks.
+Context: Testing Python utility modules that manage system resources (processes, files, network).
+Action: Implement __main__ block that: 1) Displays current state (service status, file existence); 2) Tests core functions with real data; 3) Outputs results in human-readable format. This provides a quick smoke test without running the full test suite.
+
+[2026-05-28] [Pitfall] [dbmgr 缺少 data 目录自动创建]
+Description: dbmgr 启动时如果 ./data/players 目录不存在，会报错 "Failed to create players directory" 并退出。服务器代码未自动创建数据目录，需要预先手动创建。
+Context: 测试 dbmgr 或任何需要数据目录的服务器时。
+Action: 测试前确保数据目录存在。建议在服务器代码中添加数据目录自动创建逻辑（类似 write_pid_file 中的 _mkdir 逻辑）。
+
+[2026-05-28] [Technique] [Git Bash 中 taskkill 命令转义问题]
+Description: 在 Git Bash 中直接使用 taskkill /PID xxx /F 会将 /PID 和 /F 解析为文件路径，导致命令失败。需要使用 cmd /c "taskkill /PID xxx /F" 或 powershell -Command "Stop-Process -Id xxx -Force" 来正确执行。
+Context: 在 Git Bash (MSYS2) 环境下执行 Windows 命令。
+Action: 使用 PowerShell 的 Stop-Process 命令替代 taskkill，或通过 cmd /c 包装 Windows 命令。PowerShell 方案更可靠。
+
+[2026-05-28] [Pattern] [Server Lifecycle 端到端测试]
+Description: 测试服务器生命周期时，应按以下顺序验证：1) 编译验证（exe 和 DLL 存在）；2) 单服务启动（PID 文件、端口监听）；3) 多服务按序启动；4) PID 文件内容验证（仅数字）；5) PID 文件覆盖写入；6) runtimeData 目录自动创建；7) 强制停服；8) 优雅停服脚本验证。
+Context: 测试任何多服务架构的服务器生命周期管理。
+Action: 测试脚本中使用后台启动（&）避免阻塞，启动后用 netstat 验证端口监听，用 tasklist 验证进程存活。PID 文件用 grep -E '^[0-9]+$' 验证格式。停服测试先验证脚本内容，再实际执行停服操作。

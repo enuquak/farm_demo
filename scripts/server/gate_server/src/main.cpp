@@ -67,8 +67,14 @@ int main(int argc, char* argv[]) {
     // 使用默认日志配置初始化（配置文件加载前）
     farm::init_logging_default("gate_server");
 
-    // Load config from JSON file
+    // Parse --config from command line
     std::string config_path = "config/gate_server.json";
+    for (int i = 1; i < argc - 1; ++i) {
+        if (std::string(argv[i]) == "--config") {
+            config_path = argv[i + 1];
+            break;
+        }
+    }
     std::ifstream config_file(config_path);
     if (!config_file.is_open()) {
         SPDLOG_ERROR("[Main]Config file not found: {}", config_path);
