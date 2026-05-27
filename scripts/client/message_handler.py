@@ -90,7 +90,7 @@ class MessageHandler:
         login_resp.ParseFromString(payload)
         return login_resp
 
-    def handle_packet(self, payload: bytes) -> base_pb2.Packet:
+    def handle_packet(self, payload: bytes) -> base_pb2.PlayerMsg:
         """
         处理通用消息包
 
@@ -98,9 +98,9 @@ class MessageHandler:
             payload: 消息负载
 
         Returns:
-            Packet 消息对象
+            PlayerMsg 消息对象
         """
-        packet = base_pb2.Packet()
+        packet = base_pb2.PlayerMsg()
         packet.ParseFromString(payload)
         return packet
 

@@ -1,15 +1,17 @@
 """
 正交投影相机模块
-以玩家为中心，支持地图边缘约束
+以玩家为中心，支持 lerp 平滑跟随和地图边缘约束
 """
 from .constants import TILE_SIZE
-from .tile_map import pixel_to_tile
+
+# lerp 插值系数（0-1，越大跟随越快）
+CAMERA_LERP_FACTOR = 0.1
 
 
 class Camera:
     """
     正交投影相机
-    跟随玩家移动，约束在地图边界内
+    使用 lerp 插值平滑跟随玩家移动，约束在地图边界内
     """
 
     def __init__(self, viewport_width: int, viewport_height: int):
@@ -42,17 +44,27 @@ class Camera:
         self._map_width = map_pixel_width
         self._map_height = map_pixel_height
 
-    def follow(self, player_pixel_x: float, player_pixel_y: float):
+    def follow(self, player_pixel_x: float, player_pixel_y: float, lerp: bool = True):
         """
-        使相机居中于玩家，带地图边缘约束
+        使相机跟随玩家，带 lerp 平滑插值和地图边缘约束
 
         Args:
             player_pixel_x: 玩家世界像素 X 坐标
             player_pixel_y: 玩家世界像素 Y 坐标
+            lerp: 是否使用 lerp 插值（True=平滑跟随，False=直接居中）
         """
-        # 计算相机左上角，使玩家居中
-        self.x = player_pixel_x - self.viewport_width / 2
-        self.y = player_pixel_y - self.viewport_height / 2
+        # 目标位置：使玩家居中
+        target_x = player_pixel_x - self.viewport_width / 2
+        target_y = player_pixel_y - self.viewport_height / 2
+
+        if lerp:
+            # lerp 插值：平滑过渡到目标位置
+            self.x += (target_x - self.x) * CAMERA_LERP_FACTOR
+            self.y += (target_y - self.y) * CAMERA_LERP_FACTOR
+        else:
+            # 直接跳到目标位置
+            self.x = target_x
+            self.y = target_y
 
         # 地图边缘约束
         self._clamp_to_bounds()
@@ -108,7 +120,7 @@ class Camera:
             (tile_x, tile_y) 网格坐标
         """
         world_x, world_y = self.screen_to_world(screen_x, screen_y)
-        return pixel_to_tile(int(world_x), int(world_y))
+        return (int(world_x) // TILE_SIZE, int(world_y) // TILE_SIZE)
 
     def world_to_screen(self, world_x: float, world_y: float) -> tuple:
         """
@@ -132,12 +144,10 @@ class Camera:
         Returns:
             (start_x, start_y, end_x, end_y) tile 坐标范围（不含 end）
         """
-        from .tile_map import pixel_to_tile
-        start_x, start_y = pixel_to_tile(int(self.x), int(self.y))
-        end_x, end_y = pixel_to_tile(
-            int(self.x + self.viewport_width),
-            int(self.y + self.viewport_height)
-        )
+        start_x = int(self.x) // TILE_SIZE
+        start_y = int(self.y) // TILE_SIZE
+        end_x = int(self.x + self.viewport_width) // TILE_SIZE
+        end_y = int(self.y + self.viewport_height) // TILE_SIZE
 
         # 确保范围有效
         start_x = max(0, start_x)

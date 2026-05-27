@@ -183,6 +183,16 @@ Description: For C++ classes that depend on project infrastructure (spdlog, nloh
 Context: Testing C++ classes in a project that uses spdlog for logging and nlohmann/json for serialization, without a dedicated test framework.
 Action: Create a test .cpp file with a simple pass/fail counter macro system. Include only the necessary source files (not the entire project). Use a batch file to set up MSVC environment and compile. Run the test exe directly and check exit code (0=pass, 1=fail). This approach worked for testing CropSystem (28 test cases, all passed).
 
+[2026-05-28] [Technique] [Python pygame 无头测试]
+Description: 在无显示器环境下测试 pygame 相关代码时，需要设置环境变量 SDL_VIDEODRIVER=dummy 和 SDL_AUDIODRIVER=dummy，然后调用 pygame.init() 和 pygame.display.set_mode() 创建虚拟显示。这样可以运行所有 pygame 功能（图像加载、Surface 操作、字体渲染等）而无需实际窗口。
+Context: 测试任何使用 pygame 的 Python 客户端代码（精灵渲染、HUD、地图渲染等）。
+Action: 在测试脚本开头设置 os.environ["SDL_VIDEODRIVER"] = "dummy"，调用 pygame.init() 和 pygame.display.set_mode((w, h))。测试结束时调用 pygame.quit()。注意：pyscroll 的 BufferedRenderer 和 PyscrollGroup 可以正常在此模式下创建和渲染。
+
+[2026-05-28] [Technique] [pyscroll + pytmx 集成测试]
+Description: 测试 pyscroll 渲染管线时，正确的导入路径是：pyscroll.BufferedRenderer、pyscroll.PyscrollGroup、pyscroll.data.TiledMapData（不是从子模块导入）。测试流程：加载 TMX → 创建 TiledMapData → 创建 BufferedRenderer(zoom=N) → 创建 PyscrollGroup → 添加精灵 → 调用 group.draw(surface)。
+Context: 测试使用 pytmx + pyscroll 的 2D 瓦片地图渲染系统。
+Action: 直接从 pyscroll 顶层模块导入：renderer = pyscroll.BufferedRenderer(map_data, size, zoom=ZOOM_FACTOR)。不要使用 from pyscroll.BufferedRenderer import BufferedRenderer（会报 ModuleNotFoundError）。pyscroll 的 zoom 参数支持整数缩放，配合 16x16 基础瓦片可实现像素风格渲染。
+
 [2026-05-27] [Pattern] [Game Logic Timer System Testing]
 Description: Testing timer-driven game systems (like crop growth) requires simulating time passage rather than waiting real-time. Key techniques: 1) Use planted_at parameter to set historical timestamps; 2) Use simulate_elapsed() for freeze/resume scenarios; 3) Test exact boundary conditions (now - planted_at == grow_time); 4) Test stale data cleanup when objects change externally.
 Context: Testing any server-side timer system that checks elapsed time against thresholds.

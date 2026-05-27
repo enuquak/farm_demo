@@ -212,3 +212,18 @@ Action: 创建 log_config.h（配置结构体）、log_init.h/cpp（初始化函
 Description: 独立的 CropSystem 类管理作物从 CROP_GROWING 到 CROP_READY 的生命周期。使用 std::unordered_map<std::string, CropData> 以 "x,y" 为键存储生长数据。支持场景冻结/恢复时的补帧机制（simulate_elapsed），序列化/反序列化（JSON 格式 {"tiles": {...}}），以及无效数据清理（update 时检查对象是否仍为 CROP_GROWING）。
 Context: 在多人联机农场游戏中实现服务端驱动的作物生长系统，需要支持场景冻结/恢复和存档兼容。
 Action: 创建 crop_system.h/cpp 作为独立组件，ItemInteractionHandler 通过 CropSystem* 指针委托作物注册/更新/清理。关键设计：register_crop 验证 TILLED 地面，update 同时处理成熟和无效数据清理，deserialize 兼容旧存档（无 crops 字段时初始化为空）。
+
+[2026-05-28] [Pattern] [pytmx + pyscroll 客户端瓦片地图渲染]
+Description: 使用 pytmx 加载 .tmx 地图文件，pyscroll.BufferedRenderer 渲染瓦片地图，pyscroll.PyscrollGroup 管理精灵和地图的混合渲染。关键点：(1) 必须使用 pytmx.util_pygame.load_pygame() 而非 pytmx.TiledMap() 来正确加载 tile 图像；(2) PyscrollGroup.draw() 将精灵按 _layer 属性与地图图层混合渲染，实现地面层-精灵-地物层的遮挡关系；(3) BufferedRenderer 的 zoom 参数控制渲染缩放，精灵图像需预缩放以匹配 zoom 倍数。
+Context: Python 客户端使用 pygame 实现 2D 农场游戏的瓦片地图渲染。
+Action: 创建 TmxMapLoader 封装 pytmx 加载，使用 tile 属性（walkable=false）实现碰撞检测而非硬编码 GID。PlayerSprite 继承 pygame.sprite.Sprite，通过 _layer=1 控制渲染层级。相机跟随通过 renderer.center 赋值实现。
+
+[2026-05-28] [Pitfall] [pytmx GID 内部映射]
+Description: pytmx 使用内部 GID 映射系统，layer.data 中存储的 GID 值与 .tmx 文件中 CSV 原始值不同。pytmx 的 register_gid() 方法将 TMX 原始 GID 映射为内部连续 GID。因此不能用硬编码的 GID 集合做碰撞检测，应使用 tile 属性（如 walkable）来判断。
+Context: 使用 pytmx 加载 .tmx 地图并实现碰撞检测。
+Action: 使用 tmx.get_tile_properties(x, y, layer_index) 获取 tile 属性，检查 walkable 字段。避免直接比较 layer.data 中的 GID 值与预期的 TMX 原始 GID。
+
+[2026-05-28] [Pattern] [pyscroll 精灵缩放与层级]
+Description: pyscroll.BufferedRenderer 的 zoom 参数只缩放地图渲染，不自动缩放精灵图像。精灵需要预缩放（image = pygame.transform.scale(image, (w*zoom, h*zoom))）以匹配地图缩放。精灵的 rect 使用地图像素坐标（非屏幕坐标），pyscroll 内部通过 translate_rect 转换为屏幕坐标。精灵的 _layer 属性控制与地图图层的混合渲染顺序。
+Context: 使用 pyscroll.PyscrollGroup 渲染带有缩放的地图和精灵。
+Action: PlayerSprite 在加载精灵表时预缩放所有帧（zoom 倍数），rect.topleft 使用地图像素坐标。设置 _layer=1 使玩家渲染在地面层（layer 0）之上、地物层（layer 1）之下。

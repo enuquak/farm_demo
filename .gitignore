@@ -3,11 +3,18 @@ tmp/
 
 # C++ 构建产物
 build/
+build2/
+Release/
 *.obj
 *.exe
 *.dll
 *.lib
 *.pdb
+*.recipe
+*.tlog
+
+# 编译输出目录
+bin/
 
 # Python
 __pycache__/
@@ -16,10 +23,11 @@ __pycache__/
 # VS Code
 .vscode/
 
-# Agent 工作数据中的临时文件
-agent_workspace_data/*.py
-agent_workspace_data/*.txt
-agent_workspace_data/server_output*
+# Agent 工作数据（日志、测试报告等）
+agent_workspace_data/
+
+# 运行时数据
+runtimeData/
 
 # 运行时日志文件
 runtimeData/logs/

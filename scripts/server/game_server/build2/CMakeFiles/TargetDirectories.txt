@@ -1,3 +1,0 @@
-D:/mb_workspace/farm_demo/scripts/server/game_server/build2/CMakeFiles/game_server.dir
-D:/mb_workspace/farm_demo/scripts/server/game_server/build2/CMakeFiles/ALL_BUILD.dir
-D:/mb_workspace/farm_demo/scripts/server/game_server/build2/CMakeFiles/ZERO_CHECK.dir

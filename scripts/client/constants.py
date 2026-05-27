@@ -2,14 +2,27 @@
 客户端常量定义
 包含 TileMap 相关的常量和 GroundType 枚举
 """
+import os
 from enum import IntEnum
 from typing import Tuple, Dict, Any, Optional
 
-# 网格尺寸（像素）
-TILE_SIZE = 32
+# 资源目录
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
+
+# 默认地图文件路径
+DEFAULT_MAP_PATH = os.path.join(ASSETS_DIR, "maps", "farm.tmx")
+
+# 玩家精灵表路径
+PLAYER_SPRITE_PATH = os.path.join(ASSETS_DIR, "sprites", "player.png")
+
+# 网格尺寸（像素）- 16x16 基础瓦片
+TILE_SIZE = 16
 
 # 地物精灵尺寸（像素）
 OBJECT_SPRITE_SIZE = 16
+
+# 渲染缩放倍数（16x16 基础瓦片 x 4 = 64px 渲染尺寸）
+ZOOM_FACTOR = 4
 
 
 class GroundType(IntEnum):
@@ -373,15 +386,18 @@ OBJECT_PROPERTIES: Dict[ObjectType, Dict[str, Any]] = {
 HIGHLIGHT_ALPHA = 30    # 高光增量
 SHADOW_ALPHA = 40       # 阴影减量
 
-# 默认地图尺寸
-DEFAULT_MAP_WIDTH = 60
-DEFAULT_MAP_HEIGHT = 50
+# 玩家动画帧间隔（秒）
+PLAYER_ANIM_FRAME_DURATION = 0.15
+
+# 默认地图尺寸（16px tiles，120x100 = 约与之前 60x50@32px 相同世界大小）
+DEFAULT_MAP_WIDTH = 120
+DEFAULT_MAP_HEIGHT = 100
 
 # 帧率
 TARGET_FPS = 60
 
-# 玩家移动速度（像素/秒）
-PLAYER_SPEED = 150.0
+# 玩家移动速度（像素/秒）- 16px tiles, 约 4 tiles/s
+PLAYER_SPEED = 64.0
 
 # 位置更新间隔（秒）
 POSITION_UPDATE_INTERVAL = 0.1  # 100ms

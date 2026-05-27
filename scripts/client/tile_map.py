@@ -55,6 +55,10 @@ class TileMap:
         except ValueError:
             return None
 
+    def get_ground_type(self, tile_x: int, tile_y: int) -> Optional[GroundType]:
+        """get_ground 的别名，与 TmxMapLoader 接口一致"""
+        return self.get_ground(tile_x, tile_y)
+
     def set_ground(self, tile_x: int, tile_y: int, ground_type: GroundType) -> bool:
         """
         设置指定位置的地面类型
@@ -93,6 +97,10 @@ class TileMap:
             return ObjectType(self.objects[tile_y][tile_x])
         except ValueError:
             return None
+
+    def get_object_type(self, tile_x: int, tile_y: int) -> Optional[ObjectType]:
+        """get_object 的别名，与 TmxMapLoader 接口一致"""
+        return self.get_object(tile_x, tile_y)
 
     def set_object(self, tile_x: int, tile_y: int, obj_type: ObjectType) -> bool:
         """

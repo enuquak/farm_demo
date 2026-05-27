@@ -168,6 +168,40 @@ color: blue
 - 修复完成后标记 task.md
 - 写入日志：缺陷修复完成
 
+### Step 3C: 任务完成确认 & 归档准备（强制执行，不可跳过）
+
+**触发条件**：所有 task.md 条目标记为 `[已完成 ✅]` 后，必须执行此步骤。
+
+**执行内容**：
+
+1. **全量任务完成性检查**（强制）：
+   - 重新读取 task.md，逐行扫描所有任务条目
+   - 确认无任何 `- [ ]`（未完成）条目
+   - 写入日志：`[TASK] 全量任务完成性检查：共 X 项任务，全部已标记完成`
+   - **若发现未完成项**：立即写入日志 `[ERROR] 发现未完成任务: <任务描述>`，回到 Step 3 继续开发
+
+2. **编译验证**（强制，C++ 任务适用）：
+   - 若本次任务涉及 C++ 代码修改，必须执行最终编译验证
+   - 使用构建脚本：`cmd /c "D:\mb_workspace\farm_demo\tool\build_cpp14.bat" "<服务目录完整路径>"`
+   - 编译失败则回到 Step 3 修复，不得跳过
+   - 写入日志：`[BUILD] 最终编译验证结果: <成功/失败>`
+
+3. **向 Manager 发送归档就绪通知**（强制）：
+   - 写入日志：`[NOTIFY] 所有任务已完成，通知 manager 可以执行归档操作（openspec-sync-specs + openspec-archive-change）`
+   - 在最终输出中明确告知 manager：
+     ```
+     归档就绪通知：
+     - 提案名称：<提案名>
+     - Spec 路径：<spec 路径>
+     - 所有任务已完成，task.md 无未完成项
+     - 编译验证已通过（C++ 任务适用）
+     - 请 manager 执行：openspec-sync-specs → openspec-archive-change
+     ```
+
+4. **禁止自行执行归档**：
+   - code-agent **不得**自行调用 `openspec-sync-specs` 或 `openspec-archive-change`
+   - 归档操作由 manager 统一执行，code-agent 只负责通知就绪状态
+
 ### Step 4: 开发后知识总结
 - 写入日志：开始知识沉淀
 - 将经验追加到 `pre_knowledge/code/knowledge.md`（**必须使用中文**，格式同 test 预知识）

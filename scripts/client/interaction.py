@@ -2,10 +2,9 @@
 交互系统模块
 实现物品交互的双层匹配逻辑：优先匹配地物层，无地物时匹配地面层
 """
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, Union
 
 from .constants import ObjectType, GroundType, OBJECT_PROPERTIES, GROUND_PROPERTIES
-from .tile_map import TileMap
 
 
 # 物品效果匹配表
@@ -94,12 +93,12 @@ ITEM_EFFECTS: Dict[str, Dict[str, Any]] = {
 }
 
 
-def get_interaction_key(tile_map: TileMap, tile_x: int, tile_y: int) -> str:
+def get_interaction_key(map_data, tile_x: int, tile_y: int) -> str:
     """
     获取指定位置的交互匹配键
 
     Args:
-        tile_map: TileMap 数据
+        map_data: 地图数据对象（TileMap 或 TmxMapLoader）
         tile_x: 网格 X 坐标
         tile_y: 网格 Y 坐标
 
@@ -107,12 +106,12 @@ def get_interaction_key(tile_map: TileMap, tile_x: int, tile_y: int) -> str:
         交互匹配键（格式："obj:ObjectType" 或 "gnd:GroundType"）
     """
     # 优先匹配地物层
-    obj_type = tile_map.get_object(tile_x, tile_y)
+    obj_type = map_data.get_object_type(tile_x, tile_y)
     if obj_type is not None and obj_type != ObjectType.NONE:
         return f"obj:{obj_type.name}"
 
     # 无地物时匹配地面层
-    ground_type = tile_map.get_ground(tile_x, tile_y)
+    ground_type = map_data.get_ground_type(tile_x, tile_y)
     if ground_type is not None:
         return f"gnd:{ground_type.name}"
 
@@ -122,7 +121,7 @@ def get_interaction_key(tile_map: TileMap, tile_x: int, tile_y: int) -> str:
 
 def match_item_effect(
     item_tool: Optional[str],
-    tile_map: TileMap,
+    map_data,
     tile_x: int,
     tile_y: int,
 ) -> Tuple[Optional[str], str]:
@@ -131,7 +130,7 @@ def match_item_effect(
 
     Args:
         item_tool: 当前手持工具名称（如 "pickaxe", "axe", "hoe" 等）
-        tile_map: TileMap 数据
+        map_data: 地图数据对象（TileMap 或 TmxMapLoader）
         tile_x: 网格 X 坐标
         tile_y: 网格 Y 坐标
 
@@ -141,7 +140,7 @@ def match_item_effect(
         - description: 效果描述
     """
     # 获取交互键
-    interaction_key = get_interaction_key(tile_map, tile_x, tile_y)
+    interaction_key = get_interaction_key(map_data, tile_x, tile_y)
 
     # 查找匹配的效果
     effect_data = ITEM_EFFECTS.get(interaction_key)
@@ -158,55 +157,55 @@ def match_item_effect(
     return effect_data.get("effect", "none"), effect_data.get("description", "无效果")
 
 
-def get_object_properties(tile_map: TileMap, tile_x: int, tile_y: int) -> Optional[Dict[str, Any]]:
+def get_object_properties(map_data, tile_x: int, tile_y: int) -> Optional[Dict[str, Any]]:
     """
     获取指定位置的地物属性
 
     Args:
-        tile_map: TileMap 数据
+        map_data: 地图数据对象（TileMap 或 TmxMapLoader）
         tile_x: 网格 X 坐标
         tile_y: 网格 Y 坐标
 
     Returns:
         地物属性字典，无地物时返回 None
     """
-    obj_type = tile_map.get_object(tile_x, tile_y)
+    obj_type = map_data.get_object_type(tile_x, tile_y)
     if obj_type is None or obj_type == ObjectType.NONE:
         return None
     return OBJECT_PROPERTIES.get(obj_type)
 
 
-def is_interactable(tile_map: TileMap, tile_x: int, tile_y: int) -> bool:
+def is_interactable(map_data, tile_x: int, tile_y: int) -> bool:
     """
     检查指定位置是否可交互
 
     Args:
-        tile_map: TileMap 数据
+        map_data: 地图数据对象（TileMap 或 TmxMapLoader）
         tile_x: 网格 X 坐标
         tile_y: 网格 Y 坐标
 
     Returns:
         是否可交互
     """
-    props = get_object_properties(tile_map, tile_x, tile_y)
+    props = get_object_properties(map_data, tile_x, tile_y)
     if props is None:
         return False
     return props.get("interactable", False)
 
 
-def get_interact_type(tile_map: TileMap, tile_x: int, tile_y: int) -> Optional[str]:
+def get_interact_type(map_data, tile_x: int, tile_y: int) -> Optional[str]:
     """
     获取指定位置的交互类型
 
     Args:
-        tile_map: TileMap 数据
+        map_data: 地图数据对象（TileMap 或 TmxMapLoader）
         tile_x: 网格 X 坐标
         tile_y: 网格 Y 坐标
 
     Returns:
         交互类型字符串，无交互时返回 None
     """
-    props = get_object_properties(tile_map, tile_x, tile_y)
+    props = get_object_properties(map_data, tile_x, tile_y)
     if props is None:
         return None
     return props.get("interact_type")
