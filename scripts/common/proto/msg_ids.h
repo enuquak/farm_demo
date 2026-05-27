@@ -49,4 +49,9 @@ static constexpr uint32_t MSG_ID_MAP_DATA_NOTIFY         = 2001;
 static constexpr uint32_t MSG_ID_INVENTORY_SYNC          = 3100;
 static constexpr uint32_t MSG_ID_ACTIVE_SLOT_CHANGE      = 3101;
 
+// 游戏时钟 (2300-2399)
+static constexpr uint32_t MSG_ID_CLOCK_SYNC              = 2301;
+static constexpr uint32_t MSG_ID_FORCE_SLEEP_NOTIFY      = 2302;
+static constexpr uint32_t MSG_ID_FORCE_SLEEP_READY       = 2303;
+
 }  // namespace farm

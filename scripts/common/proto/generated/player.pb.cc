@@ -185,6 +185,56 @@ struct InventoryDataDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 InventoryDataDefaultTypeInternal _InventoryData_default_instance_;
 
+inline constexpr ForceSleepReady::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        day_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ForceSleepReady::ForceSleepReady(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(ForceSleepReady_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ForceSleepReadyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ForceSleepReadyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ForceSleepReadyDefaultTypeInternal() {}
+  union {
+    ForceSleepReady _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ForceSleepReadyDefaultTypeInternal _ForceSleepReady_default_instance_;
+
+inline constexpr ForceSleepNotify::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        day_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ForceSleepNotify::ForceSleepNotify(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(ForceSleepNotify_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ForceSleepNotifyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ForceSleepNotifyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ForceSleepNotifyDefaultTypeInternal() {}
+  union {
+    ForceSleepNotify _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ForceSleepNotifyDefaultTypeInternal _ForceSleepNotify_default_instance_;
+
 inline constexpr FarmStateSync::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -267,6 +317,33 @@ struct EnergySyncDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnergySyncDefaultTypeInternal _EnergySync_default_instance_;
 
+inline constexpr ClockSync::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        day_{0},
+        time_slot_{0},
+        paused_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ClockSync::ClockSync(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(ClockSync_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ClockSyncDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ClockSyncDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ClockSyncDefaultTypeInternal() {}
+  union {
+    ClockSync _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ClockSyncDefaultTypeInternal _ClockSync_default_instance_;
+
 inline constexpr ItemUseResp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -304,6 +381,7 @@ inline constexpr EnterGameResp::Impl_::Impl_(
             ::_pbi::ConstantInitialized()),
         player_data_{nullptr},
         energy_{nullptr},
+        clock_{nullptr},
         code_{0} {}
 
 template <typename>
@@ -1231,6 +1309,9 @@ EnterGameResp::EnterGameResp(
   _impl_.energy_ = ((cached_has_bits & 0x00000004u) != 0)
                 ? ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.energy_)
                 : nullptr;
+  _impl_.clock_ = ((cached_has_bits & 0x00000008u) != 0)
+                ? ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.clock_)
+                : nullptr;
   _impl_.code_ = from._impl_.code_;
 
   // @@protoc_insertion_point(copy_constructor:farm.EnterGameResp)
@@ -1261,6 +1342,7 @@ inline void EnterGameResp::SharedDtor(MessageLite& self) {
   this_._impl_.msg_.Destroy();
   delete this_._impl_.player_data_;
   delete this_._impl_.energy_;
+  delete this_._impl_.clock_;
   this_._impl_.~Impl_();
 }
 
@@ -1303,17 +1385,17 @@ const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL EnterGameResp::G
   return EnterGameResp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 2, 30, 2>
+const ::_pbi::TcParseTable<3, 5, 3, 30, 2>
 EnterGameResp::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_._has_bits_),
     0, // no _extensions_
-    4, 24,  // max_field_number, fast_idx_mask
+    5, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967280,  // skipmap
+    4294967264,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
-    2,  // num_aux_entries
+    5,  // num_field_entries
+    3,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     EnterGameResp_class_data_.base(),
     nullptr,  // post_loop_handler
@@ -1322,23 +1404,29 @@ EnterGameResp::_table_ = {
     ::_pbi::TcParser::GetTable<::farm::EnterGameResp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .farm.EnergySync energy = 4;
-    {::_pbi::TcParser::FastMtS1,
-     {34, 2, 1, PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.energy_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // int32 code = 1;
     {::_pbi::TcParser::FastV32S1,
-     {8, 3, 0, PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.code_)}},
+     {8, 4, 0, PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.code_)}},
     // string msg = 2;
     {::_pbi::TcParser::FastUS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.msg_)}},
     // .farm.PlayerData player_data = 3;
     {::_pbi::TcParser::FastMtS1,
      {26, 1, 0, PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.player_data_)}},
+    // .farm.EnergySync energy = 4;
+    {::_pbi::TcParser::FastMtS1,
+     {34, 2, 1, PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.energy_)}},
+    // .farm.ClockSync clock = 5;
+    {::_pbi::TcParser::FastMtS1,
+     {42, 3, 2, PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.clock_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
     // int32 code = 1;
-    {PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.code_), _Internal::kHasBitsOffset + 3, 0,
+    {PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.code_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
     // string msg = 2;
     {PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.msg_), _Internal::kHasBitsOffset + 0, 0,
@@ -1349,10 +1437,14 @@ EnterGameResp::_table_ = {
     // .farm.EnergySync energy = 4;
     {PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.energy_), _Internal::kHasBitsOffset + 2, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .farm.ClockSync clock = 5;
+    {PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.clock_), _Internal::kHasBitsOffset + 3, 2,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::farm::PlayerData>()},
       {::_pbi::TcParser::GetTable<::farm::EnergySync>()},
+      {::_pbi::TcParser::GetTable<::farm::ClockSync>()},
   }},
   {{
     "\22\0\3\0\0\0\0\0"
@@ -1368,7 +1460,7 @@ PROTOBUF_NOINLINE void EnterGameResp::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       _impl_.msg_.ClearNonDefaultToEmpty();
     }
@@ -1379,6 +1471,10 @@ PROTOBUF_NOINLINE void EnterGameResp::Clear() {
     if ((cached_has_bits & 0x00000004u) != 0) {
       ABSL_DCHECK(_impl_.energy_ != nullptr);
       _impl_.energy_->Clear();
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      ABSL_DCHECK(_impl_.clock_ != nullptr);
+      _impl_.clock_->Clear();
     }
   }
   _impl_.code_ = 0;
@@ -1402,7 +1498,7 @@ PROTOBUF_NOINLINE void EnterGameResp::Clear() {
   (void)cached_has_bits;
 
   // int32 code = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
     if (this_._internal_code() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<1>(
@@ -1435,6 +1531,13 @@ PROTOBUF_NOINLINE void EnterGameResp::Clear() {
         stream);
   }
 
+  // .farm.ClockSync clock = 5;
+  if ((cached_has_bits & 0x00000008u) != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        5, *this_._impl_.clock_, this_._impl_.clock_->GetCachedSize(), target,
+        stream);
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target = stream->WriteRaw(
         this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).data(),
@@ -1460,7 +1563,7 @@ PROTOBUF_NOINLINE void EnterGameResp::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000000fu) != 0) {
+  if ((cached_has_bits & 0x0000001fu) != 0) {
     // string msg = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_msg().empty()) {
@@ -1478,8 +1581,13 @@ PROTOBUF_NOINLINE void EnterGameResp::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.energy_);
     }
-    // int32 code = 1;
+    // .farm.ClockSync clock = 5;
     if ((cached_has_bits & 0x00000008u) != 0) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.clock_);
+    }
+    // int32 code = 1;
+    if ((cached_has_bits & 0x00000010u) != 0) {
       if (this_._internal_code() != 0) {
         total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
             this_._internal_code());
@@ -1503,7 +1611,7 @@ void EnterGameResp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000000fu) != 0) {
+  if ((cached_has_bits & 0x0000001fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_msg().empty()) {
         _this->_internal_set_msg(from._internal_msg());
@@ -1530,6 +1638,14 @@ void EnterGameResp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
       }
     }
     if ((cached_has_bits & 0x00000008u) != 0) {
+      ABSL_DCHECK(from._impl_.clock_ != nullptr);
+      if (_this->_impl_.clock_ == nullptr) {
+        _this->_impl_.clock_ = ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.clock_);
+      } else {
+        _this->_impl_.clock_->MergeFrom(*from._impl_.clock_);
+      }
+    }
+    if ((cached_has_bits & 0x00000010u) != 0) {
       if (from._internal_code() != 0) {
         _this->_impl_.code_ = from._impl_.code_;
       }
@@ -3856,6 +3972,771 @@ void SceneChangeResp::InternalSwap(SceneChangeResp* PROTOBUF_RESTRICT PROTOBUF_N
       - PROTOBUF_FIELD_OFFSET(SceneChangeResp, _impl_.code_)>(
           reinterpret_cast<char*>(&_impl_.code_),
           reinterpret_cast<char*>(&other->_impl_.code_));
+}
+
+// ===================================================================
+
+class ClockSync::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<ClockSync>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ClockSync, _impl_._has_bits_);
+};
+
+ClockSync::ClockSync(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, ClockSync_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:farm.ClockSync)
+}
+ClockSync::ClockSync(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ClockSync& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, ClockSync_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<std::string>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE ClockSync::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void ClockSync::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, day_),
+           0,
+           offsetof(Impl_, paused_) -
+               offsetof(Impl_, day_) +
+               sizeof(Impl_::paused_));
+}
+ClockSync::~ClockSync() {
+  // @@protoc_insertion_point(destructor:farm.ClockSync)
+  SharedDtor(*this);
+}
+inline void ClockSync::SharedDtor(MessageLite& self) {
+  ClockSync& this_ = static_cast<ClockSync&>(self);
+  this_._internal_metadata_.Delete<std::string>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL ClockSync::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ClockSync(arena);
+}
+constexpr auto ClockSync::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ClockSync),
+                                            alignof(ClockSync));
+}
+constexpr auto ClockSync::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataLite<15>{
+      {
+          &_ClockSync_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &ClockSync::MergeImpl,
+          ::google::protobuf::MessageLite::GetNewImpl<ClockSync>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ClockSync::SharedDtor,
+          ::google::protobuf::MessageLite::GetClearImpl<ClockSync>(), &ClockSync::ByteSizeLong,
+              &ClockSync::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ClockSync, _impl_._cached_size_),
+          true,
+      },
+      "farm.ClockSync",
+  };
+}
+
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataLite<15> ClockSync_class_data_ =
+    ClockSync::InternalGenerateClassData_();
+
+const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL ClockSync::GetClassData() const {
+  return ClockSync_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+ClockSync::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ClockSync, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    ClockSync_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallbackLite,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::farm::ClockSync>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // int32 day = 1;
+    {::_pbi::TcParser::FastV32S1,
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ClockSync, _impl_.day_)}},
+    // int32 time_slot = 2;
+    {::_pbi::TcParser::FastV32S1,
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ClockSync, _impl_.time_slot_)}},
+    // bool paused = 3;
+    {::_pbi::TcParser::FastV8S1,
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(ClockSync, _impl_.paused_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int32 day = 1;
+    {PROTOBUF_FIELD_OFFSET(ClockSync, _impl_.day_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int32 time_slot = 2;
+    {PROTOBUF_FIELD_OFFSET(ClockSync, _impl_.time_slot_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // bool paused = 3;
+    {PROTOBUF_FIELD_OFFSET(ClockSync, _impl_.paused_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void ClockSync::Clear() {
+// @@protoc_insertion_point(message_clear_start:farm.ClockSync)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    ::memset(&_impl_.day_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.paused_) -
+        reinterpret_cast<char*>(&_impl_.day_)) + sizeof(_impl_.paused_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<std::string>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ClockSync::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ClockSync& this_ = static_cast<const ClockSync&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ClockSync::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ClockSync& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:farm.ClockSync)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // int32 day = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_day() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<1>(
+              stream, this_._internal_day(), target);
+    }
+  }
+
+  // int32 time_slot = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_time_slot() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<2>(
+              stream, this_._internal_time_slot(), target);
+    }
+  }
+
+  // bool paused = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_paused() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          3, this_._internal_paused(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target = stream->WriteRaw(
+        this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).data(),
+        static_cast<int>(this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size()), target);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:farm.ClockSync)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ClockSync::ByteSizeLong(const MessageLite& base) {
+  const ClockSync& this_ = static_cast<const ClockSync&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ClockSync::ByteSizeLong() const {
+  const ClockSync& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:farm.ClockSync)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    // int32 day = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_day() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_day());
+      }
+    }
+    // int32 time_slot = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_time_slot() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_time_slot());
+      }
+    }
+    // bool paused = 3;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_paused() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    total_size += this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size();
+  }
+  this_._impl_._cached_size_.Set(::_pbi::ToCachedSize(total_size));
+  return total_size;
+}
+
+void ClockSync::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ClockSync*>(&to_msg);
+  auto& from = static_cast<const ClockSync&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:farm.ClockSync)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_day() != 0) {
+        _this->_impl_.day_ = from._impl_.day_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_time_slot() != 0) {
+        _this->_impl_.time_slot_ = from._impl_.time_slot_;
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_paused() != 0) {
+        _this->_impl_.paused_ = from._impl_.paused_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
+}
+
+void ClockSync::CopyFrom(const ClockSync& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:farm.ClockSync)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ClockSync::InternalSwap(ClockSync* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ClockSync, _impl_.paused_)
+      + sizeof(ClockSync::_impl_.paused_)
+      - PROTOBUF_FIELD_OFFSET(ClockSync, _impl_.day_)>(
+          reinterpret_cast<char*>(&_impl_.day_),
+          reinterpret_cast<char*>(&other->_impl_.day_));
+}
+
+// ===================================================================
+
+class ForceSleepNotify::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<ForceSleepNotify>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ForceSleepNotify, _impl_._has_bits_);
+};
+
+ForceSleepNotify::ForceSleepNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, ForceSleepNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:farm.ForceSleepNotify)
+}
+ForceSleepNotify::ForceSleepNotify(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ForceSleepNotify& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, ForceSleepNotify_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<std::string>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE ForceSleepNotify::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void ForceSleepNotify::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.day_ = {};
+}
+ForceSleepNotify::~ForceSleepNotify() {
+  // @@protoc_insertion_point(destructor:farm.ForceSleepNotify)
+  SharedDtor(*this);
+}
+inline void ForceSleepNotify::SharedDtor(MessageLite& self) {
+  ForceSleepNotify& this_ = static_cast<ForceSleepNotify&>(self);
+  this_._internal_metadata_.Delete<std::string>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL ForceSleepNotify::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ForceSleepNotify(arena);
+}
+constexpr auto ForceSleepNotify::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ForceSleepNotify),
+                                            alignof(ForceSleepNotify));
+}
+constexpr auto ForceSleepNotify::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataLite<22>{
+      {
+          &_ForceSleepNotify_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &ForceSleepNotify::MergeImpl,
+          ::google::protobuf::MessageLite::GetNewImpl<ForceSleepNotify>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ForceSleepNotify::SharedDtor,
+          ::google::protobuf::MessageLite::GetClearImpl<ForceSleepNotify>(), &ForceSleepNotify::ByteSizeLong,
+              &ForceSleepNotify::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ForceSleepNotify, _impl_._cached_size_),
+          true,
+      },
+      "farm.ForceSleepNotify",
+  };
+}
+
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataLite<22> ForceSleepNotify_class_data_ =
+    ForceSleepNotify::InternalGenerateClassData_();
+
+const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL ForceSleepNotify::GetClassData() const {
+  return ForceSleepNotify_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
+ForceSleepNotify::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ForceSleepNotify, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    ForceSleepNotify_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallbackLite,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::farm::ForceSleepNotify>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int32 day = 1;
+    {::_pbi::TcParser::FastV32S1,
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ForceSleepNotify, _impl_.day_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int32 day = 1;
+    {PROTOBUF_FIELD_OFFSET(ForceSleepNotify, _impl_.day_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void ForceSleepNotify::Clear() {
+// @@protoc_insertion_point(message_clear_start:farm.ForceSleepNotify)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.day_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<std::string>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ForceSleepNotify::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ForceSleepNotify& this_ = static_cast<const ForceSleepNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ForceSleepNotify::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ForceSleepNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:farm.ForceSleepNotify)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // int32 day = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_day() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<1>(
+              stream, this_._internal_day(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target = stream->WriteRaw(
+        this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).data(),
+        static_cast<int>(this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size()), target);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:farm.ForceSleepNotify)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ForceSleepNotify::ByteSizeLong(const MessageLite& base) {
+  const ForceSleepNotify& this_ = static_cast<const ForceSleepNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ForceSleepNotify::ByteSizeLong() const {
+  const ForceSleepNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:farm.ForceSleepNotify)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // int32 day = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_day() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_day());
+      }
+    }
+  }
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    total_size += this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size();
+  }
+  this_._impl_._cached_size_.Set(::_pbi::ToCachedSize(total_size));
+  return total_size;
+}
+
+void ForceSleepNotify::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ForceSleepNotify*>(&to_msg);
+  auto& from = static_cast<const ForceSleepNotify&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:farm.ForceSleepNotify)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    if (from._internal_day() != 0) {
+      _this->_impl_.day_ = from._impl_.day_;
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
+}
+
+void ForceSleepNotify::CopyFrom(const ForceSleepNotify& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:farm.ForceSleepNotify)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ForceSleepNotify::InternalSwap(ForceSleepNotify* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.day_, other->_impl_.day_);
+}
+
+// ===================================================================
+
+class ForceSleepReady::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<ForceSleepReady>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ForceSleepReady, _impl_._has_bits_);
+};
+
+ForceSleepReady::ForceSleepReady(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, ForceSleepReady_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:farm.ForceSleepReady)
+}
+ForceSleepReady::ForceSleepReady(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ForceSleepReady& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, ForceSleepReady_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<std::string>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE ForceSleepReady::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void ForceSleepReady::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.day_ = {};
+}
+ForceSleepReady::~ForceSleepReady() {
+  // @@protoc_insertion_point(destructor:farm.ForceSleepReady)
+  SharedDtor(*this);
+}
+inline void ForceSleepReady::SharedDtor(MessageLite& self) {
+  ForceSleepReady& this_ = static_cast<ForceSleepReady&>(self);
+  this_._internal_metadata_.Delete<std::string>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL ForceSleepReady::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ForceSleepReady(arena);
+}
+constexpr auto ForceSleepReady::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ForceSleepReady),
+                                            alignof(ForceSleepReady));
+}
+constexpr auto ForceSleepReady::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataLite<21>{
+      {
+          &_ForceSleepReady_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &ForceSleepReady::MergeImpl,
+          ::google::protobuf::MessageLite::GetNewImpl<ForceSleepReady>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ForceSleepReady::SharedDtor,
+          ::google::protobuf::MessageLite::GetClearImpl<ForceSleepReady>(), &ForceSleepReady::ByteSizeLong,
+              &ForceSleepReady::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ForceSleepReady, _impl_._cached_size_),
+          true,
+      },
+      "farm.ForceSleepReady",
+  };
+}
+
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataLite<21> ForceSleepReady_class_data_ =
+    ForceSleepReady::InternalGenerateClassData_();
+
+const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL ForceSleepReady::GetClassData() const {
+  return ForceSleepReady_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
+ForceSleepReady::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ForceSleepReady, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    ForceSleepReady_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallbackLite,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::farm::ForceSleepReady>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int32 day = 1;
+    {::_pbi::TcParser::FastV32S1,
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(ForceSleepReady, _impl_.day_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int32 day = 1;
+    {PROTOBUF_FIELD_OFFSET(ForceSleepReady, _impl_.day_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void ForceSleepReady::Clear() {
+// @@protoc_insertion_point(message_clear_start:farm.ForceSleepReady)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.day_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<std::string>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ForceSleepReady::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ForceSleepReady& this_ = static_cast<const ForceSleepReady&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ForceSleepReady::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ForceSleepReady& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:farm.ForceSleepReady)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // int32 day = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_day() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<1>(
+              stream, this_._internal_day(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target = stream->WriteRaw(
+        this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).data(),
+        static_cast<int>(this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size()), target);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:farm.ForceSleepReady)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ForceSleepReady::ByteSizeLong(const MessageLite& base) {
+  const ForceSleepReady& this_ = static_cast<const ForceSleepReady&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ForceSleepReady::ByteSizeLong() const {
+  const ForceSleepReady& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:farm.ForceSleepReady)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // int32 day = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_day() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_day());
+      }
+    }
+  }
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    total_size += this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size();
+  }
+  this_._impl_._cached_size_.Set(::_pbi::ToCachedSize(total_size));
+  return total_size;
+}
+
+void ForceSleepReady::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ForceSleepReady*>(&to_msg);
+  auto& from = static_cast<const ForceSleepReady&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:farm.ForceSleepReady)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    if (from._internal_day() != 0) {
+      _this->_impl_.day_ = from._impl_.day_;
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
+}
+
+void ForceSleepReady::CopyFrom(const ForceSleepReady& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:farm.ForceSleepReady)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ForceSleepReady::InternalSwap(ForceSleepReady* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.day_, other->_impl_.day_);
 }
 
 // @@protoc_insertion_point(namespace_scope)

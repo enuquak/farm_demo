@@ -247,3 +247,23 @@ Action: 创建 SceneManager 实例时传入 (800, 600)。调用 request_scene_ch
 Description: 测试场景切换状态机时，通过 sm._transition.state 访问当前状态（非 sm.transition_state）。状态序列应为 IDLE -> IRIS_CLOSE -> IRIS_OPEN -> IDLE（SWITCHING 状态在 update() 内部一闪而过，可能无法捕获）。验证切换完成的最佳方式是检查 sm.current_scene_id 是否已更改。
 Context: 测试客户端 SceneManager 的场景切换状态机。
 Action: 1) 记录初始状态 IDLE；2) 调用 request_scene_change 后检查 IRIS_CLOSE；3) 多次 update(0.02) 后检查 IDLE；4) 验证 current_scene_id 已变更为目标场景。
+
+[2026-05-28] [Pitfall] [Python or 运算符与 0 值]
+Description: Python 中 `0 or 12` 返回 12，因为 0 被视为 falsy。当代码使用 `x % 12 or 12` 来处理 12 小时制显示时，x=0 会错误地显示为 12 而非 0。这在游戏时钟的午夜显示（slot 36 -> hour=0）中导致 "AM 12:00" 而非 "AM 0:00"。
+Context: 测试任何使用 Python `or` 运算符处理数值的格式化逻辑，特别是 12/24 小时制时间显示。
+Action: 测试时钟系统的时间显示时，必须覆盖 hour=0（午夜）的边界情况。对于 12 小时制格式化，使用显式的条件判断而非 `x % n or n` 模式。测试用例应包含：slot 0 (AM 6:00)、slot 12 (PM 12:00)、slot 36 (AM 0:00)、slot 38 (AM 1:00)。
+
+[2026-05-28] [Pattern] [游戏时钟系统测试]
+Description: 测试游戏内时钟系统时需要覆盖以下维度：1) 时间映射（slot->显示时间，含所有边界值）；2) 时间推进（正常dt、累积dt、大dt跨多slot）；3) 天数管理（初始值、递增、重置）；4) 暂停/恢复（暂停时elapsed保留、恢复后继续累积）；5) 回调触发（新slot、一天结束、不重复触发）；6) 序列化/反序列化（含旧存档兼容）；7) 帧率无关性（注意浮点累积误差可能导致测试不准确）。
+Context: 测试任何使用离散时间槽（time slot）模型的游戏时钟系统。
+Action: 测试脚本应按上述维度组织测试用例。帧率无关性测试需要高精度浮点比较或改用整数计数器验证。序列化测试必须覆盖旧存档兼容场景（缺失字段使用默认值）。
+
+[2026-05-28] [Pitfall] [Python 浮点累积误差导致帧率无关测试失败]
+Description: 测试帧率无关性时，`1800 * (1/30)` 的浮点累积结果为 59.999999999999154（< 60.0），导致时钟未推进一个 slot。测试误报为 FAIL，但实际代码逻辑正确。
+Context: 测试任何基于浮点累加的时间推进系统，特别是将 1/N 的 N 次方与整数阈值比较的场景。
+Action: 帧率无关测试中，在多次小 dt 累积后追加一个微小增量（如 0.001）推动跨过阈值，或改用整数计数器验证推进次数。不要依赖浮点累加精确等于整数。
+
+[2026-05-28] [Technique] [强制睡觉流程代码级验证]
+Description: 当无法启动完整服务器栈（Gate+Game+DBMgr）测试强制睡觉流程时，可以通过静态代码分析验证：1) 服务端 on_day_end() 暂停时钟+发送 ForceSleepNotify；2) 客户端 Iris 收缩完成后发送 ForceSleepReady；3) 服务端 handle_force_sleep_ready() 切换场景+恢复体力+推进天数+恢复时钟+发送响应；4) 超时处理（10秒强制完成）。验证每一步的函数调用链和状态变量变更。
+Context: 测试涉及客户端-服务端交互的多步骤流程（如强制睡觉、场景切换）。
+Action: 按消息流顺序追踪代码：服务端发送 -> 客户端接收处理 -> 客户端回复 -> 服务端处理回复。验证每个环节的消息 ID、protobuf 字段、状态变量变更是否与 spec 一致。

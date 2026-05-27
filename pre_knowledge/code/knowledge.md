@@ -297,3 +297,23 @@ Action: 在 _handle_input() 开头检查 is_input_blocked() 和 exhaustion_modal
 Description: 客户端的场景管理（SceneManager/TileMap）与视觉渲染（pyscroll/TmxMapLoader）是分离的。SceneManager 管理逻辑场景数据（场景注册表、Portal 检测、场景切换流程），而 pyscroll 负责实际的瓦片地图渲染。当前实现中，pyscroll 始终渲染 farm.tmx 文件，SceneManager 的场景数据用于 Portal 检测和场景切换状态管理。这意味着切换到 house 场景后，视觉上仍显示 farm 地图，但 Portal 检测使用 house 场景的数据。
 Context: 客户端需要同时支持多场景逻辑和视觉渲染，当前架构存在渲染与逻辑不一致的问题。
 Action: 后续需要将 pyscroll 渲染器与 SceneManager 的场景数据同步，实现真正的多场景视觉切换。当前阶段 Portal 检测和过渡动效已正确工作。
+
+[2026-05-28] [Pattern] [游戏时钟系统架构]
+Description: 游戏时钟采用服务端权威 + 客户端展示模式。服务端维护 GameClock 状态（day, time_slot, elapsed, paused），每秒在 update_game_logic() 中推进时钟。time_slot 0~39 表示一天的 40 个 30 分钟时段，60 秒现实时间推进 1 个 slot。slot 跳变时广播 ClockSync 消息给所有在线客户端，客户端只做 UI 展示。
+Context: 实现类星露谷物语的昼夜循环系统，驱动游戏内时间流逝。
+Action: (1) 在 game_server.h 中添加时钟状态变量和方法；(2) update_game_logic() 中累加 elapsed，每 60 秒推进 slot 并广播 ClockSync；(3) slot>=40 时触发 on_day_end() 暂停时钟并发送 ForceSleepNotify；(4) 客户端在 ClockSync 处理中更新 TimeHUD 显示。
+
+[2026-05-28] [Pattern] [强制睡觉流程状态机]
+Description: 强制睡觉是一个跨客户端-服务端的异步流程：服务端 on_day_end() -> 暂停时钟 -> 发送 ForceSleepNotify -> 客户端 Iris 收缩 -> 发送 ForceSleepReady -> 服务端场景切换+体力恢复+天数推进 -> 发送 SceneChangeResp+ClockSync+EnergySync -> 客户端 Iris 展开。服务端维护 force_sleep_pending_ 标记和超时计数器（10秒），超时则强制完成流程。
+Context: 游戏时间到达 AM 2:00 时需要强制玩家睡觉，推进到新的一天。
+Action: (1) 服务端在 on_day_end 中设置 clock_paused_=true 和 force_sleep_pending_=true；(2) handle_force_sleep_ready 中执行场景切换、体力恢复 50%、天数推进；(3) update_clock 中检查超时（10秒未收到 ForceSleepReady 则强制完成）；(4) 客户端在 ForceSleepNotify 处理中启动 Iris 收缩，回调中发送 ForceSleepReady。
+
+[2026-05-28] [Pattern] [TimeHUD PyGame UI 组件]
+Description: TimeHUD 在屏幕左上角 (8,8) 显示游戏时间和天数。使用 monospace 24px 白色字体，半透明黑色背景 (0,0,0,128) 提高可读性。时间格式为 "AM 6:00  Day 1"，根据 ClockSync 消息实时更新。TimeHUD 独立于 EnergyBar，两者在 game_scene.py 的 _render 方法中按顺序绘制。
+Context: 客户端需要显示当前游戏时间和天数信息。
+Action: 创建 scripts/client/ui/time_hud.py，TimeHUD 类提供 update(day, time_slot) 和 draw(screen) 方法。在 game_scene.py 中创建实例，在 _process_network_messages 中处理 MSG_ID_CLOCK_SYNC 更新数据，在 _render 中调用 draw()。
+
+[2026-05-28] [Pattern] [游戏时钟时间映射公式]
+Description: time_slot 到时分的映射公式：raw_hour = 6 + time_slot // 2, hour = raw_hour % 24, minute = (time_slot % 2) * 30。AM/PM 判断：hour < 12 为 AM，否则为 PM。显示时 hour 取模 12（0 显示为 12）。示例：slot 0 = AM 6:00, slot 12 = PM 12:00, slot 20 = PM 4:00, slot 36 = AM 0:00。
+Context: 游戏时钟需要将离散的 time_slot 转换为玩家可读的时间字符串。
+Action: 在 GameClock (Python) 和 TimeHUD (Python) 中使用相同的公式。C++ 侧不需要此公式（只传递 slot 值），客户端负责显示。

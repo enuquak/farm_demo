@@ -38,3 +38,8 @@ MSG_ID_ACTIVE_SLOT_CHANGE = 3101    # Client -> Game: 快捷栏选中格切换
 # 场景切换 (2200-2299)
 MSG_ID_SCENE_CHANGE_REQ = 2201      # Client -> Game: 场景切换请求
 MSG_ID_SCENE_CHANGE_RESP = 2202     # Game -> Client: 场景切换响应
+
+# 游戏时钟 (2300-2399)
+MSG_ID_CLOCK_SYNC = 2301            # Game -> Client: 时钟同步
+MSG_ID_FORCE_SLEEP_NOTIFY = 2302    # Game -> Client: 强制睡觉通知
+MSG_ID_FORCE_SLEEP_READY = 2303     # Client -> Game: 强制睡觉就绪

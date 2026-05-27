@@ -36,6 +36,7 @@ message EnterGameResp {
     string msg = 2;
     PlayerData player_data = 3; // 玩家数据
     EnergySync energy = 4;      // 能量数据
+    ClockSync clock = 5;        // 时钟数据
 }
 
 // 物品使用请求 (Client -> Game)
@@ -84,4 +85,28 @@ message SceneChangeResp {
     int32 spawn_x = 4;          // 出生点 X (tile)
     int32 spawn_y = 5;          // 出生点 Y (tile)
     string active_scene = 6;    // 当前活跃场景 ID
+}
+
+// ===========================================
+// 游戏时钟协议
+// ===========================================
+
+// 时钟同步 (Game -> Client)
+// 每个 time_slot 跳变时广播
+message ClockSync {
+    int32 day = 1;              // 天数
+    int32 time_slot = 2;        // 时间槽 (0~39)
+    bool paused = 3;            // 是否暂停
+}
+
+// 强制睡觉通知 (Game -> Client)
+// 当 time_slot 达到 40 时发送
+message ForceSleepNotify {
+    int32 day = 1;              // 当前天数
+}
+
+// 强制睡觉就绪 (Client -> Game)
+// 客户端 Iris 收缩完成后发送
+message ForceSleepReady {
+    int32 day = 1;              // 当前天数
 }
