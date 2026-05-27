@@ -41,6 +41,11 @@ set(SOURCES
     src/dbmgr_connection.cpp
     src/dbmgr_connection_manager.cpp
     src/msvc_compat.cpp
+    src/item_effects.cpp
+    src/world_state.cpp
+    src/drop_item_manager.cpp
+    src/item_interaction_handler.cpp
+    src/crop_system.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/admin_msg_ids.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/log_init.cpp

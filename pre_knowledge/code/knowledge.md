@@ -207,3 +207,8 @@ Action: 不要定义包装宏，直接使用 spdlog 原生宏（SPDLOG_INFO/SPDL
 Description: 使用 spdlog header-only 库实现统一日志系统。日志格式为 [时间][级别][进程名:PID][模块] 内容。spdlog 模式字符串设置为 "[%Y-%m-%d %H:%M:%S.%e][%^%l%$][process:pid] %v"，模块名在各调用点以 "[ModuleName] message" 格式包含在消息中。使用 rotating_file_sink_mt 实现按大小轮转（20MB/文件，保留7个）。日志级别通过配置文件设置，支持 debug/info/error/critical。
 Context: 为 C++ 服务器进程实现统一的日志输出格式和文件轮转。
 Action: 创建 log_config.h（配置结构体）、log_init.h/cpp（初始化函数）、log_modules.h（模块常量和 spdlog include）、log_macros.h（spdlog include 入口头文件）。在 main.cpp 中先用默认配置初始化日志，加载配置文件后再重新初始化。
+
+[2026-05-27] [Pattern] [作物生长系统 CropSystem 设计模式]
+Description: 独立的 CropSystem 类管理作物从 CROP_GROWING 到 CROP_READY 的生命周期。使用 std::unordered_map<std::string, CropData> 以 "x,y" 为键存储生长数据。支持场景冻结/恢复时的补帧机制（simulate_elapsed），序列化/反序列化（JSON 格式 {"tiles": {...}}），以及无效数据清理（update 时检查对象是否仍为 CROP_GROWING）。
+Context: 在多人联机农场游戏中实现服务端驱动的作物生长系统，需要支持场景冻结/恢复和存档兼容。
+Action: 创建 crop_system.h/cpp 作为独立组件，ItemInteractionHandler 通过 CropSystem* 指针委托作物注册/更新/清理。关键设计：register_crop 验证 TILLED 地面，update 同时处理成熟和无效数据清理，deserialize 兼容旧存档（无 crops 字段时初始化为空）。

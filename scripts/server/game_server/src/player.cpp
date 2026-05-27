@@ -87,6 +87,13 @@ void Player::set_inventory(const std::string& inventory) {
     }
 }
 
+void Player::set_energy(int32_t energy) {
+    if (player_data_.energy != energy) {
+        player_data_.energy = energy;
+        dirty_ = true;
+    }
+}
+
 void Player::set_farm_state(const std::string& farm_state) {
     if (player_data_.farm_state != farm_state) {
         player_data_.farm_state = farm_state;

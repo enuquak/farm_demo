@@ -35,3 +35,28 @@ message EnterGameResp {
     string msg = 2;
     PlayerData player_data = 3; // 玩家数据
 }
+
+// 物品使用请求 (Client -> Game)
+message ItemUseReq {
+    int32 target_x = 1;         // 目标 tile X
+    int32 target_y = 2;         // 目标 tile Y
+    string direction = 3;       // 玩家朝向
+    int32 active_slot = 4;      // 当前激活的背包格子
+}
+
+// 物品使用响应 (Game -> Client)
+message ItemUseResp {
+    int32 code = 1;             // 0=成功, 其他=错误码
+    string msg = 2;
+}
+
+// 玩家背包数据
+message InventoryData {
+    string inventory_json = 1;  // 背包 JSON 数据
+}
+
+// 农场状态同步 (Game -> Client)
+message FarmStateSync {
+    string world_json = 1;      // 世界状态 JSON
+    string crop_json = 2;       // 作物状态 JSON
+}

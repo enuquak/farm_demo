@@ -24,4 +24,14 @@ static constexpr uint32_t MSG_ID_CREATE_ROLE_RESP       = 1004;
 static constexpr uint32_t MSG_ID_ENTER_GAME_REQ         = 1005;
 static constexpr uint32_t MSG_ID_ENTER_GAME_RESP        = 1006;
 
+// 物品使用 (3001-3002)
+static constexpr uint32_t MSG_ID_ITEM_USE_REQ           = 3001;
+static constexpr uint32_t MSG_ID_ITEM_USE_RESP          = 3002;
+
+// 农场状态同步 (3003)
+static constexpr uint32_t MSG_ID_FARM_STATE_SYNC        = 3003;
+
+// 掉落物同步 (3004-3005)
+static constexpr uint32_t MSG_ID_DROP_ITEM_SYNC         = 3004;
+
 }  // namespace farm
