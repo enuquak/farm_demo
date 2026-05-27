@@ -208,12 +208,7 @@ Description: 使用 spdlog header-only 库实现统一日志系统。日志格�
 Context: 为 C++ 服务器进程实现统一的日志输出格式和文件轮转。
 Action: 创建 log_config.h（配置结构体）、log_init.h/cpp（初始化函数）、log_modules.h（模块常量和 spdlog include）、log_macros.h（spdlog include 入口头文件）。在 main.cpp 中先用默认配置初始化日志，加载配置文件后再重新初始化。
 
-[2026-05-27] [Pattern] [服务器控制规范模块]
-Description: 实现 Python 服务器控制规范模块（scripts/common/server_control.py），为 AI 智能体提供标准化的服务器进程操作接口。模块遵循以下规范：重启操作优先（restart_all）、优雅停服优先（MSG_ID_SHUTDOWN 消息）、按依赖顺序启动（dbmgr->game_server->gate_server）、操作后验证。
-Context: AI 智能体需要管理 farm_demo 服务器进程的启动、停止、重启操作。
-Action: 实现 server_control.py 模块，包含：PID 文件管理（read_pid_file, check_process_alive）、日志解析（parse_log_line, filter_logs_by_level/module）、优雅停服（send_shutdown_message, graceful_shutdown_service/all）、强制停服（force_kill_process/service）、启动（start_service/all_services）、重启（restart_all）、验证（verify_startup/shutdown）。所有操作记录详细日志，支持 Windows 和跨平台。
-
-[2026-05-28] [Pattern] [命令行参数解析 --config]
-Description: 服务进程支持通过 --config 命令行参数指定配置文件路径，保留默认路径作为 fallback。解析逻辑在 main() 函数中，遍历 argv 查找 "--config" 参数，取下一个参数作为路径值。如果未指定 --config，使用默认路径（如 "config/gate_server.json"）。
-Context: spec 要求服务启动命令格式为 `bin\<service_name>.exe --config config\<service_name>.json`，但之前 config 路径是硬编码的。
-Action: 在三个服务的 main.cpp 中添加 --config 参数解析。使用简单的 for 循环遍历 argc/argv，找到 "--config" 后取 argv[i+1] 作为 config_path。start_all.bat 已正确使用 --config 格式。
+[2026-05-27] [Pattern] [作物生长系统 CropSystem 设计模式]
+Description: 独立的 CropSystem 类管理作物从 CROP_GROWING 到 CROP_READY 的生命周期。使用 std::unordered_map<std::string, CropData> 以 "x,y" 为键存储生长数据。支持场景冻结/恢复时的补帧机制（simulate_elapsed），序列化/反序列化（JSON 格式 {"tiles": {...}}），以及无效数据清理（update 时检查对象是否仍为 CROP_GROWING）。
+Context: 在多人联机农场游戏中实现服务端驱动的作物生长系统，需要支持场景冻结/恢复和存档兼容。
+Action: 创建 crop_system.h/cpp 作为独立组件，ItemInteractionHandler 通过 CropSystem* 指针委托作物注册/更新/清理。关键设计：register_crop 验证 TILLED 地面，update 同时处理成熟和无效数据清理，deserialize 兼容旧存档（无 crops 字段时初始化为空）。

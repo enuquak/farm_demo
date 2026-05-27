@@ -26,6 +26,7 @@ struct PlayerBizData {
     float pos_x = 0.0f;          // 位置 X
     float pos_y = 0.0f;          // 位置 Y
     float pos_z = 0.0f;          // 位置 Z
+    int32_t energy = 100;        // 体力值
     std::string scene_id;        // 场景 ID
     std::string inventory;       // 背包数据（JSON 格式）
     std::string farm_state;      // 农场状态（JSON 格式）
@@ -83,6 +84,9 @@ public:
 
     const std::string& get_inventory() const { return player_data_.inventory; }
     void set_inventory(const std::string& inventory);
+
+    int32_t get_energy() const { return player_data_.energy; }
+    void set_energy(int32_t energy);
 
     const std::string& get_farm_state() const { return player_data_.farm_state; }
     void set_farm_state(const std::string& farm_state);
