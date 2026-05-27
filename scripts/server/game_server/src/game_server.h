@@ -7,6 +7,10 @@
 #include "dbmgr_connection_manager.h"
 #include "player_id_generator.h"
 #include "admin_msg_ids.h"
+#include "world_state.h"
+#include "drop_item_manager.h"
+#include "crop_system.h"
+#include "item_interaction_handler.h"
 
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -45,12 +49,18 @@ private:
     static void on_read(struct bufferevent* bev, void* ctx);
     static void on_event(struct bufferevent* bev, short events, void* ctx);
     static void on_heartbeat_timer(evutil_socket_t fd, short events, void* ctx);
+    static void on_update_timer(evutil_socket_t fd, short events, void* ctx);
 
     // 连接处理
     void handle_accept(evutil_socket_t fd, struct sockaddr* addr);
     void handle_read(std::shared_ptr<GateSession> session);
     void handle_disconnect(std::shared_ptr<GateSession> session);
     void check_heartbeat();
+    void update_game_logic();
+
+    // Inventory helpers for auto-pickup
+    bool load_inventory_from_player(Player* player, PlayerInventory& inv);
+    void save_inventory_to_player(Player* player, const PlayerInventory& inv);
 
     // 内部消息路由
     void route_internal_message(std::shared_ptr<GateSession> session,
@@ -68,6 +78,8 @@ private:
                              const std::vector<uint8_t>& payload);
     void handle_client_msg(std::shared_ptr<GateSession> session,
                            const std::vector<uint8_t>& payload);
+    void handle_item_use_req(uint64_t player_id,
+                              const uint8_t* payload, size_t payload_len);
     void handle_account_msg(std::shared_ptr<GateSession> session,
                             const std::vector<uint8_t>& payload);
     void handle_enter_game_req(std::shared_ptr<GateSession> session,
@@ -95,6 +107,7 @@ private:
     struct event_base* base_;
     struct evconnlistener* listener_;
     struct event* heartbeat_timer_;
+    struct event* update_timer_;
     bool running_;
 
     // Gate 会话管理（按 fd 索引）
@@ -112,6 +125,18 @@ private:
 
     // Player ID 生成器
     PlayerIdGenerator player_id_gen_;
+
+    // 世界状态（tile map）
+    WorldState world_state_;
+
+    // 掉落物管理
+    DropItemManager drop_manager_;
+
+    // 作物生长系统
+    CropSystem crop_system_;
+
+    // 物品交互处理器
+    ItemInteractionHandler item_handler_;
 };
 
 }  // namespace farm

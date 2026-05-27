@@ -177,3 +177,13 @@ Action: Test plan should verify: 1) Header file defines correct message IDs; 2) 
 Description: Testing cascade shutdown (Gate→Game→DBMgr) requires verifying: 1) GateServer stops listener and forwards MSG_ID_SHUTDOWN to game servers; 2) GameServer stops listener, saves players, broadcasts to DBMgrs, sends response; 3) DbMgrServer stops listener, sends response, calls stop().
 Context: Testing any multi-service shutdown cascade where services have dependencies.
 Action: Test plan should verify each server's handle_shutdown() implementation: 1) Stops accepting new connections; 2) Performs cleanup (save data, close connections); 3) Forwards shutdown to downstream services; 4) Sends response to upstream service; 5) Calls stop().
+
+[2026-05-27] [Technique] [Standalone C++ Unit Test Without Framework]
+Description: For C++ classes that depend on project infrastructure (spdlog, nlohmann/json), create a standalone test program that includes the class under test and its direct dependencies. Compile with MSVC using /I flags for include directories (src, common/include, common/third_party, protobuf). This avoids needing a full test framework while still validating all public methods.
+Context: Testing C++ classes in a project that uses spdlog for logging and nlohmann/json for serialization, without a dedicated test framework.
+Action: Create a test .cpp file with a simple pass/fail counter macro system. Include only the necessary source files (not the entire project). Use a batch file to set up MSVC environment and compile. Run the test exe directly and check exit code (0=pass, 1=fail). This approach worked for testing CropSystem (28 test cases, all passed).
+
+[2026-05-27] [Pattern] [Game Logic Timer System Testing]
+Description: Testing timer-driven game systems (like crop growth) requires simulating time passage rather than waiting real-time. Key techniques: 1) Use planted_at parameter to set historical timestamps; 2) Use simulate_elapsed() for freeze/resume scenarios; 3) Test exact boundary conditions (now - planted_at == grow_time); 4) Test stale data cleanup when objects change externally.
+Context: Testing any server-side timer system that checks elapsed time against thresholds.
+Action: Test plan should cover: 1) Not-yet-mature (elapsed < threshold); 2) Exactly-mature (elapsed == threshold); 3) Over-mature (elapsed > threshold); 4) Freeze/resume catch-up; 5) Zero/negative elapsed edge cases; 6) Null world pointer safety; 7) Stale data cleanup.

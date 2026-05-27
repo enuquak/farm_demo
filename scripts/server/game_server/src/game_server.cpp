@@ -32,8 +32,13 @@ GameServer::GameServer(const std::string& ip, uint16_t port,
     , base_(nullptr)
     , listener_(nullptr)
     , heartbeat_timer_(nullptr)
+    , update_timer_(nullptr)
     , running_(false)
     , dbmgr_configs_(dbmgr_configs)
+    , world_state_()
+    , drop_manager_()
+    , crop_system_()
+    , item_handler_(&world_state_, &drop_manager_, &crop_system_)
 {
 }
 
@@ -79,6 +84,13 @@ bool GameServer::start() {
     heartbeat_timer_ = event_new(base_, -1, EV_PERSIST, on_heartbeat_timer, this);
     evtimer_add(heartbeat_timer_, &tv);
 
+    // 创建游戏逻辑更新定时器（每秒执行一次，用于作物生长、自动拾取等）
+    struct timeval update_tv;
+    update_tv.tv_sec = 1;
+    update_tv.tv_usec = 0;
+    update_timer_ = event_new(base_, -1, EV_PERSIST, on_update_timer, this);
+    evtimer_add(update_timer_, &update_tv);
+
     running_ = true;
     SPDLOG_INFO("[Game]Listening on {}:{}", ip_, port_);
 
@@ -95,6 +107,17 @@ bool GameServer::start() {
         SPDLOG_INFO("[Game]No DBMgr configs, skipping DBMgr connections");
     }
 
+    // 初始化世界状态
+    world_state_.generate_default();
+    SPDLOG_INFO("[Game]World state initialized");
+
+    // 注册物品交互消息处理
+    msg_handler_.register_handler(MSG_ID_ITEM_USE_REQ,
+        [this](uint64_t player_id, const uint8_t* payload, size_t payload_len) {
+            handle_item_use_req(player_id, payload, payload_len);
+        });
+    SPDLOG_INFO("[Game]Item interaction handler registered");
+
     // 进入事件循环（阻塞）
     event_base_dispatch(base_);
 
@@ -106,6 +129,10 @@ void GameServer::stop() {
     running_ = false;
     // Shutdown DBMgr connections first
     dbmgr_mgr_.shutdown();
+    if (update_timer_) {
+        event_free(update_timer_);
+        update_timer_ = nullptr;
+    }
     if (heartbeat_timer_) {
         event_free(heartbeat_timer_);
         heartbeat_timer_ = nullptr;
@@ -248,6 +275,81 @@ void GameServer::check_heartbeat() {
             handle_disconnect(it->second);
         }
     }
+}
+
+void GameServer::on_update_timer(evutil_socket_t fd, short events, void* ctx) {
+    auto* server = static_cast<GameServer*>(ctx);
+    server->update_game_logic();
+}
+
+void GameServer::update_game_logic() {
+    time_t now = std::time(nullptr);
+
+    // Update item handler (crops, drop expiry)
+    item_handler_.update(this);
+
+    // Auto-pickup: for each player, check nearby drop items
+    auto all_players = player_mgr_.get_all_players();
+    for (Player* player : all_players) {
+        if (!player || player->data_state() != PlayerBizDataState::LOADED) continue;
+
+        float px = player->get_pos_x();
+        float py = player->get_pos_y();
+
+        auto nearby_ids = drop_manager_.find_nearby(px, py);
+        if (nearby_ids.empty()) continue;
+
+        // Load inventory
+        PlayerInventory inv;
+        if (!load_inventory_from_player(player, inv)) continue;
+
+        bool inventory_changed = false;
+        for (uint32_t drop_id : nearby_ids) {
+            const DropItem* drop = drop_manager_.get(drop_id);
+            if (!drop) continue;
+
+            int32_t max_stack = ItemEffects::get_max_stack(drop->item_id);
+            int32_t leftover = inv.add_item(drop->item_id, drop->count, max_stack);
+
+            if (leftover < drop->count) {
+                int32_t picked_up = drop->count - leftover;
+                SPDLOG_INFO("[Game]Auto-pickup: player={} picked up {} x item_id={} (drop_id={})",
+                            player->player_id(), picked_up, drop->item_id, drop_id);
+
+                drop_manager_.remove(drop_id);
+                inventory_changed = true;
+
+                if (leftover > 0) {
+                    SPDLOG_INFO("[Game]Auto-pickup: player={} inventory full, remaining drops left on ground",
+                                player->player_id());
+                    break;
+                }
+            }
+        }
+
+        if (inventory_changed) {
+            save_inventory_to_player(player, inv);
+        }
+    }
+}
+
+bool GameServer::load_inventory_from_player(Player* player, PlayerInventory& inv) {
+    const std::string& inv_json = player->get_inventory();
+    if (!inv_json.empty() && inv_json != "{}") {
+        return inv.deserialize(inv_json);
+    }
+
+    // Default inventory for new players
+    inv.slots[0] = {3, 1};   // axe x1
+    inv.slots[1] = {4, 1};   // hoe x1
+    inv.slots[2] = {5, 5};   // seeds x5
+    inv.slots[3] = {6, 3};   // bread x3
+    return true;
+}
+
+void GameServer::save_inventory_to_player(Player* player, const PlayerInventory& inv) {
+    std::string json = inv.serialize();
+    player->set_inventory(json);
 }
 
 // ===========================================
@@ -541,6 +643,71 @@ void GameServer::handle_enter_game_req(std::shared_ptr<GateSession> session,
         game_msg.SerializeToString(&final_resp);
 
         send_to_gate(session, MSG_ID_GAME_MSG, final_resp);
+    }
+}
+
+void GameServer::handle_item_use_req(uint64_t player_id,
+                                      const uint8_t* payload, size_t payload_len) {
+    // Parse ItemUseReq
+    farm::ItemUseReq req;
+    if (payload_len > 0) {
+        req.ParseFromArray(payload, static_cast<int>(payload_len));
+    }
+
+    SPDLOG_INFO("[Game]ItemUseReq: player_id={} target=({},{}) direction={} active_slot={}",
+                player_id, req.target_x(), req.target_y(), req.direction(), req.active_slot());
+
+    // Get player
+    Player* player = player_mgr_.get_player(player_id);
+    if (!player) {
+        SPDLOG_ERROR("[Game]ItemUseReq: player_id={} not found", player_id);
+        return;
+    }
+
+    // Process item use
+    ItemUseResult result = item_handler_.handle_item_use(
+        player,
+        static_cast<int32_t>(req.target_x()),
+        static_cast<int32_t>(req.target_y()),
+        req.direction(),
+        static_cast<int32_t>(req.active_slot()),
+        this);
+
+    // Send ItemUseResp
+    farm::ItemUseResp resp;
+    resp.set_code(static_cast<int32_t>(result));
+
+    switch (result) {
+        case ItemUseResult::SUCCESS:
+            resp.set_msg("success");
+            break;
+        case ItemUseResult::NO_ACTIVE_ITEM:
+            resp.set_msg("no active item");
+            break;
+        case ItemUseResult::NO_MATCHING_EFFECT:
+            resp.set_msg("no matching effect");
+            break;
+        case ItemUseResult::ENERGY_EXHAUSTED:
+            resp.set_msg("energy exhausted");
+            break;
+        case ItemUseResult::INVALID_TARGET:
+            resp.set_msg("invalid target");
+            break;
+        default:
+            resp.set_msg("internal error");
+            break;
+    }
+
+    // Send response via PlayerMsg wrapper
+    std::string resp_data;
+    resp.SerializeToString(&resp_data);
+
+    send_game_msg(player_id, MSG_ID_ITEM_USE_RESP,
+                  reinterpret_cast<const uint8_t*>(resp_data.data()),
+                  resp_data.size());
+
+    if (result == ItemUseResult::SUCCESS) {
+        SPDLOG_INFO("[Game]ItemUseReq processed successfully for player_id={}", player_id);
     }
 }
 
