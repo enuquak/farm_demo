@@ -14,6 +14,8 @@ enum class GroundType : uint8_t {
     WATER = 2,
     SAND = 3,
     TILLED = 4,
+    WALL = 5,
+    WOOD_FLOOR = 6,
 };
 
 // Object type constants (matching client ObjectType enum)

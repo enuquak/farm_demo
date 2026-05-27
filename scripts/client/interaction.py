@@ -2,9 +2,12 @@
 交互系统模块
 实现物品交互的双层匹配逻辑：优先匹配地物层，无地物时匹配地面层
 """
+import logging
 from typing import Optional, Dict, Any, Tuple, Union
 
 from .constants import ObjectType, GroundType, OBJECT_PROPERTIES, GROUND_PROPERTIES
+
+logger = logging.getLogger("client.interaction")
 
 
 # 物品效果匹配表
@@ -209,3 +212,44 @@ def get_interact_type(map_data, tile_x: int, tile_y: int) -> Optional[str]:
     if props is None:
         return None
     return props.get("interact_type")
+
+
+def is_portal(map_data, tile_x: int, tile_y: int) -> bool:
+    """
+    检查指定位置是否是 Portal（门）
+
+    Args:
+        map_data: 地图数据对象（TileMap 或 TmxMapLoader）
+        tile_x: 网格 X 坐标
+        tile_y: 网格 Y 坐标
+
+    Returns:
+        是否是 Portal
+    """
+    interact_type = get_interact_type(map_data, tile_x, tile_y)
+    return interact_type == "portal"
+
+
+def get_portal_scene(map_data, tile_x: int, tile_y: int) -> Optional[str]:
+    """
+    获取 Portal 的目标场景
+
+    Args:
+        map_data: 地图数据对象（TileMap 或 TmxMapLoader）
+        tile_x: 网格 X 坐标
+        tile_y: 网格 Y 坐标
+
+    Returns:
+        目标场景 ID，非 Portal 时返回 None
+    """
+    obj_type = map_data.get_object_type(tile_x, tile_y)
+    if obj_type is None:
+        return None
+
+    # 根据门类型确定目标场景
+    if obj_type == ObjectType.DOOR_IN:
+        return "house"
+    elif obj_type == ObjectType.DOOR_OUT:
+        return "farm"
+
+    return None

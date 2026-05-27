@@ -34,4 +34,19 @@ static constexpr uint32_t MSG_ID_FARM_STATE_SYNC        = 3003;
 // 掉落物同步 (3004-3005)
 static constexpr uint32_t MSG_ID_DROP_ITEM_SYNC         = 3004;
 
+// 玩家移动 (2100-2199)
+static constexpr uint32_t MSG_ID_POSITION_UPDATE         = 2101;
+static constexpr uint32_t MSG_ID_POSITION_CORRECT        = 2102;
+
+// 场景切换 (2200-2299)
+static constexpr uint32_t MSG_ID_SCENE_CHANGE_REQ        = 2201;
+static constexpr uint32_t MSG_ID_SCENE_CHANGE_RESP       = 2202;
+
+// 场景数据 (2000-2099)
+static constexpr uint32_t MSG_ID_MAP_DATA_NOTIFY         = 2001;
+
+// 背包同步 (3100-3199)
+static constexpr uint32_t MSG_ID_INVENTORY_SYNC          = 3100;
+static constexpr uint32_t MSG_ID_ACTIVE_SLOT_CHANGE      = 3101;
+
 }  // namespace farm

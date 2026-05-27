@@ -46,6 +46,7 @@ set(SOURCES
     src/drop_item_manager.cpp
     src/item_interaction_handler.cpp
     src/crop_system.cpp
+    src/scene_state.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/admin_msg_ids.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/log_init.cpp

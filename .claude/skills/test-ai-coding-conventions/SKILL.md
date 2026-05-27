@@ -288,6 +288,12 @@ sock.sendall(full_msg[8:])      # 第三段
 - **原因**: 编译脚本只负责编译，未将第三方库的 DLL 复制到输出目录
 - **解决**: 编译后检查 exe 目录是否包含所有依赖 DLL（如 event.dll, event_core.dll, event_extra.dll）
 
+### 6.1b CMakeLists.txt 遗漏源文件（LNK2019）
+- **现象**: 编译时报 LNK2019 "无法解析的外部符号"，符号对应新添加的类方法
+- **原因**: 新增的 .cpp 源文件未添加到 CMakeLists.txt 的 SOURCES 列表中。与 DLL 缺失不同，这是编译阶段的链接错误
+- **解决**: 每次新增 .cpp 文件后，必须在 CMakeLists.txt 的 SOURCES 列表中添加对应条目。编译测试失败时，首先检查 LNK2019 错误中的符号是否来自新文件
+- **关联**: 同一问题也出现在 proto 文件（遗漏 .pb.cc 到 PROTO_SRCS）和头文件（遗漏 #include）
+
 ### 6.2 后台进程启动假成功
 - **现象**: 后台启动命令返回成功，但进程实际未存活
 - **原因**: Windows 下 DLL 缺失会弹窗阻塞，启动命令仍返回 0

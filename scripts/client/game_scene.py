@@ -23,12 +23,13 @@ from .player_sprite import PlayerSprite
 from .hud import HUD
 from .msg_ids import (
     MSG_ID_MAP_DATA_NOTIFY, MSG_ID_POSITION_UPDATE, MSG_ID_POSITION_CORRECT,
-    MSG_ID_ITEM_USE_RESP
+    MSG_ID_ITEM_USE_RESP, MSG_ID_SCENE_CHANGE_RESP
 )
 from .input_manager import InputManager, check_distance, get_interact_range
 from .interaction import ITEM_EFFECTS, match_item_effect
 from .ui.energy_bar import EnergyBar
 from .ui.exhaustion_modal import ExhaustionModal
+from .scene import SceneManager
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'common', 'proto', 'generated'))
 import player_pb2
@@ -64,7 +65,18 @@ class GameScene:
         pygame.display.set_caption("Farm Demo - Game")
         self.clock = pygame.time.Clock()
 
-        # 加载 TMX 地图
+        # 场景管理器
+        self._scene_manager = SceneManager(
+            self.WINDOW_WIDTH, self.WINDOW_HEIGHT, connection
+        )
+
+        # 加载初始场景（默认 farm）
+        initial_scene = player_data.get('scene_id', 'farm')
+        if not self._scene_manager.load_scene(initial_scene):
+            logger.warning(f"[GameScene]Failed to load scene {initial_scene}, falling back to TMX")
+            self._scene_manager.load_scene('farm')
+
+        # TMX 地图（用于 pyscroll 渲染）
         self._tmx_map = TmxMapLoader(DEFAULT_MAP_PATH)
         logger.info(f"[GameScene]TMX map loaded: {self._tmx_map.width}x{self._tmx_map.height}")
 
@@ -180,6 +192,9 @@ class GameScene:
             # 处理网络消息
             self._process_network_messages()
 
+            # 更新场景管理器（过渡动效）
+            self._scene_manager.update(dt)
+
             # 处理玩家输入（帧率无关）
             self._handle_input(dt)
 
@@ -215,13 +230,16 @@ class GameScene:
         Args:
             dt: 距离上一帧的时间（秒）
         """
-        # 弹窗显示时屏蔽游戏输入
-        if self._exhaustion_modal.is_visible:
+        # 弹窗显示时或场景过渡时屏蔽游戏输入
+        if self._exhaustion_modal.is_visible or self._scene_manager.is_input_blocked():
             self._player_sprite.set_moving(False)
             return
 
         # 处理鼠标点击交互
         self._handle_mouse_click()
+
+        # 处理空格键 Portal 交互
+        self._handle_portal_interaction()
 
         # 使用 InputManager 的 Action Map 处理移动
         input_dx = 0.0
@@ -272,6 +290,9 @@ class GameScene:
         # 应用移动
         self._player_sprite.set_position(new_x, new_y)
 
+        # 检查 Portal 触发
+        self._check_portal_trigger(new_x, new_y)
+
     def _update_facing_direction(self, dx: float, dy: float):
         """
         根据移动方向更新朝向
@@ -297,6 +318,10 @@ class GameScene:
         鼠标左键点击世界中的 tile 触发物品交互
         """
         if self._input_manager.is_ui_blocking():
+            return
+
+        # 过渡期间屏蔽鼠标交互
+        if self._scene_manager.is_input_blocked():
             return
 
         if not self._input_manager.is_left_mouse_just_pressed():
@@ -326,6 +351,29 @@ class GameScene:
                         f"target=({tile_x},{tile_y}), range={interact_range}")
             return
 
+        # 检查是否点击了 Portal（门）
+        from .interaction import is_portal, get_portal_scene
+        if is_portal(self._tmx_map, tile_x, tile_y):
+            target_scene = get_portal_scene(self._tmx_map, tile_x, tile_y)
+            if target_scene:
+                # 计算玩家屏幕位置（用于 Iris 动效中心点）
+                player_cx = int(self._player_sprite.world_x + TILE_SIZE // 2)
+                player_cy = int(self._player_sprite.world_y + TILE_SIZE // 2)
+                screen_x = int((player_cx - self._map_renderer.x) * ZOOM_FACTOR)
+                screen_y = int((player_cy - self._map_renderer.y) * ZOOM_FACTOR)
+
+                logger.info(f"[GameScene]Portal clicked: tile=({tile_x},{tile_y}), target={target_scene}")
+
+                # 确定目标 portal ID
+                from .constants import ObjectType
+                obj_type = self._tmx_map.get_object_type(tile_x, tile_y)
+                target_portal_id = "door_out" if obj_type == ObjectType.DOOR_IN else "door_in"
+
+                self._scene_manager.request_scene_change(
+                    target_scene, target_portal_id, (screen_x, screen_y)
+                )
+                return
+
         current_tool = None
         effect, description = match_item_effect(current_tool, self._tmx_map, tile_x, tile_y)
 
@@ -336,6 +384,61 @@ class GameScene:
         dy = tile_y - player_tile_y
         self._update_facing_direction(dx, dy)
         self._player_sprite.set_direction(self._facing_direction)
+
+    def _handle_portal_interaction(self):
+        """
+        处理空格键 Portal 交互
+        玩家站在 Portal 旁（切比雪夫距离=1），面前 tile 是 Portal，按空格触发场景切换
+        """
+        if not self._input_manager.is_action_pressed("interact"):
+            return
+
+        # 过渡期间不处理
+        if self._scene_manager.is_input_blocked():
+            return
+
+        # 计算玩家当前 tile
+        player_tile_x = int(self._player_sprite.world_x) // TILE_SIZE
+        player_tile_y = int(self._player_sprite.world_y) // TILE_SIZE
+
+        # 根据朝向计算面前的 tile
+        from .constants import Direction
+        face_x, face_y = player_tile_x, player_tile_y
+        if self._facing_direction == Direction.UP:
+            face_y -= 1
+        elif self._facing_direction == Direction.DOWN:
+            face_y += 1
+        elif self._facing_direction == Direction.LEFT:
+            face_x -= 1
+        elif self._facing_direction == Direction.RIGHT:
+            face_x += 1
+
+        # 检查面前的 tile 是否是 Portal
+        from .interaction import is_portal, get_portal_scene
+        if not is_portal(self._tmx_map, face_x, face_y):
+            return
+
+        target_scene = get_portal_scene(self._tmx_map, face_x, face_y)
+        if not target_scene:
+            return
+
+        # 计算玩家屏幕位置（用于 Iris 动效中心点）
+        player_cx = int(self._player_sprite.world_x + TILE_SIZE // 2)
+        player_cy = int(self._player_sprite.world_y + TILE_SIZE // 2)
+        screen_x = int((player_cx - self._map_renderer.x) * ZOOM_FACTOR)
+        screen_y = int((player_cy - self._map_renderer.y) * ZOOM_FACTOR)
+
+        # 确定目标 portal ID
+        from .constants import ObjectType
+        obj_type = self._tmx_map.get_object_type(face_x, face_y)
+        target_portal_id = "door_out" if obj_type == ObjectType.DOOR_IN else "door_in"
+
+        logger.info(f"[GameScene]Portal interact via SPACE: face_tile=({face_x},{face_y}), "
+                    f"target={target_scene}, portal={target_portal_id}")
+
+        self._scene_manager.request_scene_change(
+            target_scene, target_portal_id, (screen_x, screen_y)
+        )
 
     def _clamp_to_map_bounds(self, x: float, y: float) -> tuple:
         """
@@ -370,6 +473,50 @@ class GameScene:
 
         # 不可通行，返回原位置
         return (self._player_sprite.world_x, self._player_sprite.world_y)
+
+    def _check_portal_trigger(self, player_x: float, player_y: float):
+        """
+        检查玩家当前位置是否触发 Portal
+
+        Args:
+            player_x: 玩家像素 X 坐标
+            player_y: 玩家像素 Y 坐标
+        """
+        # 过渡中不检查
+        if self._scene_manager.is_transitioning:
+            return
+
+        # 计算 tile 坐标
+        tile_x = int(player_x) // TILE_SIZE
+        tile_y = int(player_y) // TILE_SIZE
+
+        # 检查当前位置是否有 Portal
+        portal = self._scene_manager.check_portal_trigger(
+            tile_x, tile_y, self._facing_direction
+        )
+
+        if portal is None:
+            return
+
+        target_scene = portal.get("target")
+        target_portal_id = portal.get("target_portal")
+
+        if not target_scene:
+            return
+
+        # 计算玩家屏幕位置（用于 Iris 动效中心点）
+        player_cx = int(self._player_sprite.world_x + TILE_SIZE // 2)
+        player_cy = int(self._player_sprite.world_y + TILE_SIZE // 2)
+        screen_x = int((player_cx - self._map_renderer.x) * ZOOM_FACTOR)
+        screen_y = int((player_cy - self._map_renderer.y) * ZOOM_FACTOR)
+
+        logger.info(f"[GameScene]Portal triggered: tile=({tile_x},{tile_y}), "
+                    f"target={target_scene}, portal={target_portal_id}")
+
+        # 请求场景切换
+        self._scene_manager.request_scene_change(
+            target_scene, target_portal_id, (screen_x, screen_y)
+        )
 
     # ========== 位置纠正 ==========
 
@@ -485,6 +632,8 @@ class GameScene:
                 self._handle_position_correct(payload)
             elif msg_id == MSG_ID_ITEM_USE_RESP:
                 self._handle_item_use_resp(payload)
+            elif msg_id == MSG_ID_SCENE_CHANGE_RESP:
+                self._handle_scene_change_resp(payload)
 
     def _handle_map_data_notify(self, payload: bytes):
         """
@@ -546,6 +695,46 @@ class GameScene:
         except Exception as e:
             logger.error(f"[GameScene]Failed to parse ItemUseResp: {e}")
 
+    def _handle_scene_change_resp(self, payload: bytes):
+        """
+        处理场景切换响应
+
+        Args:
+            payload: 消息负载（PlayerMsg 包装）
+        """
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            resp = player_pb2.SceneChangeResp()
+            resp.ParseFromString(player_msg.payload)
+
+            logger.info(f"[GameScene]SceneChangeResp received: code={resp.code}, "
+                       f"target={resp.target_scene}, spawn=({resp.spawn_x},{resp.spawn_y})")
+
+            if resp.code != 0:
+                logger.error(f"[GameScene]Scene change failed: {resp.msg}")
+                return
+
+            # 处理场景切换
+            spawn_pos = self._scene_manager.handle_scene_change_resp(
+                resp.target_scene, resp.spawn_x, resp.spawn_y
+            )
+
+            if spawn_pos:
+                # 更新玩家位置
+                spawn_x, spawn_y = spawn_pos
+                self._player_sprite.set_position(spawn_x, spawn_y)
+
+                # 更新玩家数据中的场景 ID
+                self._player_data['scene_id'] = resp.target_scene
+
+                logger.info(f"[GameScene]Scene changed to {resp.target_scene}, "
+                           f"player at ({spawn_x}, {spawn_y})")
+
+        except Exception as e:
+            logger.error(f"[GameScene]Failed to parse SceneChangeResp: {e}")
+
     # ========== 渲染 ==========
 
     def _render(self, dt: float):
@@ -577,6 +766,9 @@ class GameScene:
 
         # 精疲力尽弹窗渲染（最顶层）
         self._exhaustion_modal.draw(self.screen)
+
+        # 场景过渡 Iris 遮罩（最顶层）
+        self._scene_manager._transition.apply(self.screen)
 
         # 刷新显示
         pygame.display.flip()
