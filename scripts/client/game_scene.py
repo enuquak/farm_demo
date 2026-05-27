@@ -23,12 +23,14 @@ from .player_sprite import PlayerSprite
 from .hud import HUD
 from .msg_ids import (
     MSG_ID_MAP_DATA_NOTIFY, MSG_ID_POSITION_UPDATE, MSG_ID_POSITION_CORRECT,
-    MSG_ID_ITEM_USE_RESP, MSG_ID_SCENE_CHANGE_RESP
+    MSG_ID_ITEM_USE_RESP, MSG_ID_SCENE_CHANGE_RESP,
+    MSG_ID_CLOCK_SYNC, MSG_ID_FORCE_SLEEP_NOTIFY, MSG_ID_FORCE_SLEEP_READY
 )
 from .input_manager import InputManager, check_distance, get_interact_range
 from .interaction import ITEM_EFFECTS, match_item_effect
 from .ui.energy_bar import EnergyBar
 from .ui.exhaustion_modal import ExhaustionModal
+from .ui.time_hud import TimeHUD
 from .scene import SceneManager
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'common', 'proto', 'generated'))
@@ -125,6 +127,16 @@ class GameScene:
 
         # 精疲力尽弹窗
         self._exhaustion_modal = ExhaustionModal(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+
+        # 时间 HUD
+        self._time_hud = TimeHUD()
+        self._time_hud.update(
+            player_data.get('day', 1),
+            player_data.get('time_slot', 0)
+        )
+
+        # 强制睡觉状态
+        self._force_sleep_pending: bool = False
 
         # 玩家朝向
         self._facing_direction: str = Direction.DOWN
@@ -634,6 +646,10 @@ class GameScene:
                 self._handle_item_use_resp(payload)
             elif msg_id == MSG_ID_SCENE_CHANGE_RESP:
                 self._handle_scene_change_resp(payload)
+            elif msg_id == MSG_ID_CLOCK_SYNC:
+                self._handle_clock_sync(payload)
+            elif msg_id == MSG_ID_FORCE_SLEEP_NOTIFY:
+                self._handle_force_sleep_notify(payload)
 
     def _handle_map_data_notify(self, payload: bytes):
         """
@@ -735,6 +751,90 @@ class GameScene:
         except Exception as e:
             logger.error(f"[GameScene]Failed to parse SceneChangeResp: {e}")
 
+    def _handle_clock_sync(self, payload: bytes):
+        """
+        处理时钟同步消息
+
+        Args:
+            payload: 消息负载（PlayerMsg 包装）
+        """
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            clock_sync = player_pb2.ClockSync()
+            clock_sync.ParseFromString(player_msg.payload)
+
+            self._time_hud.update(clock_sync.day, clock_sync.time_slot)
+
+            logger.debug(f"[GameScene]ClockSync received: day={clock_sync.day}, "
+                        f"slot={clock_sync.time_slot}, paused={clock_sync.paused}")
+
+        except Exception as e:
+            logger.error(f"[GameScene]Failed to parse ClockSync: {e}")
+
+    def _handle_force_sleep_notify(self, payload: bytes):
+        """
+        处理强制睡觉通知
+
+        Args:
+            payload: 消息负载（PlayerMsg 包装）
+        """
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            notify = player_pb2.ForceSleepNotify()
+            notify.ParseFromString(player_msg.payload)
+
+            logger.info(f"[GameScene]ForceSleepNotify received: day={notify.day}")
+
+            # 标记强制睡觉待处理
+            self._force_sleep_pending = True
+
+            # 计算玩家屏幕位置（用于 Iris 动效中心点）
+            player_cx = int(self._player_sprite.world_x + TILE_SIZE // 2)
+            player_cy = int(self._player_sprite.world_y + TILE_SIZE // 2)
+            screen_x = int((player_cx - self._map_renderer.x) * ZOOM_FACTOR)
+            screen_y = int((player_cy - self._map_renderer.y) * ZOOM_FACTOR)
+
+            # 启动 Iris 收缩过渡，完成后发送 ForceSleepReady
+            self._scene_manager._transition.start(
+                (screen_x, screen_y),
+                self._on_force_sleep_iris_complete
+            )
+
+        except Exception as e:
+            logger.error(f"[GameScene]Failed to parse ForceSleepNotify: {e}")
+
+    def _on_force_sleep_iris_complete(self):
+        """强制睡觉 Iris 收缩完成回调"""
+        logger.info("[GameScene]Force sleep Iris complete, sending ForceSleepReady")
+
+        # 发送 ForceSleepReady 给服务器
+        if self._connection and self._connection.is_connected:
+            try:
+                ready = player_pb2.ForceSleepReady()
+                ready.day = self._time_hud._day
+
+                payload = ready.SerializeToString()
+
+                player_msg = base_pb2.PlayerMsg()
+                player_msg.player_id = self._player_data.get('player_id', 0)
+                player_msg.server_id = self._player_data.get('server_id', 1)
+                player_msg.msg_id = MSG_ID_FORCE_SLEEP_READY
+                player_msg.payload = payload
+                msg_payload = player_msg.SerializeToString()
+
+                self._connection.send_message(MSG_ID_FORCE_SLEEP_READY, msg_payload)
+                logger.info("[GameScene]ForceSleepReady sent")
+
+            except Exception as e:
+                logger.error(f"[GameScene]Failed to send ForceSleepReady: {e}")
+
+        # 不在这里切换场景，等待服务器的 SceneChangeResp
+        # Iris 展开会在 handle_scene_change_resp 中通过场景管理器处理
+
     # ========== 渲染 ==========
 
     def _render(self, dt: float):
@@ -763,6 +863,9 @@ class GameScene:
 
         # 能量条渲染（右下角）
         self._energy_bar.draw(self.screen)
+
+        # 时间 HUD 渲染（左上角）
+        self._time_hud.draw(self.screen)
 
         # 精疲力尽弹窗渲染（最顶层）
         self._exhaustion_modal.draw(self.screen)

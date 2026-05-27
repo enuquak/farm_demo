@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cplayer.proto\x12\x04\x66\x61rm\"\xc4\x01\n\nPlayerData\x12\x11\n\tplayer_id\x18\x01 \x01(\x04\x12\x11\n\tserver_id\x18\x02 \x01(\r\x12\x11\n\trole_name\x18\x03 \x01(\t\x12\r\n\x05level\x18\x04 \x01(\r\x12\x0b\n\x03\x65xp\x18\x05 \x01(\x04\x12\r\n\x05pos_x\x18\x06 \x01(\x02\x12\r\n\x05pos_y\x18\x07 \x01(\x02\x12\x12\n\ncreated_at\x18\x08 \x01(\x04\x12\r\n\x05pos_z\x18\t \x01(\x02\x12\x10\n\x08scene_id\x18\n \x01(\t\x12\x0e\n\x06\x65nergy\x18\x0b \x01(\x05\"4\n\x0c\x45nterGameReq\x12\x11\n\tplayer_id\x18\x01 \x01(\x04\x12\x11\n\tserver_id\x18\x02 \x01(\r\"s\n\rEnterGameResp\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\x12%\n\x0bplayer_data\x18\x03 \x01(\x0b\x32\x10.farm.PlayerData\x12 \n\x06\x65nergy\x18\x04 \x01(\x0b\x32\x10.farm.EnergySync\"X\n\nItemUseReq\x12\x10\n\x08target_x\x18\x01 \x01(\x05\x12\x10\n\x08target_y\x18\x02 \x01(\x05\x12\x11\n\tdirection\x18\x03 \x01(\t\x12\x13\n\x0b\x61\x63tive_slot\x18\x04 \x01(\x05\"*\n\nEnergySync\x12\x0f\n\x07\x63urrent\x18\x01 \x01(\x05\x12\x0b\n\x03max\x18\x02 \x01(\x05\"J\n\x0bItemUseResp\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\x12 \n\x06\x65nergy\x18\x05 \x01(\x0b\x32\x10.farm.EnergySync\"\'\n\rInventoryData\x12\x16\n\x0einventory_json\x18\x01 \x01(\t\"6\n\rFarmStateSync\x12\x12\n\nworld_json\x18\x01 \x01(\t\x12\x11\n\tcrop_json\x18\x02 \x01(\t\"@\n\x0eSceneChangeReq\x12\x14\n\x0ctarget_scene\x18\x01 \x01(\t\x12\x18\n\x10target_portal_id\x18\x02 \x01(\t\"z\n\x0fSceneChangeResp\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\x12\x14\n\x0ctarget_scene\x18\x03 \x01(\t\x12\x0f\n\x07spawn_x\x18\x04 \x01(\x05\x12\x0f\n\x07spawn_y\x18\x05 \x01(\x05\x12\x14\n\x0c\x61\x63tive_scene\x18\x06 \x01(\tB\x02H\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cplayer.proto\x12\x04\x66\x61rm\"\xc4\x01\n\nPlayerData\x12\x11\n\tplayer_id\x18\x01 \x01(\x04\x12\x11\n\tserver_id\x18\x02 \x01(\r\x12\x11\n\trole_name\x18\x03 \x01(\t\x12\r\n\x05level\x18\x04 \x01(\r\x12\x0b\n\x03\x65xp\x18\x05 \x01(\x04\x12\r\n\x05pos_x\x18\x06 \x01(\x02\x12\r\n\x05pos_y\x18\x07 \x01(\x02\x12\x12\n\ncreated_at\x18\x08 \x01(\x04\x12\r\n\x05pos_z\x18\t \x01(\x02\x12\x10\n\x08scene_id\x18\n \x01(\t\x12\x0e\n\x06\x65nergy\x18\x0b \x01(\x05\"4\n\x0c\x45nterGameReq\x12\x11\n\tplayer_id\x18\x01 \x01(\x04\x12\x11\n\tserver_id\x18\x02 \x01(\r\"\x93\x01\n\rEnterGameResp\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\x12%\n\x0bplayer_data\x18\x03 \x01(\x0b\x32\x10.farm.PlayerData\x12 \n\x06\x65nergy\x18\x04 \x01(\x0b\x32\x10.farm.EnergySync\x12\x1e\n\x05\x63lock\x18\x05 \x01(\x0b\x32\x0f.farm.ClockSync\"X\n\nItemUseReq\x12\x10\n\x08target_x\x18\x01 \x01(\x05\x12\x10\n\x08target_y\x18\x02 \x01(\x05\x12\x11\n\tdirection\x18\x03 \x01(\t\x12\x13\n\x0b\x61\x63tive_slot\x18\x04 \x01(\x05\"*\n\nEnergySync\x12\x0f\n\x07\x63urrent\x18\x01 \x01(\x05\x12\x0b\n\x03max\x18\x02 \x01(\x05\"J\n\x0bItemUseResp\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\x12 \n\x06\x65nergy\x18\x05 \x01(\x0b\x32\x10.farm.EnergySync\"\'\n\rInventoryData\x12\x16\n\x0einventory_json\x18\x01 \x01(\t\"6\n\rFarmStateSync\x12\x12\n\nworld_json\x18\x01 \x01(\t\x12\x11\n\tcrop_json\x18\x02 \x01(\t\"@\n\x0eSceneChangeReq\x12\x14\n\x0ctarget_scene\x18\x01 \x01(\t\x12\x18\n\x10target_portal_id\x18\x02 \x01(\t\"z\n\x0fSceneChangeResp\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\x12\x14\n\x0ctarget_scene\x18\x03 \x01(\t\x12\x0f\n\x07spawn_x\x18\x04 \x01(\x05\x12\x0f\n\x07spawn_y\x18\x05 \x01(\x05\x12\x14\n\x0c\x61\x63tive_scene\x18\x06 \x01(\t\";\n\tClockSync\x12\x0b\n\x03\x64\x61y\x18\x01 \x01(\x05\x12\x11\n\ttime_slot\x18\x02 \x01(\x05\x12\x0e\n\x06paused\x18\x03 \x01(\x08\"\x1f\n\x10\x46orceSleepNotify\x12\x0b\n\x03\x64\x61y\x18\x01 \x01(\x05\"\x1e\n\x0f\x46orceSleepReady\x12\x0b\n\x03\x64\x61y\x18\x01 \x01(\x05\x42\x02H\x03\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,20 +36,26 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_PLAYERDATA']._serialized_end=219
   _globals['_ENTERGAMEREQ']._serialized_start=221
   _globals['_ENTERGAMEREQ']._serialized_end=273
-  _globals['_ENTERGAMERESP']._serialized_start=275
-  _globals['_ENTERGAMERESP']._serialized_end=390
-  _globals['_ITEMUSEREQ']._serialized_start=392
-  _globals['_ITEMUSEREQ']._serialized_end=480
-  _globals['_ENERGYSYNC']._serialized_start=482
-  _globals['_ENERGYSYNC']._serialized_end=524
-  _globals['_ITEMUSERESP']._serialized_start=526
-  _globals['_ITEMUSERESP']._serialized_end=600
-  _globals['_INVENTORYDATA']._serialized_start=602
-  _globals['_INVENTORYDATA']._serialized_end=641
-  _globals['_FARMSTATESYNC']._serialized_start=643
-  _globals['_FARMSTATESYNC']._serialized_end=697
-  _globals['_SCENECHANGEREQ']._serialized_start=699
-  _globals['_SCENECHANGEREQ']._serialized_end=763
-  _globals['_SCENECHANGERESP']._serialized_start=765
-  _globals['_SCENECHANGERESP']._serialized_end=887
+  _globals['_ENTERGAMERESP']._serialized_start=276
+  _globals['_ENTERGAMERESP']._serialized_end=423
+  _globals['_ITEMUSEREQ']._serialized_start=425
+  _globals['_ITEMUSEREQ']._serialized_end=513
+  _globals['_ENERGYSYNC']._serialized_start=515
+  _globals['_ENERGYSYNC']._serialized_end=557
+  _globals['_ITEMUSERESP']._serialized_start=559
+  _globals['_ITEMUSERESP']._serialized_end=633
+  _globals['_INVENTORYDATA']._serialized_start=635
+  _globals['_INVENTORYDATA']._serialized_end=674
+  _globals['_FARMSTATESYNC']._serialized_start=676
+  _globals['_FARMSTATESYNC']._serialized_end=730
+  _globals['_SCENECHANGEREQ']._serialized_start=732
+  _globals['_SCENECHANGEREQ']._serialized_end=796
+  _globals['_SCENECHANGERESP']._serialized_start=798
+  _globals['_SCENECHANGERESP']._serialized_end=920
+  _globals['_CLOCKSYNC']._serialized_start=922
+  _globals['_CLOCKSYNC']._serialized_end=981
+  _globals['_FORCESLEEPNOTIFY']._serialized_start=983
+  _globals['_FORCESLEEPNOTIFY']._serialized_end=1014
+  _globals['_FORCESLEEPREADY']._serialized_start=1016
+  _globals['_FORCESLEEPREADY']._serialized_end=1046
 # @@protoc_insertion_point(module_scope)

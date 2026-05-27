@@ -130,9 +130,19 @@ bool GameServer::start() {
         });
     SPDLOG_INFO("[Game]Scene change handler registered");
 
+    // 注册强制睡觉就绪消息处理
+    msg_handler_.register_handler(MSG_ID_FORCE_SLEEP_READY,
+        [this](uint64_t player_id, const uint8_t* payload, size_t payload_len) {
+            handle_force_sleep_ready(player_id, payload, payload_len);
+        });
+    SPDLOG_INFO("[Game]Force sleep handler registered");
+
     // 初始化默认场景（farm）
     get_or_create_scene("farm");
     SPDLOG_INFO("[Game]Default scenes initialized");
+
+    // 加载时钟数据
+    load_clock_data();
 
     // 进入事件循环（阻塞）
     event_base_dispatch(base_);
@@ -300,6 +310,9 @@ void GameServer::on_update_timer(evutil_socket_t fd, short events, void* ctx) {
 
 void GameServer::update_game_logic() {
     time_t now = std::time(nullptr);
+
+    // Update game clock (1 second interval)
+    update_clock();
 
     // Update item handler (crops, drop expiry)
     item_handler_.update(this);
@@ -951,6 +964,12 @@ void GameServer::handle_account_msg(std::shared_ptr<GateSession> session,
 
                     enter_resp.set_code(0);
                     enter_resp.set_msg("success");
+
+                    // Include clock data
+                    farm::ClockSync* clock_sync = enter_resp.mutable_clock();
+                    clock_sync->set_day(clock_day_);
+                    clock_sync->set_time_slot(clock_time_slot_);
+                    clock_sync->set_paused(clock_paused_);
                 } else {
                     enter_resp.set_code(-1);
                     enter_resp.set_msg("Player not found after data load");
@@ -1080,6 +1099,10 @@ void GameServer::handle_shutdown(std::shared_ptr<GateSession> session, const Adm
     // 保存所有场景数据
     SPDLOG_INFO("[Game]Saving all scene data...");
     save_all_scenes();
+
+    // 保存时钟数据
+    SPDLOG_INFO("[Game]Saving clock data...");
+    save_clock_data();
 
     // 向所有 DBMgr 发送 MSG_ID_SHUTDOWN
     AdminShutdownMsg forward_msg;
@@ -1290,6 +1313,325 @@ void GameServer::save_scene_data(const std::string& scene_id) {
         static_cast<int32_t>(farm::PlayerDataOp::SET),
         key, value,
         std::move(callback));
+}
+
+// ===========================================
+// 游戏时钟
+// ===========================================
+
+void GameServer::save_clock_data() {
+    if (!dbmgr_mgr_.is_connected(0)) {
+        SPDLOG_INFO("[Game]No DBMgr connected, skipping clock data save");
+        return;
+    }
+
+    nlohmann::json clock_json;
+    clock_json["day"] = clock_day_;
+    clock_json["time_slot"] = clock_time_slot_;
+    clock_json["elapsed"] = clock_elapsed_;
+
+    std::string value = clock_json.dump();
+    std::string key = "server:game_clock";
+
+    auto callback = [](int32_t code, const uint8_t* /*data*/, size_t /*len*/) {
+        if (code == 0) {
+            SPDLOG_INFO("[Game]Clock data saved to DBMgr");
+        } else {
+            SPDLOG_ERROR("[Game]Clock data save failed: code={}", code);
+        }
+    };
+
+    dbmgr_mgr_.send_player_data_req(
+        SCENE_DATA_PLAYER_ID,
+        static_cast<int32_t>(farm::PlayerDataOp::SET),
+        key, value,
+        std::move(callback));
+}
+
+void GameServer::load_clock_data() {
+    if (!dbmgr_mgr_.is_connected(0)) {
+        SPDLOG_INFO("[Game]No DBMgr connected, cannot load clock data");
+        return;
+    }
+
+    std::string key = "server:game_clock";
+
+    auto callback = [this](int32_t code, const uint8_t* value_data, size_t value_len) {
+        if (code != 0 || !value_data || value_len == 0) {
+            SPDLOG_INFO("[Game]No saved clock data, using defaults (day=1, slot=0)");
+            return;
+        }
+
+        try {
+            std::string json_str(reinterpret_cast<const char*>(value_data), value_len);
+            nlohmann::json clock_json = nlohmann::json::parse(json_str);
+
+            clock_day_ = clock_json.value("day", 1);
+            clock_time_slot_ = clock_json.value("time_slot", 0);
+            clock_elapsed_ = clock_json.value("elapsed", 0.0);
+
+            SPDLOG_INFO("[Game]Loaded clock data from DBMgr: day={}, slot={}, elapsed={}",
+                        clock_day_, clock_time_slot_, clock_elapsed_);
+        } catch (const std::exception& e) {
+            SPDLOG_ERROR("[Game]Error loading clock data: {}", e.what());
+        }
+    };
+
+    dbmgr_mgr_.send_player_data_req(
+        SCENE_DATA_PLAYER_ID,
+        static_cast<int32_t>(farm::PlayerDataOp::GET),
+        key, "",
+        std::move(callback));
+}
+
+void GameServer::update_clock() {
+    // 暂停状态不更新
+    if (clock_paused_) {
+        // 但仍然检查强制睡觉超时
+        if (force_sleep_pending_) {
+            force_sleep_timeout_counter_++;
+            if (force_sleep_timeout_counter_ >= 10) {
+                SPDLOG_WARN("[Game]Force sleep timeout (10s), forcing completion");
+                force_sleep_pending_ = false;
+                force_sleep_timeout_counter_ = 0;
+
+                // 强制完成：切换场景 + 恢复体力 + 推进天数
+                // 获取当前玩家（简化：遍历所有玩家）
+                auto all_players = player_mgr_.get_all_players();
+                for (Player* player : all_players) {
+                    if (!player || player->data_state() != PlayerBizDataState::LOADED) continue;
+
+                    uint64_t player_id = player->player_id();
+
+                    // 切换到 house 场景
+                    const std::string& current_scene = player->get_scene_id();
+                    if (!current_scene.empty()) {
+                        auto it = scenes_.find(current_scene);
+                        if (it != scenes_.end()) {
+                            it->second->remove_player();
+                        }
+                    }
+
+                    SceneState* house = get_or_create_scene("house");
+                    if (house->is_frozen()) house->thaw();
+                    house->add_player();
+
+                    player->set_scene_id("house");
+                    player->set_pos_x(5.0f * 16);
+                    player->set_pos_y(6.0f * 16);
+
+                    // 恢复体力 50% of max energy
+                    int32_t current_energy = player->get_energy();
+                    int32_t max_energy = 100;  // TODO: make configurable
+                    int32_t restore = max_energy / 2;
+                    player->set_energy(std::min(current_energy + restore, max_energy));
+
+                    // 推进天数
+                    clock_day_++;
+                    clock_time_slot_ = 0;
+                    clock_elapsed_ = 0.0;
+
+                    // 恢复时钟
+                    clock_paused_ = false;
+
+                    // 发送 SceneChangeResp
+                    farm::SceneChangeResp scene_resp;
+                    scene_resp.set_code(0);
+                    scene_resp.set_msg("force sleep");
+                    scene_resp.set_target_scene("house");
+                    scene_resp.set_spawn_x(5);
+                    scene_resp.set_spawn_y(6);
+                    scene_resp.set_active_scene("house");
+
+                    std::string scene_resp_data;
+                    scene_resp.SerializeToString(&scene_resp_data);
+                    send_game_msg(player_id, MSG_ID_SCENE_CHANGE_RESP,
+                                  reinterpret_cast<const uint8_t*>(scene_resp_data.data()),
+                                  scene_resp_data.size());
+
+                    // 发送 ClockSync
+                    broadcast_clock_sync();
+
+                    // 发送 EnergySync
+                    farm::ItemUseResp energy_resp;
+                    energy_resp.set_code(0);
+                    energy_resp.set_msg("force sleep restore");
+                    farm::EnergySync* energy_sync = energy_resp.mutable_energy();
+                    energy_sync->set_current(player->get_energy());
+                    energy_sync->set_max(max_energy);
+
+                    std::string energy_resp_data;
+                    energy_resp.SerializeToString(&energy_resp_data);
+                    send_game_msg(player_id, MSG_ID_ITEM_USE_RESP,
+                                  reinterpret_cast<const uint8_t*>(energy_resp_data.data()),
+                                  energy_resp_data.size());
+
+                    SPDLOG_INFO("[Game]Force sleep timeout: player={} switched to house, day={}", player_id, clock_day_);
+                }
+            }
+        }
+        return;
+    }
+
+    // 推进时钟（update_game_logic 每秒调用一次）
+    clock_elapsed_ += 1.0;
+
+    // 检查是否推进一个 slot (60秒 = 1个slot)
+    while (clock_elapsed_ >= 60.0) {
+        clock_elapsed_ -= 60.0;
+        clock_time_slot_++;
+
+        if (clock_time_slot_ >= 40) {
+            // 一天结束
+            SPDLOG_INFO("[Game]Day {} ended (slot={})", clock_day_, clock_time_slot_);
+            on_day_end();
+            return;
+        } else {
+            SPDLOG_INFO("[Game]New slot: day={}, slot={}", clock_day_, clock_time_slot_);
+            broadcast_clock_sync();
+        }
+    }
+}
+
+void GameServer::broadcast_clock_sync() {
+    farm::ClockSync sync;
+    sync.set_day(clock_day_);
+    sync.set_time_slot(clock_time_slot_);
+    sync.set_paused(clock_paused_);
+
+    std::string sync_data;
+    sync.SerializeToString(&sync_data);
+
+    // 发送给所有在线玩家
+    auto all_players = player_mgr_.get_all_players();
+    for (Player* player : all_players) {
+        if (!player || player->data_state() != PlayerBizDataState::LOADED) continue;
+        send_game_msg(player->player_id(), MSG_ID_CLOCK_SYNC,
+                      reinterpret_cast<const uint8_t*>(sync_data.data()),
+                      sync_data.size());
+    }
+
+    SPDLOG_DEBUG("[Game]ClockSync broadcast: day={}, slot={}, paused={}",
+                 clock_day_, clock_time_slot_, clock_paused_);
+}
+
+void GameServer::on_day_end() {
+    // 暂停时钟
+    clock_paused_ = true;
+    force_sleep_pending_ = true;
+    force_sleep_timeout_counter_ = 0;
+
+    // 发送 ForceSleepNotify 给所有在线玩家
+    farm::ForceSleepNotify notify;
+    notify.set_day(clock_day_);
+
+    std::string notify_data;
+    notify.SerializeToString(&notify_data);
+
+    auto all_players = player_mgr_.get_all_players();
+    for (Player* player : all_players) {
+        if (!player || player->data_state() != PlayerBizDataState::LOADED) continue;
+        send_game_msg(player->player_id(), MSG_ID_FORCE_SLEEP_NOTIFY,
+                      reinterpret_cast<const uint8_t*>(notify_data.data()),
+                      notify_data.size());
+    }
+
+    SPDLOG_INFO("[Game]Force sleep initiated: day={}, waiting for client ready", clock_day_);
+}
+
+void GameServer::handle_force_sleep_ready(uint64_t player_id,
+                                           const uint8_t* payload, size_t payload_len) {
+    farm::ForceSleepReady req;
+    if (payload_len > 0) {
+        req.ParseFromArray(payload, static_cast<int>(payload_len));
+    }
+
+    SPDLOG_INFO("[Game]ForceSleepReady received: player_id={}, day={}", player_id, req.day());
+
+    if (!force_sleep_pending_) {
+        SPDLOG_WARN("[Game]ForceSleepReady but no force sleep pending, ignoring");
+        return;
+    }
+
+    // 清除强制睡觉状态
+    force_sleep_pending_ = false;
+    force_sleep_timeout_counter_ = 0;
+
+    // 获取玩家
+    Player* player = player_mgr_.get_player(player_id);
+    if (!player) {
+        SPDLOG_ERROR("[Game]ForceSleepReady: player_id={} not found", player_id);
+        return;
+    }
+
+    // 1. 冻结当前场景
+    const std::string& current_scene = player->get_scene_id();
+    if (!current_scene.empty()) {
+        auto it = scenes_.find(current_scene);
+        if (it != scenes_.end()) {
+            it->second->remove_player();
+        }
+    }
+
+    // 2. 切换到 house 场景
+    SceneState* house = get_or_create_scene("house");
+    if (house->is_frozen()) house->thaw();
+    house->add_player();
+
+    // 3. 设置玩家位置到 BED 旁边
+    player->set_scene_id("house");
+    player->set_pos_x(5.0f * 16);  // TILE_SIZE = 16
+    player->set_pos_y(6.0f * 16);
+    player->set_dirty(true);
+
+    // 4. 恢复体力 50% of max energy
+    int32_t current_energy = player->get_energy();
+    int32_t max_energy = 100;  // TODO: make configurable
+    int32_t restore = max_energy / 2;
+    player->set_energy(std::min(current_energy + restore, max_energy));
+
+    // 5. 推进天数
+    clock_day_++;
+    clock_time_slot_ = 0;
+    clock_elapsed_ = 0.0;
+
+    // 6. 恢复时钟
+    clock_paused_ = false;
+
+    // 7. 发送 SceneChangeResp
+    farm::SceneChangeResp scene_resp;
+    scene_resp.set_code(0);
+    scene_resp.set_msg("force sleep");
+    scene_resp.set_target_scene("house");
+    scene_resp.set_spawn_x(5);
+    scene_resp.set_spawn_y(6);
+    scene_resp.set_active_scene("house");
+
+    std::string scene_resp_data;
+    scene_resp.SerializeToString(&scene_resp_data);
+    send_game_msg(player_id, MSG_ID_SCENE_CHANGE_RESP,
+                  reinterpret_cast<const uint8_t*>(scene_resp_data.data()),
+                  scene_resp_data.size());
+
+    // 8. 发送 ClockSync
+    broadcast_clock_sync();
+
+    // 9. 发送 EnergySync (via ItemUseResp with energy field)
+    farm::ItemUseResp energy_resp;
+    energy_resp.set_code(0);
+    energy_resp.set_msg("force sleep restore");
+    farm::EnergySync* energy_sync = energy_resp.mutable_energy();
+    energy_sync->set_current(player->get_energy());
+    energy_sync->set_max(max_energy);
+
+    std::string energy_resp_data;
+    energy_resp.SerializeToString(&energy_resp_data);
+    send_game_msg(player_id, MSG_ID_ITEM_USE_RESP,
+                  reinterpret_cast<const uint8_t*>(energy_resp_data.data()),
+                  energy_resp_data.size());
+
+    SPDLOG_INFO("[Game]Force sleep completed: player={}, day={}, energy={}/{}",
+                player_id, clock_day_, player->get_energy(), max_energy);
 }
 
 void GameServer::load_scene_data(const std::string& scene_id) {

@@ -332,6 +332,14 @@ class LoginFlowManager:
                 success_data["energy_current"] = 100
                 success_data["energy_max"] = 100
 
+            # 提取时钟数据
+            if enter_resp.HasField("clock"):
+                success_data["day"] = enter_resp.clock.day
+                success_data["time_slot"] = enter_resp.clock.time_slot
+            else:
+                success_data["day"] = 1
+                success_data["time_slot"] = 0
+
             self._on_success(success_data)
 
     def _on_disconnect(self, reason: str):

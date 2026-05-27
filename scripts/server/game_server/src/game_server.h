@@ -114,6 +114,17 @@ private:
     void handle_shutdown(std::shared_ptr<GateSession> session, const AdminShutdownMsg& msg);
     void handle_shutdown_resp(std::shared_ptr<GateSession> session, const AdminShutdownResp& resp);
 
+    // 游戏时钟
+    void update_clock();
+    void broadcast_clock_sync();
+    void on_day_end();
+    void handle_force_sleep_ready(uint64_t player_id,
+                                   const uint8_t* payload, size_t payload_len);
+
+    // 时钟数据持久化（via DBMgr）
+    void save_clock_data();
+    void load_clock_data();
+
     std::string ip_;
     uint16_t port_;
     struct event_base* base_;
@@ -152,6 +163,14 @@ private:
 
     // 多场景管理
     std::unordered_map<std::string, std::unique_ptr<SceneState>> scenes_;
+
+    // 游戏时钟状态
+    int32_t clock_day_ = 1;
+    int32_t clock_time_slot_ = 0;
+    double clock_elapsed_ = 0.0;
+    bool clock_paused_ = false;
+    bool force_sleep_pending_ = false;
+    int force_sleep_timeout_counter_ = 0;  // 超时计数（秒）
 };
 
 }  // namespace farm
