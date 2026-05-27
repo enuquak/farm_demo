@@ -57,11 +57,6 @@ static bool write_pid_file(const std::string& pid_file) {
     return true;
 }
 
-static std::string get_config_path() {
-    // Try relative to executable, then relative to CWD
-    return "config/dbmgr.json";
-}
-
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
     WSADATA wsa_data;
@@ -74,8 +69,14 @@ int main(int argc, char* argv[]) {
     // 使用默认日志配置初始化（配置文件加载前）
     farm::init_logging_default("dbmgr");
 
-    // Load config from JSON file
-    std::string config_path = get_config_path();
+    // Parse --config from command line
+    std::string config_path = "config/dbmgr.json";
+    for (int i = 1; i < argc - 1; ++i) {
+        if (std::string(argv[i]) == "--config") {
+            config_path = argv[i + 1];
+            break;
+        }
+    }
     std::ifstream config_file(config_path);
     if (!config_file.is_open()) {
         SPDLOG_ERROR("[Main]Config file not found: {}", config_path);
