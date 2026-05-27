@@ -21,6 +21,7 @@ message PlayerData {
     uint64 created_at = 8;      // 创建时间
     float pos_z = 9;            // 位置 Z
     string scene_id = 10;       // 场景 ID
+    int32 energy = 11;          // 能量值
 }
 
 // 进入游戏请求 (Client -> Gate -> Game)
@@ -34,6 +35,7 @@ message EnterGameResp {
     int32 code = 1;             // 0=成功, 1=角色不存在, 2=服务器不可用
     string msg = 2;
     PlayerData player_data = 3; // 玩家数据
+    EnergySync energy = 4;      // 能量数据
 }
 
 // 物品使用请求 (Client -> Game)
@@ -44,10 +46,17 @@ message ItemUseReq {
     int32 active_slot = 4;      // 当前激活的背包格子
 }
 
+// 能量同步 (Game -> Client)
+message EnergySync {
+    int32 current = 1;          // 当前能量值
+    int32 max = 2;              // 最大能量值
+}
+
 // 物品使用响应 (Game -> Client)
 message ItemUseResp {
     int32 code = 1;             // 0=成功, 其他=错误码
     string msg = 2;
+    EnergySync energy = 5;      // 能量数据（变更时携带）
 }
 
 // 玩家背包数据

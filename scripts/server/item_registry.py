@@ -38,11 +38,11 @@ ITEM_EFFECTS = {
         },
     },
     4: {
-        "gnd:GRASS": {"set_ground": "TILLED"},
-        "gnd:DIRT": {"set_ground": "TILLED"},
+        "gnd:GRASS": {"set_ground": "TILLED", "energy_cost": 2},
+        "gnd:DIRT": {"set_ground": "TILLED", "energy_cost": 2},
     },
     5: {
-        "gnd:TILLED": {"place_object": "CROP_GROWING", "consume_self": True},
+        "gnd:TILLED": {"place_object": "CROP_GROWING", "consume_self": True, "energy_cost": 1},
     },
     6: {
         "ANY": {"consume_self": True, "energy_restore": 15, "interact_range": -1},

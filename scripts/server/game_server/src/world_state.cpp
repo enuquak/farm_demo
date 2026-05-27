@@ -136,9 +136,9 @@ void WorldState::generate_default() {
         }
     }
 
-    // Stones
+    // Stones (first one near player spawn for testing)
     int stone_positions[][2] = {
-        {5,5}, {10,8}, {15,12}, {20,3}, {25,15},
+        {1,0}, {5,5}, {10,8}, {15,12}, {20,3}, {25,15},
         {30,10}, {35,20}, {40,5}, {45,18}, {50,8}
     };
     for (auto& pos : stone_positions) {

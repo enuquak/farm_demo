@@ -39,7 +39,8 @@ inline constexpr PlayerData::Impl_::Impl_(
         pos_x_{0},
         pos_y_{0},
         created_at_{::uint64_t{0u}},
-        pos_z_{0} {}
+        pos_z_{0},
+        energy_{0} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR PlayerData::PlayerData(::_pbi::ConstantInitialized)
@@ -60,34 +61,6 @@ struct PlayerDataDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerDataDefaultTypeInternal _PlayerData_default_instance_;
-
-inline constexpr ItemUseResp::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        msg_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        code_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR ItemUseResp::ItemUseResp(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::MessageLite(ItemUseResp_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::MessageLite(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct ItemUseRespDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ItemUseRespDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ItemUseRespDefaultTypeInternal() {}
-  union {
-    ItemUseResp _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ItemUseRespDefaultTypeInternal _ItemUseResp_default_instance_;
 
 inline constexpr ItemUseReq::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -202,6 +175,61 @@ struct EnterGameReqDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnterGameReqDefaultTypeInternal _EnterGameReq_default_instance_;
 
+inline constexpr EnergySync::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        current_{0},
+        max_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR EnergySync::EnergySync(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(EnergySync_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct EnergySyncDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR EnergySyncDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~EnergySyncDefaultTypeInternal() {}
+  union {
+    EnergySync _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EnergySyncDefaultTypeInternal _EnergySync_default_instance_;
+
+inline constexpr ItemUseResp::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        msg_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        energy_{nullptr},
+        code_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ItemUseResp::ItemUseResp(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(ItemUseResp_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ItemUseRespDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ItemUseRespDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ItemUseRespDefaultTypeInternal() {}
+  union {
+    ItemUseResp _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ItemUseRespDefaultTypeInternal _ItemUseResp_default_instance_;
+
 inline constexpr EnterGameResp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -209,6 +237,7 @@ inline constexpr EnterGameResp::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         player_data_{nullptr},
+        energy_{nullptr},
         code_{0} {}
 
 template <typename>
@@ -277,9 +306,9 @@ PlayerData::PlayerData(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, pos_z_) -
+           offsetof(Impl_, energy_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::pos_z_));
+               sizeof(Impl_::energy_));
 
   // @@protoc_insertion_point(copy_constructor:farm.PlayerData)
 }
@@ -295,9 +324,9 @@ inline void PlayerData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, pos_z_) -
+           offsetof(Impl_, energy_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::pos_z_));
+               sizeof(Impl_::energy_));
 }
 PlayerData::~PlayerData() {
   // @@protoc_insertion_point(destructor:farm.PlayerData)
@@ -351,16 +380,16 @@ const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL PlayerData::GetC
   return PlayerData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 10, 0, 49, 2>
+const ::_pbi::TcParseTable<4, 11, 0, 49, 2>
 PlayerData::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(PlayerData, _impl_._has_bits_),
     0, // no _extensions_
-    10, 120,  // max_field_number, fast_idx_mask
+    11, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294966272,  // skipmap
+    4294965248,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    10,  // num_field_entries
+    11,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     PlayerData_class_data_.base(),
@@ -401,7 +430,9 @@ PlayerData::_table_ = {
     // string scene_id = 10;
     {::_pbi::TcParser::FastUS1,
      {82, 1, 0, PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.scene_id_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // int32 energy = 11;
+    {::_pbi::TcParser::FastV32S1,
+     {88, 10, 0, PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.energy_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -439,6 +470,9 @@ PlayerData::_table_ = {
     // string scene_id = 10;
     {PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.scene_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int32 energy = 11;
+    {PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.energy_), _Internal::kHasBitsOffset + 10, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
   }},
   // no aux_entries
   {{
@@ -469,10 +503,10 @@ PROTOBUF_NOINLINE void PlayerData::Clear() {
         reinterpret_cast<char*>(&_impl_.pos_y_) -
         reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.pos_y_));
   }
-  if ((cached_has_bits & 0x00000300u) != 0) {
+  if ((cached_has_bits & 0x00000700u) != 0) {
     ::memset(&_impl_.created_at_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.pos_z_) -
-        reinterpret_cast<char*>(&_impl_.created_at_)) + sizeof(_impl_.pos_z_));
+        reinterpret_cast<char*>(&_impl_.energy_) -
+        reinterpret_cast<char*>(&_impl_.created_at_)) + sizeof(_impl_.energy_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<std::string>();
@@ -585,6 +619,15 @@ PROTOBUF_NOINLINE void PlayerData::Clear() {
     }
   }
 
+  // int32 energy = 11;
+  if ((this_._impl_._has_bits_[0] & 0x00000400u) != 0) {
+    if (this_._internal_energy() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<11>(
+              stream, this_._internal_energy(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target = stream->WriteRaw(
         this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).data(),
@@ -666,7 +709,7 @@ PROTOBUF_NOINLINE void PlayerData::Clear() {
       }
     }
   }
-  if ((cached_has_bits & 0x00000300u) != 0) {
+  if ((cached_has_bits & 0x00000700u) != 0) {
     // uint64 created_at = 8;
     if ((cached_has_bits & 0x00000100u) != 0) {
       if (this_._internal_created_at() != 0) {
@@ -678,6 +721,13 @@ PROTOBUF_NOINLINE void PlayerData::Clear() {
     if ((cached_has_bits & 0x00000200u) != 0) {
       if (::absl::bit_cast<::uint32_t>(this_._internal_pos_z()) != 0) {
         total_size += 5;
+      }
+    }
+    // int32 energy = 11;
+    if ((cached_has_bits & 0x00000400u) != 0) {
+      if (this_._internal_energy() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_energy());
       }
     }
   }
@@ -747,7 +797,7 @@ void PlayerData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
       }
     }
   }
-  if ((cached_has_bits & 0x00000300u) != 0) {
+  if ((cached_has_bits & 0x00000700u) != 0) {
     if ((cached_has_bits & 0x00000100u) != 0) {
       if (from._internal_created_at() != 0) {
         _this->_impl_.created_at_ = from._impl_.created_at_;
@@ -756,6 +806,11 @@ void PlayerData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
     if ((cached_has_bits & 0x00000200u) != 0) {
       if (::absl::bit_cast<::uint32_t>(from._internal_pos_z()) != 0) {
         _this->_impl_.pos_z_ = from._impl_.pos_z_;
+      }
+    }
+    if ((cached_has_bits & 0x00000400u) != 0) {
+      if (from._internal_energy() != 0) {
+        _this->_impl_.energy_ = from._impl_.energy_;
       }
     }
   }
@@ -780,8 +835,8 @@ void PlayerData::InternalSwap(PlayerData* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.role_name_, &other->_impl_.role_name_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.scene_id_, &other->_impl_.scene_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.pos_z_)
-      + sizeof(PlayerData::_impl_.pos_z_)
+      PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.energy_)
+      + sizeof(PlayerData::_impl_.energy_)
       - PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));
@@ -1107,6 +1162,9 @@ EnterGameResp::EnterGameResp(
   _impl_.player_data_ = ((cached_has_bits & 0x00000002u) != 0)
                 ? ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.player_data_)
                 : nullptr;
+  _impl_.energy_ = ((cached_has_bits & 0x00000004u) != 0)
+                ? ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.energy_)
+                : nullptr;
   _impl_.code_ = from._impl_.code_;
 
   // @@protoc_insertion_point(copy_constructor:farm.EnterGameResp)
@@ -1136,6 +1194,7 @@ inline void EnterGameResp::SharedDtor(MessageLite& self) {
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.msg_.Destroy();
   delete this_._impl_.player_data_;
+  delete this_._impl_.energy_;
   this_._impl_.~Impl_();
 }
 
@@ -1178,17 +1237,17 @@ const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL EnterGameResp::G
   return EnterGameResp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 1, 30, 2>
+const ::_pbi::TcParseTable<2, 4, 2, 30, 2>
 EnterGameResp::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_._has_bits_),
     0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
-    1,  // num_aux_entries
+    4,  // num_field_entries
+    2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     EnterGameResp_class_data_.base(),
     nullptr,  // post_loop_handler
@@ -1197,10 +1256,12 @@ EnterGameResp::_table_ = {
     ::_pbi::TcParser::GetTable<::farm::EnterGameResp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // .farm.EnergySync energy = 4;
+    {::_pbi::TcParser::FastMtS1,
+     {34, 2, 1, PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.energy_)}},
     // int32 code = 1;
     {::_pbi::TcParser::FastV32S1,
-     {8, 2, 0, PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.code_)}},
+     {8, 3, 0, PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.code_)}},
     // string msg = 2;
     {::_pbi::TcParser::FastUS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.msg_)}},
@@ -1211,7 +1272,7 @@ EnterGameResp::_table_ = {
     65535, 65535
   }}, {{
     // int32 code = 1;
-    {PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.code_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.code_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
     // string msg = 2;
     {PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.msg_), _Internal::kHasBitsOffset + 0, 0,
@@ -1219,9 +1280,13 @@ EnterGameResp::_table_ = {
     // .farm.PlayerData player_data = 3;
     {PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.player_data_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .farm.EnergySync energy = 4;
+    {PROTOBUF_FIELD_OFFSET(EnterGameResp, _impl_.energy_), _Internal::kHasBitsOffset + 2, 1,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::farm::PlayerData>()},
+      {::_pbi::TcParser::GetTable<::farm::EnergySync>()},
   }},
   {{
     "\22\0\3\0\0\0\0\0"
@@ -1237,13 +1302,17 @@ PROTOBUF_NOINLINE void EnterGameResp::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
+  if ((cached_has_bits & 0x00000007u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       _impl_.msg_.ClearNonDefaultToEmpty();
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
       ABSL_DCHECK(_impl_.player_data_ != nullptr);
       _impl_.player_data_->Clear();
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      ABSL_DCHECK(_impl_.energy_ != nullptr);
+      _impl_.energy_->Clear();
     }
   }
   _impl_.code_ = 0;
@@ -1267,7 +1336,7 @@ PROTOBUF_NOINLINE void EnterGameResp::Clear() {
   (void)cached_has_bits;
 
   // int32 code = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
     if (this_._internal_code() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<1>(
@@ -1290,6 +1359,13 @@ PROTOBUF_NOINLINE void EnterGameResp::Clear() {
   if ((cached_has_bits & 0x00000002u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         3, *this_._impl_.player_data_, this_._impl_.player_data_->GetCachedSize(), target,
+        stream);
+  }
+
+  // .farm.EnergySync energy = 4;
+  if ((cached_has_bits & 0x00000004u) != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        4, *this_._impl_.energy_, this_._impl_.energy_->GetCachedSize(), target,
         stream);
   }
 
@@ -1318,7 +1394,7 @@ PROTOBUF_NOINLINE void EnterGameResp::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     // string msg = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_msg().empty()) {
@@ -1331,8 +1407,13 @@ PROTOBUF_NOINLINE void EnterGameResp::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.player_data_);
     }
-    // int32 code = 1;
+    // .farm.EnergySync energy = 4;
     if ((cached_has_bits & 0x00000004u) != 0) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.energy_);
+    }
+    // int32 code = 1;
+    if ((cached_has_bits & 0x00000008u) != 0) {
       if (this_._internal_code() != 0) {
         total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
             this_._internal_code());
@@ -1356,7 +1437,7 @@ void EnterGameResp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_msg().empty()) {
         _this->_internal_set_msg(from._internal_msg());
@@ -1375,6 +1456,14 @@ void EnterGameResp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
+      ABSL_DCHECK(from._impl_.energy_ != nullptr);
+      if (_this->_impl_.energy_ == nullptr) {
+        _this->_impl_.energy_ = ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.energy_);
+      } else {
+        _this->_impl_.energy_->MergeFrom(*from._impl_.energy_);
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
       if (from._internal_code() != 0) {
         _this->_impl_.code_ = from._impl_.code_;
       }
@@ -1775,6 +1864,282 @@ void ItemUseReq::InternalSwap(ItemUseReq* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
 
 // ===================================================================
 
+class EnergySync::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<EnergySync>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(EnergySync, _impl_._has_bits_);
+};
+
+EnergySync::EnergySync(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, EnergySync_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:farm.EnergySync)
+}
+EnergySync::EnergySync(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const EnergySync& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, EnergySync_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<std::string>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE EnergySync::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void EnergySync::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, current_),
+           0,
+           offsetof(Impl_, max_) -
+               offsetof(Impl_, current_) +
+               sizeof(Impl_::max_));
+}
+EnergySync::~EnergySync() {
+  // @@protoc_insertion_point(destructor:farm.EnergySync)
+  SharedDtor(*this);
+}
+inline void EnergySync::SharedDtor(MessageLite& self) {
+  EnergySync& this_ = static_cast<EnergySync&>(self);
+  this_._internal_metadata_.Delete<std::string>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL EnergySync::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) EnergySync(arena);
+}
+constexpr auto EnergySync::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(EnergySync),
+                                            alignof(EnergySync));
+}
+constexpr auto EnergySync::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataLite<16>{
+      {
+          &_EnergySync_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &EnergySync::MergeImpl,
+          ::google::protobuf::MessageLite::GetNewImpl<EnergySync>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &EnergySync::SharedDtor,
+          ::google::protobuf::MessageLite::GetClearImpl<EnergySync>(), &EnergySync::ByteSizeLong,
+              &EnergySync::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(EnergySync, _impl_._cached_size_),
+          true,
+      },
+      "farm.EnergySync",
+  };
+}
+
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataLite<16> EnergySync_class_data_ =
+    EnergySync::InternalGenerateClassData_();
+
+const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL EnergySync::GetClassData() const {
+  return EnergySync_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
+EnergySync::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(EnergySync, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    EnergySync_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallbackLite,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::farm::EnergySync>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int32 max = 2;
+    {::_pbi::TcParser::FastV32S1,
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(EnergySync, _impl_.max_)}},
+    // int32 current = 1;
+    {::_pbi::TcParser::FastV32S1,
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(EnergySync, _impl_.current_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int32 current = 1;
+    {PROTOBUF_FIELD_OFFSET(EnergySync, _impl_.current_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int32 max = 2;
+    {PROTOBUF_FIELD_OFFSET(EnergySync, _impl_.max_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void EnergySync::Clear() {
+// @@protoc_insertion_point(message_clear_start:farm.EnergySync)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    ::memset(&_impl_.current_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.max_) -
+        reinterpret_cast<char*>(&_impl_.current_)) + sizeof(_impl_.max_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<std::string>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL EnergySync::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const EnergySync& this_ = static_cast<const EnergySync&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL EnergySync::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const EnergySync& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:farm.EnergySync)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // int32 current = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_current() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<1>(
+              stream, this_._internal_current(), target);
+    }
+  }
+
+  // int32 max = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_max() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<2>(
+              stream, this_._internal_max(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target = stream->WriteRaw(
+        this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).data(),
+        static_cast<int>(this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size()), target);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:farm.EnergySync)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t EnergySync::ByteSizeLong(const MessageLite& base) {
+  const EnergySync& this_ = static_cast<const EnergySync&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t EnergySync::ByteSizeLong() const {
+  const EnergySync& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:farm.EnergySync)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    // int32 current = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_current() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_current());
+      }
+    }
+    // int32 max = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_max() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_max());
+      }
+    }
+  }
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    total_size += this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size();
+  }
+  this_._impl_._cached_size_.Set(::_pbi::ToCachedSize(total_size));
+  return total_size;
+}
+
+void EnergySync::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<EnergySync*>(&to_msg);
+  auto& from = static_cast<const EnergySync&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:farm.EnergySync)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_current() != 0) {
+        _this->_impl_.current_ = from._impl_.current_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_max() != 0) {
+        _this->_impl_.max_ = from._impl_.max_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
+}
+
+void EnergySync::CopyFrom(const EnergySync& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:farm.EnergySync)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void EnergySync::InternalSwap(EnergySync* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(EnergySync, _impl_.max_)
+      + sizeof(EnergySync::_impl_.max_)
+      - PROTOBUF_FIELD_OFFSET(EnergySync, _impl_.current_)>(
+          reinterpret_cast<char*>(&_impl_.current_),
+          reinterpret_cast<char*>(&other->_impl_.current_));
+}
+
+// ===================================================================
+
 class ItemUseResp::_Internal {
  public:
   using HasBits =
@@ -1813,6 +2178,10 @@ ItemUseResp::ItemUseResp(
   _internal_metadata_.MergeFrom<std::string>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.energy_ = ((cached_has_bits & 0x00000002u) != 0)
+                ? ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.energy_)
+                : nullptr;
   _impl_.code_ = from._impl_.code_;
 
   // @@protoc_insertion_point(copy_constructor:farm.ItemUseResp)
@@ -1825,7 +2194,12 @@ PROTOBUF_NDEBUG_INLINE ItemUseResp::Impl_::Impl_(
 
 inline void ItemUseResp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.code_ = {};
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, energy_),
+           0,
+           offsetof(Impl_, code_) -
+               offsetof(Impl_, energy_) +
+               sizeof(Impl_::code_));
 }
 ItemUseResp::~ItemUseResp() {
   // @@protoc_insertion_point(destructor:farm.ItemUseResp)
@@ -1836,6 +2210,7 @@ inline void ItemUseResp::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<std::string>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.msg_.Destroy();
+  delete this_._impl_.energy_;
   this_._impl_.~Impl_();
 }
 
@@ -1878,18 +2253,18 @@ const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL ItemUseResp::Get
   return ItemUseResp_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 28, 2>
+const ::_pbi::TcParseTable<1, 3, 1, 28, 2>
 ItemUseResp::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(ItemUseResp, _impl_._has_bits_),
     0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
+    5, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
+    4294967276,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
+    3,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
     ItemUseResp_class_data_.base(),
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallbackLite,  // fallback
@@ -1902,18 +2277,23 @@ ItemUseResp::_table_ = {
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(ItemUseResp, _impl_.msg_)}},
     // int32 code = 1;
     {::_pbi::TcParser::FastV32S1,
-     {8, 1, 0, PROTOBUF_FIELD_OFFSET(ItemUseResp, _impl_.code_)}},
+     {8, 2, 0, PROTOBUF_FIELD_OFFSET(ItemUseResp, _impl_.code_)}},
   }}, {{
     65535, 65535
   }}, {{
     // int32 code = 1;
-    {PROTOBUF_FIELD_OFFSET(ItemUseResp, _impl_.code_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(ItemUseResp, _impl_.code_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
     // string msg = 2;
     {PROTOBUF_FIELD_OFFSET(ItemUseResp, _impl_.msg_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // .farm.EnergySync energy = 5;
+    {PROTOBUF_FIELD_OFFSET(ItemUseResp, _impl_.energy_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
-  // no aux_entries
+  {{
+      {::_pbi::TcParser::GetTable<::farm::EnergySync>()},
+  }},
   {{
     "\20\0\3\0\0\0\0\0"
     "farm.ItemUseResp"
@@ -1928,8 +2308,14 @@ PROTOBUF_NOINLINE void ItemUseResp::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    _impl_.msg_.ClearNonDefaultToEmpty();
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      _impl_.msg_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      ABSL_DCHECK(_impl_.energy_ != nullptr);
+      _impl_.energy_->Clear();
+    }
   }
   _impl_.code_ = 0;
   _impl_._has_bits_.Clear();
@@ -1952,7 +2338,7 @@ PROTOBUF_NOINLINE void ItemUseResp::Clear() {
   (void)cached_has_bits;
 
   // int32 code = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
     if (this_._internal_code() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<1>(
@@ -1968,6 +2354,14 @@ PROTOBUF_NOINLINE void ItemUseResp::Clear() {
           _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "farm.ItemUseResp.msg");
       target = stream->WriteStringMaybeAliased(2, _s, target);
     }
+  }
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .farm.EnergySync energy = 5;
+  if ((cached_has_bits & 0x00000002u) != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        5, *this_._impl_.energy_, this_._impl_.energy_->GetCachedSize(), target,
+        stream);
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -1995,7 +2389,7 @@ PROTOBUF_NOINLINE void ItemUseResp::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
+  if ((cached_has_bits & 0x00000007u) != 0) {
     // string msg = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_msg().empty()) {
@@ -2003,8 +2397,13 @@ PROTOBUF_NOINLINE void ItemUseResp::Clear() {
                                         this_._internal_msg());
       }
     }
-    // int32 code = 1;
+    // .farm.EnergySync energy = 5;
     if ((cached_has_bits & 0x00000002u) != 0) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.energy_);
+    }
+    // int32 code = 1;
+    if ((cached_has_bits & 0x00000004u) != 0) {
       if (this_._internal_code() != 0) {
         total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
             this_._internal_code());
@@ -2021,13 +2420,14 @@ PROTOBUF_NOINLINE void ItemUseResp::Clear() {
 void ItemUseResp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
   auto* const _this = static_cast<ItemUseResp*>(&to_msg);
   auto& from = static_cast<const ItemUseResp&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:farm.ItemUseResp)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
+  if ((cached_has_bits & 0x00000007u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_msg().empty()) {
         _this->_internal_set_msg(from._internal_msg());
@@ -2038,6 +2438,14 @@ void ItemUseResp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
+      ABSL_DCHECK(from._impl_.energy_ != nullptr);
+      if (_this->_impl_.energy_ == nullptr) {
+        _this->_impl_.energy_ = ::google::protobuf::MessageLite::CopyConstruct(arena, *from._impl_.energy_);
+      } else {
+        _this->_impl_.energy_->MergeFrom(*from._impl_.energy_);
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
       if (from._internal_code() != 0) {
         _this->_impl_.code_ = from._impl_.code_;
       }
@@ -2062,7 +2470,12 @@ void ItemUseResp::InternalSwap(ItemUseResp* PROTOBUF_RESTRICT PROTOBUF_NONNULL o
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.msg_, &other->_impl_.msg_, arena);
-  swap(_impl_.code_, other->_impl_.code_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ItemUseResp, _impl_.code_)
+      + sizeof(ItemUseResp::_impl_.code_)
+      - PROTOBUF_FIELD_OFFSET(ItemUseResp, _impl_.energy_)>(
+          reinterpret_cast<char*>(&_impl_.energy_),
+          reinterpret_cast<char*>(&other->_impl_.energy_));
 }
 
 // ===================================================================

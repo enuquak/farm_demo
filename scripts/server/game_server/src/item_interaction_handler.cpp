@@ -103,8 +103,10 @@ ItemUseResult ItemInteractionHandler::handle_item_use(
         return ItemUseResult::INTERNAL_ERROR;
     }
 
-    // Use the server's active slot (ignore client-reported one for security)
-    // The active_slot is already in the inventory data from DB
+    // Use the client's requested active slot (validated)
+    if (active_slot >= 0 && active_slot < 10) {
+        inv.active_slot = active_slot;
+    }
     InventorySlot* active = inv.get_active_slot();
 
     // Get target tile info
@@ -122,7 +124,21 @@ ItemUseResult ItemInteractionHandler::handle_item_use(
     if (!active || active->count <= 0) {
         // No active item - check for harvestable crop
         if (obj_type == ObjectType::CROP_READY) {
+            // Harvest costs 1 energy
+            static constexpr int32_t HARVEST_ENERGY_COST = 1;
+            int32_t current_energy = player->get_energy();
+            if (current_energy < HARVEST_ENERGY_COST) {
+                SPDLOG_INFO("[ItemHandler]Player={} energy exhausted for harvest (have={}, need={})",
+                            player_id, current_energy, HARVEST_ENERGY_COST);
+                return ItemUseResult::ENERGY_EXHAUSTED;
+            }
+
             if (harvest_crop(target_x, target_y, inv)) {
+                // Deduct energy for harvest
+                player->set_energy(current_energy - HARVEST_ENERGY_COST);
+                SPDLOG_INFO("[ItemHandler]Player={} energy deducted {} for harvest (now={})",
+                            player_id, HARVEST_ENERGY_COST, current_energy - HARVEST_ENERGY_COST);
+
                 save_inventory(player, inv);
                 SPDLOG_INFO("[ItemHandler]Player={} harvested crop at ({},{})",
                             player_id, target_x, target_y);
@@ -180,9 +196,10 @@ ItemUseResult ItemInteractionHandler::handle_item_use(
                     player_id, effect->energy_cost, new_energy);
     }
 
-    // Restore energy (food)
+    // Restore energy (food), capped at max_energy (100)
     if (effect->energy_restore > 0) {
-        int32_t new_energy = player->get_energy() + effect->energy_restore;
+        static constexpr int32_t MAX_ENERGY = 100;
+        int32_t new_energy = std::min(player->get_energy() + effect->energy_restore, MAX_ENERGY);
         player->set_energy(new_energy);
         SPDLOG_INFO("[ItemHandler]Player={} energy restored {} (now={})",
                     player_id, effect->energy_restore, new_energy);
