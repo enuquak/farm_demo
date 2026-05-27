@@ -133,11 +133,13 @@ const ItemEffect* ItemEffects::get_effect(int32_t item_id,
 
 const char* ItemEffects::ground_type_to_string(GroundType gt) {
     switch (gt) {
-        case GroundType::GRASS:  return "GRASS";
-        case GroundType::DIRT:   return "DIRT";
-        case GroundType::WATER:  return "WATER";
-        case GroundType::SAND:   return "SAND";
-        case GroundType::TILLED: return "TILLED";
+        case GroundType::GRASS:      return "GRASS";
+        case GroundType::DIRT:       return "DIRT";
+        case GroundType::WATER:      return "WATER";
+        case GroundType::SAND:       return "SAND";
+        case GroundType::TILLED:     return "TILLED";
+        case GroundType::WALL:       return "WALL";
+        case GroundType::WOOD_FLOOR: return "WOOD_FLOOR";
         default: return "UNKNOWN";
     }
 }
@@ -159,11 +161,13 @@ const char* ItemEffects::object_type_to_string(ObjectType ot) {
 }
 
 int ItemEffects::string_to_ground_type(const std::string& name) {
-    if (name == "GRASS")  return static_cast<int>(GroundType::GRASS);
-    if (name == "DIRT")   return static_cast<int>(GroundType::DIRT);
-    if (name == "WATER")  return static_cast<int>(GroundType::WATER);
-    if (name == "SAND")   return static_cast<int>(GroundType::SAND);
-    if (name == "TILLED") return static_cast<int>(GroundType::TILLED);
+    if (name == "GRASS")      return static_cast<int>(GroundType::GRASS);
+    if (name == "DIRT")       return static_cast<int>(GroundType::DIRT);
+    if (name == "WATER")      return static_cast<int>(GroundType::WATER);
+    if (name == "SAND")       return static_cast<int>(GroundType::SAND);
+    if (name == "TILLED")     return static_cast<int>(GroundType::TILLED);
+    if (name == "WALL")       return static_cast<int>(GroundType::WALL);
+    if (name == "WOOD_FLOOR") return static_cast<int>(GroundType::WOOD_FLOOR);
     return -1;
 }
 

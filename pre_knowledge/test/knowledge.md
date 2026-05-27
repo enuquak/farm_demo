@@ -218,7 +218,32 @@ Description: item_interaction_handler.cpp 中，交互范围检查（Chebyshev d
 Context: 测试能量耗尽场景时，需要确保测试目标在交互范围内。
 Action: 测试 ENERGY_EXHAUSTED 时，必须选择在 interact_range 范围内的目标。例如锄头 range=50，测试目标应选择 Chebyshev 距离 <= 50 的位置（如 (30,30)），而非 (55,55)。代码执行顺序：范围检查 → 能量检查 → 执行效果。
 
+[2026-05-28] [Pitfall] [CMakeLists.txt 遗漏新增 .cpp 源文件] [PROMOTED]
+Description: 新增 scene_state.cpp 源文件后未将其添加到 CMakeLists.txt 的 SOURCES 列表中，导致 SceneState 类的所有方法（构造函数、add_player、remove_player、thaw、generate_default）产生 LNK2019 链接错误。这与之前遗漏 proto .pb.cc 文件的问题模式相同，但影响的是普通 .cpp 源文件。
+Context: C++ 项目使用 CMake 构建，新增类时需要手动将 .cpp 文件添加到 SOURCES 变量。
+Action: 每次新增 .cpp 文件后，必须在 CMakeLists.txt 的 SOURCES 列表中添加对应条目。链接错误 LNK2019 "无法解析的外部符号" 是源文件未加入构建的典型表现。建议在 code-agent 的开发流程中加入检查点：新增文件后自动验证 CMakeLists.txt 是否已更新。
+
 [2026-05-28] [Pattern] [修复后重测流程]
 Description: 对修复后的代码进行重测时，应：1) 确认服务器已重启（清除内存中的旧状态）；2) 验证编译成功；3) 按优先级测试修复项；4) 同时验证回归（未修复的功能不受影响）。
 Context: Bug 修复后的回归测试。
 Action: 重测流程：重启服务器 → 编译验证 → DLL 检查 → 逐项测试修复点 → 验证能量上限 → 生成报告。注意：服务器重启会清除玩家在线状态，但持久化数据（如玩家存档）仍保留。
+
+[2026-05-28] [Technique] [C++ 代码级测试验证]
+Description: 当无法启动完整服务器基础设施（Gate+Game+DBMgr）时，可以通过静态代码分析验证 C++ 修复的正确性：1) 读取 CMakeLists.txt 确认源文件在 SOURCES 列表中；2) 读取 .cpp 文件确认方法实现存在且调用链正确；3) 编译验证无链接错误；4) 检查 DLL 完整性。这比仅检查编译更可靠，因为可以验证业务逻辑的调用关系。
+Context: 测试 C++ 服务器功能但无法启动完整服务器栈时。
+Action: 按以下步骤验证：1) cmake --build 编译通过；2) grep 确认源文件在 CMakeLists.txt；3) 在 .cpp 中搜索关键方法定义和调用点；4) 验证 DLL 存在。此方法适用于验证 BUG-002 (save_all_scenes 调用) 和 BUG-003 (格式迁移逻辑)。
+
+[2026-05-28] [Pitfall] [Python 模块路径与目录结构不匹配]
+Description: Python 测试脚本中 sys.path 设置为 'scripts' 后，import 路径应为 'client.scene.scene_defs'（因为 scene_defs.py 在 scripts/client/scene/ 下），而非 'client.scene_defs'。项目目录结构中 client 包有子包 scene，所有场景相关模块都在 scene 子包中。
+Context: 测试使用 client 包的 Python 代码。
+Action: import 前先确认实际文件路径：scripts/client/scene/scene_defs.py -> from client.scene.scene_defs import ...。不要假设模块在包的顶层。
+
+[2026-05-28] [Pitfall] [SceneManager 构造函数参数变更]
+Description: SceneManager.__init__() 需要 screen_width 和 screen_height 两个位置参数（用于 SceneTransition 的 Iris 动效），不能无参构造。同时 request_scene_change() 需要 3 个参数：target_scene, target_portal_id, player_screen_pos(tuple)。
+Context: 测试客户端 SceneManager 模块。
+Action: 创建 SceneManager 实例时传入 (800, 600)。调用 request_scene_change("house", "door_out", (400, 300))。测试前先 inspect 构造函数签名。
+
+[2026-05-28] [Pattern] [场景管理器状态机测试]
+Description: 测试场景切换状态机时，通过 sm._transition.state 访问当前状态（非 sm.transition_state）。状态序列应为 IDLE -> IRIS_CLOSE -> IRIS_OPEN -> IDLE（SWITCHING 状态在 update() 内部一闪而过，可能无法捕获）。验证切换完成的最佳方式是检查 sm.current_scene_id 是否已更改。
+Context: 测试客户端 SceneManager 的场景切换状态机。
+Action: 1) 记录初始状态 IDLE；2) 调用 request_scene_change 后检查 IRIS_CLOSE；3) 多次 update(0.02) 后检查 IDLE；4) 验证 current_scene_id 已变更为目标场景。

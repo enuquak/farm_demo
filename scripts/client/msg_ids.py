@@ -34,3 +34,7 @@ MSG_ID_DROP_ITEM_SYNC = 3003        # Game -> Client: 掉落物同步
 # 背包同步 (3100-3199)
 MSG_ID_INVENTORY_SYNC = 3100        # Game -> Client: 背包数据同步
 MSG_ID_ACTIVE_SLOT_CHANGE = 3101    # Client -> Game: 快捷栏选中格切换
+
+# 场景切换 (2200-2299)
+MSG_ID_SCENE_CHANGE_REQ = 2201      # Client -> Game: 场景切换请求
+MSG_ID_SCENE_CHANGE_RESP = 2202     # Game -> Client: 场景切换响应

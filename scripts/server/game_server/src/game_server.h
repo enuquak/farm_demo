@@ -11,6 +11,7 @@
 #include "drop_item_manager.h"
 #include "crop_system.h"
 #include "item_interaction_handler.h"
+#include "scene_state.h"
 
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -61,6 +62,17 @@ private:
     // Inventory helpers for auto-pickup
     bool load_inventory_from_player(Player* player, PlayerInventory& inv);
     void save_inventory_to_player(Player* player, const PlayerInventory& inv);
+
+    // Scene management
+    SceneState* get_or_create_scene(const std::string& scene_id);
+    void handle_scene_change_req(uint64_t player_id,
+                                  const uint8_t* payload, size_t payload_len);
+
+    // Scene data persistence (via DBMgr)
+    void save_all_scenes();
+    void save_scene_data(const std::string& scene_id);
+    void load_scene_data(const std::string& scene_id);
+    static std::string make_scene_data_key(const std::string& scene_id);
 
     // 内部消息路由
     void route_internal_message(std::shared_ptr<GateSession> session,
@@ -126,17 +138,20 @@ private:
     // Player ID 生成器
     PlayerIdGenerator player_id_gen_;
 
-    // 世界状态（tile map）
+    // 世界状态（tile map）- 保留用于向后兼容
     WorldState world_state_;
 
-    // 掉落物管理
+    // 掉落物管理 - 保留用于向后兼容
     DropItemManager drop_manager_;
 
-    // 作物生长系统
+    // 作物生长系统 - 保留用于向后兼容
     CropSystem crop_system_;
 
     // 物品交互处理器
     ItemInteractionHandler item_handler_;
+
+    // 多场景管理
+    std::unordered_map<std::string, std::unique_ptr<SceneState>> scenes_;
 };
 
 }  // namespace farm

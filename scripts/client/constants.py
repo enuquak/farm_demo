@@ -27,11 +27,13 @@ ZOOM_FACTOR = 4
 
 class GroundType(IntEnum):
     """地面类型枚举"""
-    GRASS = 0    # 草地
-    DIRT = 1     # 泥土
-    WATER = 2    # 水面
-    SAND = 3     # 沙地
-    TILLED = 4   # 翻耕
+    GRASS = 0       # 草地
+    DIRT = 1        # 泥土
+    WATER = 2       # 水面
+    SAND = 3        # 沙地
+    TILLED = 4      # 翻耕
+    WALL = 5        # 墙壁，不可通行
+    WOOD_FLOOR = 6  # 木地板，可通行
 
 
 class ObjectType(IntEnum):
@@ -77,6 +79,14 @@ GROUND_PROPERTIES = {
     },
     GroundType.TILLED: {
         "color": (100, 60, 30),       # 深棕色
+        "walkable": True,
+    },
+    GroundType.WALL: {
+        "color": (80, 80, 80),        # 深灰色
+        "walkable": False,
+    },
+    GroundType.WOOD_FLOOR: {
+        "color": (160, 110, 60),      # 浅棕色（木地板）
         "walkable": True,
     },
 }

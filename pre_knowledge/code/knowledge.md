@@ -262,3 +262,38 @@ Action: 接受客户端的 active_slot 参数，但进行范围验证（0-9）�
 Description: 集成测试依赖世界状态中的可交互对象位置。如果测试玩家出生点附近没有可交互对象，物品使用测试会因 INVALID_TARGET 失败。
 Context: C++ 游戏服务器集成测试，需要测试物品交互功能。
 Action: 在 generate_default() 中确保玩家出生点附近（range=1 内）有至少一个可交互对象（如石头）。测试脚本也需要根据世界状态调整目标坐标。
+
+[2026-05-28] [Pattern] [客户端场景管理框架]
+Description: 实现多场景管理框架，包含场景注册表（scene_defs.py）、场景管理器（scene_manager.py）、过渡动效（scene_transition.py）。场景注册表定义每个场景的尺寸、地图生成函数、传送门列表和出生点。场景管理器持有当前场景 TileMap，管理场景切换流程和输入屏蔽。过渡动效使用 PyGame SRCALPHA Surface 实现 Iris 圆形遮罩效果。
+Context: 农场游戏需要支持多个独立场景（农场、房屋）之间的切换。
+Action: 创建 scripts/client/scene/ 包，包含 scene_defs.py（场景注册）、scene_manager.py（场景管理）、scene_transition.py（过渡动效）。SceneTransition 状态机：IDLE -> IRIS_CLOSE(300ms) -> SWITCHING(1帧) -> IRIS_OPEN(300ms) -> IDLE。
+
+[2026-05-28] [Pattern] [服务端多场景数据管理]
+Description: 服务端使用 SceneState 类管理每个场景的独立数据（WorldState、CropSystem、DropItemManager）。GameServer 持有 scenes_ map（scene_id -> SceneState），提供 get_or_create_scene 方法。场景支持冻结/恢复机制：最后一个玩家离开时 freeze() 记录时间戳，玩家进入时 thaw() 调用 crop_system.simulate_elapsed 补帧。
+Context: 多场景架构下，每个场景需要独立的数据和生命周期管理。
+Action: 创建 scene_state.h/cpp，包含 SceneState 类。GameServer 使用 std::unordered_map<std::string, std::unique_ptr<SceneState>> 管理场景。SceneChangeReq handler 负责冻结当前场景、加载目标场景、更新玩家位置。
+
+[2026-05-28] [Pattern] [Portal 传送门触发机制]
+Description: Portal 触发有两种方式：(1) 玩家站在 Portal tile 上按触发方向移动；(2) 玩家站在 Portal 旁按空格/鼠标交互。客户端检测 Portal 后发送 SceneChangeReq 给服务器，服务器验证、冻结当前场景、加载目标场景、返回 SceneChangeResp。客户端收到响应后触发 Iris 过渡动效，动效完成后切换场景。
+Context: 农场游戏需要支持通过门在不同场景之间切换。
+Action: 在 scene_defs.py 中定义 portals 列表（pos、trigger_dir、target、target_portal）。scene_manager.py 的 check_portal_trigger 方法检查当前位置和方向是否匹配 Portal。game_scene.py 的 _check_portal_trigger 方法在移动后检测并触发场景切换。
+
+[2026-05-28] [Pattern] [Protobuf 场景切换消息]
+Description: 场景切换使用独立的消息对：SceneChangeReq（target_scene、target_portal_id）和 SceneChangeResp（code、msg、target_scene、spawn_x、spawn_y、active_scene）。消息 ID 范围 2200-2299。响应中包含出生点坐标，客户端根据此坐标设置玩家位置。
+Context: 客户端和服务器之间需要交换场景切换信息。
+Action: 在 player.proto 中添加 SceneChangeReq 和 SceneChangeResp 消息，在 msg_ids.py 和 msg_ids.h 中添加 MSG_ID_SCENE_CHANGE_REQ=2201 和 MSG_ID_SCENE_CHANGE_RESP=2202。重新生成 protobuf 代码。
+
+[2026-05-28] [Pattern] [Portal 双触发机制实现]
+Description: Portal 传送门支持两种触发方式：(1) 方向触发 - 玩家站在 Portal tile 上，朝 trigger_dir 方向移动时触发；(2) 交互触发 - 玩家站在 Portal 旁（切比雪夫距离=1），按空格键或鼠标点击 Portal 触发。方向触发在 game_scene.py 的 _check_portal_trigger() 中实现（移动后检测），空格触发在 _handle_portal_interaction() 中实现（检测面前 tile），鼠标触发在 _handle_mouse_click() 中实现（点击 Portal tile 时优先处理）。
+Context: 客户端需要支持通过门在不同场景之间切换，spec 要求两种触发方式。
+Action: (1) 方向触发：在移动后调用 check_portal_trigger(tile_x, tile_y, facing_direction)；(2) 空格触发：计算面前 tile（根据朝向偏移），检查 is_portal()；(3) 鼠标触发：在 _handle_mouse_click 中优先检查 is_portal()，匹配则调用 request_scene_change()。所有触发方式都需要先检查 is_input_blocked() 防止过渡期间重复触发。
+
+[2026-05-28] [Pattern] [过渡期间输入屏蔽层次]
+Description: 场景过渡期间的输入屏蔽应在两个层次实现：(1) _handle_input 方法开头的 is_input_blocked() 检查，屏蔽所有输入处理（移动、鼠标、交互）；(2) 各具体处理方法内部的 is_input_blocked() 检查（防御性编程）。当前实现中，_handle_input 在开头返回，因此 _handle_mouse_click 和 _handle_portal_interaction 不会被调用，但内部检查提供额外安全保障。
+Context: Iris 过渡动效期间需要屏蔽所有游戏输入，防止重复触发场景切换。
+Action: 在 _handle_input() 开头检查 is_input_blocked() 和 exhaustion_modal.is_visible，满足时 return。在 _handle_mouse_click() 和 _handle_portal_interaction() 内部也添加 is_input_blocked() 检查作为防御性编程。
+
+[2026-05-28] [Pattern] [客户端场景管理与 pyscroll 渲染分离]
+Description: 客户端的场景管理（SceneManager/TileMap）与视觉渲染（pyscroll/TmxMapLoader）是分离的。SceneManager 管理逻辑场景数据（场景注册表、Portal 检测、场景切换流程），而 pyscroll 负责实际的瓦片地图渲染。当前实现中，pyscroll 始终渲染 farm.tmx 文件，SceneManager 的场景数据用于 Portal 检测和场景切换状态管理。这意味着切换到 house 场景后，视觉上仍显示 farm 地图，但 Portal 检测使用 house 场景的数据。
+Context: 客户端需要同时支持多场景逻辑和视觉渲染，当前架构存在渲染与逻辑不一致的问题。
+Action: 后续需要将 pyscroll 渲染器与 SceneManager 的场景数据同步，实现真正的多场景视觉切换。当前阶段 Portal 检测和过渡动效已正确工作。
