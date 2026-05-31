@@ -238,8 +238,7 @@ void DbMgrServer::check_heartbeat() {
     time_t now = std::time(nullptr);
     std::vector<evutil_socket_t> timeout_fds;
 
-    for (auto& kv : game_sessions_) {
-        auto& session = kv.second;
+    for (auto& [fd, session] : game_sessions_) {
         if (session->state() == GameSessionState::DISCONNECTED) continue;
 
         // 只对已识别的连接发送心跳
@@ -249,8 +248,8 @@ void DbMgrServer::check_heartbeat() {
 
         // 检查心跳超时
         if (now - session->last_heartbeat() > DBMGR_HEARTBEAT_TIMEOUT) {
-            SPDLOG_INFO("[DBMgr]Heartbeat timeout fd={}", session->fd());
-            timeout_fds.push_back(kv.first);
+            SPDLOG_INFO("[DBMgr]Heartbeat timeout fd={}", fd);
+            timeout_fds.push_back(fd);
         }
     }
 
