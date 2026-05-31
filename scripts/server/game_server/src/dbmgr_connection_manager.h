@@ -12,6 +12,7 @@
 #include <functional>
 #include <memory>
 #include <atomic>
+#include <optional>
 #include <tuple>
 
 namespace farm {
@@ -151,7 +152,7 @@ private:
     void send_to_dbmgr(DBMgrConnection* conn, uint32_t msg_id, const std::string& payload);
 
     // Lookup connection by bev pointer (for callbacks)
-    DBMgrConnection* find_connection_by_bev(struct bufferevent* bev);
+    std::optional<DBMgrConnection*> find_connection_by_bev(struct bufferevent* bev);
 
     struct event_base* base_;
     struct event* heartbeat_timer_;

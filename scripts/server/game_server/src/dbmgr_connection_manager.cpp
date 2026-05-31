@@ -74,9 +74,9 @@ void DBMgrConnectionManager::shutdown() {
     }
 
     // Fail all pending requests
-    for (auto& kv : pending_requests_) {
-        if (kv.second.callback) {
-            kv.second.callback(-1, nullptr, 0);
+    for (auto& [request_id, request] : pending_requests_) {
+        if (request.callback) {
+            request.callback(-1, nullptr, 0);
         }
     }
     pending_requests_.clear();
@@ -193,25 +193,25 @@ void DBMgrConnectionManager::handle_read(DBMgrConnection* conn) {
 
 void DBMgrConnectionManager::on_read(struct bufferevent* bev, void* ctx) {
     auto* mgr = static_cast<DBMgrConnectionManager*>(ctx);
-    DBMgrConnection* conn = mgr->find_connection_by_bev(bev);
+    auto conn = mgr->find_connection_by_bev(bev);
     if (!conn) return;
-    mgr->handle_read(conn);
+    mgr->handle_read(*conn);
 }
 
 void DBMgrConnectionManager::on_event(struct bufferevent* bev, short events, void* ctx) {
     auto* mgr = static_cast<DBMgrConnectionManager*>(ctx);
-    DBMgrConnection* conn = mgr->find_connection_by_bev(bev);
+    auto conn = mgr->find_connection_by_bev(bev);
 
     if (events & BEV_EVENT_CONNECTED) {
         if (conn) {
-            mgr->handle_connected(conn);
+            mgr->handle_connected(*conn);
         }
         return;
     }
 
     if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR)) {
         if (conn) {
-            mgr->handle_disconnect(conn);
+            mgr->handle_disconnect(*conn);
         }
     }
 }
@@ -347,9 +347,9 @@ void DBMgrConnectionManager::handle_account_data_resp(DBMgrConnection* conn,
     // We need to find the matching request - for now we'll use a simple approach
     // In a real implementation, we'd need a better matching mechanism
     uint64_t request_id = 0;
-    for (auto& kv : pending_account_requests_) {
-        if (kv.second.dbmgr_index == conn->config_index()) {
-            request_id = kv.first;
+    for (auto& [req_id, request] : pending_account_requests_) {
+        if (request.dbmgr_index == conn->config_index()) {
+            request_id = req_id;
             break;
         }
     }
@@ -387,9 +387,9 @@ void DBMgrConnectionManager::handle_account_set_resp(DBMgrConnection* conn,
 
     // Find pending request
     uint64_t request_id = 0;
-    for (auto& kv : pending_account_requests_) {
-        if (kv.second.dbmgr_index == conn->config_index()) {
-            request_id = kv.first;
+    for (auto& [req_id, request] : pending_account_requests_) {
+        if (request.dbmgr_index == conn->config_index()) {
+            request_id = req_id;
             break;
         }
     }
@@ -635,12 +635,12 @@ uint32_t DBMgrConnectionManager::hash_account_id(std::string_view account_id) co
 void DBMgrConnectionManager::fail_pending_requests_for(uint32_t dbmgr_index) {
     std::vector<uint64_t> to_remove;
 
-    for (auto& kv : pending_requests_) {
-        if (kv.second.dbmgr_index == dbmgr_index) {
-            if (kv.second.callback) {
-                kv.second.callback(-1, nullptr, 0);
+    for (auto& [request_id, request] : pending_requests_) {
+        if (request.dbmgr_index == dbmgr_index) {
+            if (request.callback) {
+                request.callback(-1, nullptr, 0);
             }
-            to_remove.push_back(kv.first);
+            to_remove.push_back(request_id);
         }
     }
 
@@ -689,11 +689,11 @@ void DBMgrConnectionManager::send_to_dbmgr(DBMgrConnection* conn, uint32_t msg_i
     bufferevent_write(conn->bev(), packed.data(), packed.size());
 }
 
-DBMgrConnection* DBMgrConnectionManager::find_connection_by_bev(struct bufferevent* bev) {
+std::optional<DBMgrConnection*> DBMgrConnectionManager::find_connection_by_bev(struct bufferevent* bev) {
     auto it = bev_to_index_.find(bev);
-    if (it == bev_to_index_.end()) return nullptr;
+    if (it == bev_to_index_.end()) return std::nullopt;
     uint32_t idx = it->second;
-    if (idx >= connections_.size() || !connections_[idx]) return nullptr;
+    if (idx >= connections_.size() || !connections_[idx]) return std::nullopt;
     return connections_[idx].get();
 }
 
