@@ -90,19 +90,19 @@ const std::unordered_map<int32_t, ItemEffects::EffectMap>& ItemEffects::get_effe
     return effects;
 }
 
-const ItemEffect* ItemEffects::get_effect(int32_t item_id,
-                                            const std::string& obj_type,
-                                            const std::string& ground_type) {
+std::optional<const ItemEffect*> ItemEffects::get_effect(int32_t item_id,
+                                                           std::string_view obj_type,
+                                                           std::string_view ground_type) {
     auto& all_effects = get_effects();
     auto it = all_effects.find(item_id);
     if (it == all_effects.end()) {
-        return nullptr;
+        return std::nullopt;
     }
     const auto& effect_map = it->second;
 
     // Priority 1: match object type
     if (!obj_type.empty()) {
-        std::string key = "obj:" + obj_type;
+        std::string key = std::string("obj:").append(obj_type);
         auto eit = effect_map.find(key);
         if (eit != effect_map.end()) {
             return &eit->second;
@@ -111,7 +111,7 @@ const ItemEffect* ItemEffects::get_effect(int32_t item_id,
 
     // Priority 2: match ground type
     if (!ground_type.empty()) {
-        std::string key = "gnd:" + ground_type;
+        std::string key = std::string("gnd:").append(ground_type);
         auto eit = effect_map.find(key);
         if (eit != effect_map.end()) {
             return &eit->second;
@@ -124,7 +124,7 @@ const ItemEffect* ItemEffects::get_effect(int32_t item_id,
         return &eit->second;
     }
 
-    return nullptr;
+    return std::nullopt;
 }
 
 // ===========================================
@@ -160,7 +160,7 @@ const char* ItemEffects::object_type_to_string(ObjectType ot) {
     }
 }
 
-int ItemEffects::string_to_ground_type(const std::string& name) {
+int ItemEffects::string_to_ground_type(std::string_view name) {
     if (name == "GRASS")      return static_cast<int>(GroundType::GRASS);
     if (name == "DIRT")       return static_cast<int>(GroundType::DIRT);
     if (name == "WATER")      return static_cast<int>(GroundType::WATER);
@@ -171,7 +171,7 @@ int ItemEffects::string_to_ground_type(const std::string& name) {
     return -1;
 }
 
-int ItemEffects::string_to_object_type(const std::string& name) {
+int ItemEffects::string_to_object_type(std::string_view name) {
     if (name == "STONE")        return static_cast<int>(ObjectType::STONE);
     if (name == "CROP_GROWING") return static_cast<int>(ObjectType::CROP_GROWING);
     if (name == "CROP_READY")   return static_cast<int>(ObjectType::CROP_READY);

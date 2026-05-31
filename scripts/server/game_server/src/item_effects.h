@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -93,17 +95,17 @@ public:
      * @param ground_type Ground type at target (e.g. "GRASS")
      * @return Pointer to effect if found, nullptr otherwise
      */
-    static const ItemEffect* get_effect(int32_t item_id,
-                                         const std::string& obj_type,
-                                         const std::string& ground_type);
+    static std::optional<const ItemEffect*> get_effect(int32_t item_id,
+                                                        std::string_view obj_type,
+                                                        std::string_view ground_type);
 
     // Convert enum to string
     static const char* ground_type_to_string(GroundType gt);
     static const char* object_type_to_string(ObjectType ot);
 
     // Convert string to enum (returns -1 if not found)
-    static int string_to_ground_type(const std::string& name);
-    static int string_to_object_type(const std::string& name);
+    static int string_to_ground_type(std::string_view name);
+    static int string_to_object_type(std::string_view name);
 
 private:
     // Effect tables: item_id -> {target_key -> effect}

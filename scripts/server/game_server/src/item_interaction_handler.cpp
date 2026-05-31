@@ -118,7 +118,7 @@ ItemUseResult ItemInteractionHandler::handle_item_use(
     if (active_slot >= 0 && active_slot < 10) {
         inv.active_slot = active_slot;
     }
-    InventorySlot* active = inv.get_active_slot();
+    auto active = inv.get_active_slot();
 
     // Get target tile info
     ObjectType obj_type = world_->get_object(target_x, target_y);
@@ -129,10 +129,10 @@ ItemUseResult ItemInteractionHandler::handle_item_use(
 
     SPDLOG_INFO("[ItemHandler]Player={} use item at ({},{}), obj={} gnd={}, active_slot={} item_id={}",
                 player_id, target_x, target_y, obj_str, gnd_str,
-                inv.active_slot, active ? active->item_id : -1);
+                inv.active_slot, active ? (*active)->item_id : -1);
 
     // Check if active slot has an item
-    if (!active || active->count <= 0) {
+    if (!active || (*active)->count <= 0) {
         // No active item - check for harvestable crop
         if (obj_type == ObjectType::CROP_READY) {
             // Harvest costs 1 energy
@@ -160,15 +160,16 @@ ItemUseResult ItemInteractionHandler::handle_item_use(
         return ItemUseResult::NO_ACTIVE_ITEM;
     }
 
-    int32_t item_id = active->item_id;
+    int32_t item_id = (*active)->item_id;
 
     // Look up effect
-    const ItemEffect* effect = ItemEffects::get_effect(item_id, obj_str, gnd_str);
-    if (!effect) {
+    auto effect_opt = ItemEffects::get_effect(item_id, obj_str, gnd_str);
+    if (!effect_opt) {
         SPDLOG_INFO("[ItemHandler]Player={} no matching effect for item={} on obj={} gnd={}",
                     player_id, item_id, obj_str, gnd_str);
         return ItemUseResult::NO_MATCHING_EFFECT;
     }
+    const ItemEffect* effect = *effect_opt;
 
     // Check interact range (Chebyshev distance)
     {

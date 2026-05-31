@@ -6,9 +6,12 @@
 #include "crop_system.h"
 
 #include <cstdint>
+#include <optional>
+#include <random>
 #include <string>
 #include <unordered_map>
 #include <ctime>
+#include <memory>
 
 namespace farm {
 
@@ -41,18 +44,28 @@ struct PlayerInventory {
 
     PlayerInventory() : slots(30) {}
 
-    InventorySlot* get_active_slot() {
-        if (active_slot >= 0 && active_slot < 30) {
-            return &slots[active_slot];
-        }
-        return nullptr;
+    // Create default inventory for new players
+    static PlayerInventory create_default() {
+        PlayerInventory inv;
+        inv.slots[0] = {3, 1};   // axe x1
+        inv.slots[1] = {4, 1};   // hoe x1
+        inv.slots[2] = {5, 5};   // seeds x5
+        inv.slots[3] = {6, 3};   // bread x3
+        return inv;
     }
 
-    const InventorySlot* get_active_slot() const {
+    std::optional<InventorySlot*> get_active_slot() {
         if (active_slot >= 0 && active_slot < 30) {
             return &slots[active_slot];
         }
-        return nullptr;
+        return std::nullopt;
+    }
+
+    std::optional<const InventorySlot*> get_active_slot() const {
+        if (active_slot >= 0 && active_slot < 30) {
+            return &slots[active_slot];
+        }
+        return std::nullopt;
     }
 
     int32_t get_count(int32_t item_id) const {
@@ -127,6 +140,9 @@ struct PlayerInventory {
  */
 class ItemInteractionHandler {
 public:
+    // Default constructor: owns its own WorldState, DropItemManager, CropSystem
+    ItemInteractionHandler();
+    // External-dependency constructor: uses provided pointers (caller owns the objects)
     ItemInteractionHandler(WorldState* world, DropItemManager* drops, CropSystem* crops);
 
     /**
@@ -187,9 +203,16 @@ private:
     void broadcast_drop_sync(uint32_t drop_id, const DropItem& drop,
                               int action, GameServer* game_server);
 
+    // Owned instances (used when default-constructed)
+    std::unique_ptr<WorldState> owned_world_;
+    std::unique_ptr<DropItemManager> owned_drops_;
+    std::unique_ptr<CropSystem> owned_crops_;
+
+    // Working pointers (may point to owned or external instances)
     WorldState* world_;
     DropItemManager* drops_;
     CropSystem* crops_;
+    std::mt19937 rng_{std::random_device{}()};
 };
 
 }  // namespace farm
