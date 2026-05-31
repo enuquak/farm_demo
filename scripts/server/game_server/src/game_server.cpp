@@ -144,6 +144,11 @@ bool GameServer::start() {
     online_stub_ = std::make_unique<OnlineStub>(&redis_conn_);
     SPDLOG_INFO("[Game]LoginStub and OnlineStub initialized");
 
+    // Wire up offline callback for Redis cleanup
+    player_mgr_.set_offline_callback([this](uint64_t player_id) {
+        login_stub_->on_player_offline(player_id);
+    });
+
     admin_handler_ = std::make_unique<AdminHandler>(
         &player_mgr_, scene_mgr_.get(), game_clock_.get(), &dbmgr_mgr_,
         send_to_gate_func,
