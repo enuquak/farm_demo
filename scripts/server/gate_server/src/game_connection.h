@@ -3,6 +3,7 @@
 #include <event2/event.h>
 #include <event2/bufferevent.h>
 #include <string>
+#include <string_view>
 #include <cstdint>
 #include <ctime>
 #include <vector>
@@ -31,7 +32,7 @@ public:
     void disconnect();
 
     // 发送消息到 Game
-    bool send(uint32_t msg_id, const std::string& payload);
+    bool send(uint32_t msg_id, std::string_view payload);
     bool send(uint32_t msg_id, const uint8_t* payload, size_t len);
 
     // 状态查询

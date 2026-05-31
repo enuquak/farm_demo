@@ -91,7 +91,7 @@ void GameConnection::disconnect() {
     read_buffer_.clear();
 }
 
-bool GameConnection::send(uint32_t msg_id, const std::string& payload) {
+bool GameConnection::send(uint32_t msg_id, std::string_view payload) {
     return send(msg_id, reinterpret_cast<const uint8_t*>(payload.data()), payload.size());
 }
 
