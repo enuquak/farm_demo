@@ -14,8 +14,6 @@
 #include <arpa/inet.h>
 #endif
 #include <cstring>
-#include <fstream>
-#include <sstream>
 
 #include "base.pb.h"
 #include "internal.pb.h"
@@ -108,8 +106,8 @@ bool GateServer::start() {
 void GateServer::stop() {
     running_ = false;
     // 断开所有 Game 连接
-    for (auto& kv : game_conns_) {
-        kv.second->disconnect();
+    for (auto& [server_id, conn] : game_conns_) {
+        conn->disconnect();
     }
     game_conns_.clear();
     if (heartbeat_timer_) {
@@ -127,85 +125,12 @@ void GateServer::stop() {
     }
 }
 
-void GateServer::set_game_server(const std::string& ip, uint16_t port) {
-    // 向后兼容：添加为 server_id=1 的配置
+void GateServer::add_game_server(uint32_t server_id, const std::string& ip, uint16_t port) {
     GameServerConfig config;
-    config.server_id = 1;
+    config.server_id = server_id;
     config.ip = ip;
     config.port = port;
     game_server_configs_.push_back(config);
-}
-
-bool GateServer::load_game_servers_config(const std::string& config_file) {
-    std::ifstream file(config_file);
-    if (!file.is_open()) {
-        SPDLOG_ERROR("[Gate]Failed to open config file: {}", config_file);
-        return false;
-    }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string content = buffer.str();
-    file.close();
-
-    // 简单的 JSON 解析（不依赖外部库）
-    // 查找 "game_servers" 数组
-    size_t array_start = content.find("[");
-    size_t array_end = content.find("]");
-    if (array_start == std::string::npos || array_end == std::string::npos) {
-        SPDLOG_ERROR("[Gate]Invalid config format: missing array");
-        return false;
-    }
-
-    std::string array_content = content.substr(array_start + 1, array_end - array_start - 1);
-
-    // 解析每个 server 对象
-    size_t pos = 0;
-    while (pos < array_content.size()) {
-        // 查找 server_id
-        size_t id_pos = array_content.find("\"server_id\"", pos);
-        if (id_pos == std::string::npos) break;
-
-        size_t id_colon = array_content.find(":", id_pos);
-        size_t id_end = array_content.find(",", id_colon);
-        if (id_end == std::string::npos) id_end = array_content.find("}", id_colon);
-        std::string id_str = array_content.substr(id_colon + 1, id_end - id_colon - 1);
-        // 去除空格
-        id_str.erase(std::remove_if(id_str.begin(), id_str.end(), ::isspace), id_str.end());
-        uint32_t server_id = static_cast<uint32_t>(std::stoul(id_str));
-
-        // 查找 ip
-        size_t ip_pos = array_content.find("\"ip\"", id_end);
-        if (ip_pos == std::string::npos) break;
-
-        size_t ip_colon = array_content.find(":", ip_pos);
-        size_t ip_quote_start = array_content.find("\"", ip_colon);
-        size_t ip_quote_end = array_content.find("\"", ip_quote_start + 1);
-        std::string ip = array_content.substr(ip_quote_start + 1, ip_quote_end - ip_quote_start - 1);
-
-        // 查找 port
-        size_t port_pos = array_content.find("\"port\"", ip_quote_end);
-        if (port_pos == std::string::npos) break;
-
-        size_t port_colon = array_content.find(":", port_pos);
-        size_t port_end = array_content.find(",", port_colon);
-        if (port_end == std::string::npos) port_end = array_content.find("}", port_colon);
-        std::string port_str = array_content.substr(port_colon + 1, port_end - port_colon - 1);
-        port_str.erase(std::remove_if(port_str.begin(), port_str.end(), ::isspace), port_str.end());
-        uint16_t port = static_cast<uint16_t>(std::stoul(port_str));
-
-        GameServerConfig config;
-        config.server_id = server_id;
-        config.ip = ip;
-        config.port = port;
-        game_server_configs_.push_back(config);
-
-        SPDLOG_INFO("[Gate]Loaded game server config: server_id={} ip={} port={}", server_id, ip, port);
-
-        pos = port_end;
-    }
-
-    return true;
 }
 
 GameConnection* GateServer::get_game_connection(uint32_t server_id) {
@@ -354,7 +279,7 @@ void GateServer::check_heartbeat() {
     for (auto& session : sessions) {
         if (session->state() == SessionState::DISCONNECTED) continue;
 
-        if (now - session->last_heartbeat() > HEARTBEAT_TIMEOUT) {
+        if (now - session->last_heartbeat() > GATE_HEARTBEAT_TIMEOUT) {
             SPDLOG_INFO("[Gate]Heartbeat timeout fd={}", session->fd());
             handle_disconnect(session);
         }
@@ -391,8 +316,9 @@ void GateServer::route_message(std::shared_ptr<Session> session, uint32_t msg_id
     if (msg_id >= 2000 && msg_id < 3000) {
         // 解析 PlayerMsg 获取 server_id
         farm::PlayerMsg player_msg;
-        if (!payload.empty()) {
-            player_msg.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+        if (!payload.empty() && !player_msg.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+            SPDLOG_ERROR("[Gate]Failed to parse PlayerMsg from fd={}", session->fd());
+            return;
         }
         uint32_t server_id = player_msg.server_id();
         forward_player_msg_to_game(session, server_id, msg_id, payload);
@@ -413,8 +339,9 @@ void GateServer::handle_heartbeat(std::shared_ptr<Session> session, const std::v
 
     // 解析心跳消息
     farm::Heartbeat hb;
-    if (!payload.empty()) {
-        hb.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !hb.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Gate]Failed to parse Heartbeat");
+        return;
     }
 
     // 回复心跳
@@ -429,8 +356,9 @@ void GateServer::handle_heartbeat(std::shared_ptr<Session> session, const std::v
 
 void GateServer::handle_login(std::shared_ptr<Session> session, const std::vector<uint8_t>& payload) {
     farm::LoginReq req;
-    if (!payload.empty()) {
-        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Gate]Failed to parse LoginReq");
+        return;
     }
 
     SPDLOG_INFO("[Gate]Login request from fd={} token={}", session->fd(), req.token());
@@ -491,8 +419,9 @@ void GateServer::handle_game_message(uint32_t server_id, uint32_t msg_id, const 
 
 void GateServer::handle_game_identify_resp(uint32_t server_id, const std::vector<uint8_t>& payload) {
     farm::GateIdentifyResp resp;
-    if (!payload.empty()) {
-        resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Gate]Failed to parse GateIdentifyResp from server_id={}", server_id);
+        return;
     }
 
     if (resp.code() == 0) {
@@ -513,8 +442,9 @@ void GateServer::handle_game_heartbeat_resp(uint32_t server_id, const std::vecto
 
 void GateServer::handle_player_join_resp(uint32_t server_id, const std::vector<uint8_t>& payload) {
     farm::PlayerJoinResp resp;
-    if (!payload.empty()) {
-        resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Gate]Failed to parse PlayerJoinResp from server_id={}", server_id);
+        return;
     }
 
     if (resp.code() == 0) {
@@ -528,8 +458,9 @@ void GateServer::handle_player_join_resp(uint32_t server_id, const std::vector<u
 
 void GateServer::handle_game_msg(uint32_t server_id, const std::vector<uint8_t>& payload) {
     farm::GameMessage game_msg;
-    if (!payload.empty()) {
-        game_msg.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !game_msg.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Gate]Failed to parse GameMessage from server_id={}", server_id);
+        return;
     }
 
     uint64_t player_id = game_msg.player_id();
@@ -550,8 +481,9 @@ void GateServer::handle_game_msg(uint32_t server_id, const std::vector<uint8_t>&
 
 void GateServer::handle_account_msg_resp(uint32_t server_id, const std::vector<uint8_t>& payload) {
     farm::AccountMessageResp resp;
-    if (!payload.empty()) {
-        resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Gate]Failed to parse AccountMessageResp from server_id={}", server_id);
+        return;
     }
 
     const std::string& account_id = resp.account_id();
@@ -595,8 +527,9 @@ void GateServer::forward_account_msg_to_game(std::shared_ptr<Session> session, u
                                               const std::vector<uint8_t>& payload) {
     // 解析 AccountMsg
     farm::AccountMsg account_msg;
-    if (!payload.empty()) {
-        account_msg.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !account_msg.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Gate]Failed to parse AccountMsg");
+        return;
     }
 
     const std::string& account_id = account_msg.account_id();
@@ -693,10 +626,10 @@ void GateServer::handle_shutdown(const AdminShutdownMsg& msg) {
     forward_msg.timeout_ms = msg.timeout_ms;
     std::string forward_payload = forward_msg.serialize();
 
-    for (auto& kv : game_conns_) {
-        if (kv.second->is_identified()) {
-            kv.second->send(MSG_ID_SHUTDOWN, forward_payload);
-            SPDLOG_INFO("[Gate]Forwarded shutdown to Game Server {}", kv.first);
+    for (auto& [server_id, conn] : game_conns_) {
+        if (conn->is_identified()) {
+            conn->send(MSG_ID_SHUTDOWN, forward_payload);
+            SPDLOG_INFO("[Gate]Forwarded shutdown to Game Server {}", server_id);
         }
     }
 
