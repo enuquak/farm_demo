@@ -2,6 +2,7 @@
 #include "player.h"
 #include "game_server.h"
 #include "msg_ids.h"
+#include "game_constants.h"
 #include "log_macros.h"
 
 #include <nlohmann/json.hpp>
@@ -75,6 +76,16 @@ bool PlayerInventory::deserialize(const std::string& json_str) {
 // ===========================================
 // ItemInteractionHandler
 // ===========================================
+
+ItemInteractionHandler::ItemInteractionHandler()
+    : owned_world_(std::make_unique<WorldState>())
+    , owned_drops_(std::make_unique<DropItemManager>())
+    , owned_crops_(std::make_unique<CropSystem>())
+    , world_(owned_world_.get())
+    , drops_(owned_drops_.get())
+    , crops_(owned_crops_.get())
+{
+}
 
 ItemInteractionHandler::ItemInteractionHandler(WorldState* world, DropItemManager* drops, CropSystem* crops)
     : world_(world)
@@ -196,10 +207,9 @@ ItemUseResult ItemInteractionHandler::handle_item_use(
                     player_id, effect->energy_cost, new_energy);
     }
 
-    // Restore energy (food), capped at max_energy (100)
+    // Restore energy (food), capped at max_energy
     if (effect->energy_restore > 0) {
-        static constexpr int32_t MAX_ENERGY = 100;
-        int32_t new_energy = std::min(player->get_energy() + effect->energy_restore, MAX_ENERGY);
+        int32_t new_energy = std::min(player->get_energy() + effect->energy_restore, farm::MAX_ENERGY);
         player->set_energy(new_energy);
         SPDLOG_INFO("[ItemHandler]Player={} energy restored {} (now={})",
                     player_id, effect->energy_restore, new_energy);
@@ -251,8 +261,8 @@ bool ItemInteractionHandler::execute_effect(const ItemEffect& effect,
     for (const auto& drop_def : effect.drops) {
         int32_t drop_count = drop_def.min_count;
         if (drop_def.max_count > drop_def.min_count) {
-            drop_count = drop_def.min_count +
-                (std::rand() % (drop_def.max_count - drop_def.min_count + 1));
+            std::uniform_int_distribution<int32_t> dist(drop_def.min_count, drop_def.max_count);
+            drop_count = dist(rng_);
         }
 
         // Convert tile coordinates to pixel coordinates (center of tile)
@@ -263,9 +273,9 @@ bool ItemInteractionHandler::execute_effect(const ItemEffect& effect,
 
         // Broadcast spawn to clients
         for (uint32_t did : drop_ids) {
-            const DropItem* drop = drops_->get(did);
+            auto drop = drops_->get(did);
             if (drop) {
-                broadcast_drop_sync(did, *drop, 0, nullptr);  // action=0 (spawn)
+                broadcast_drop_sync(did, **drop, 0, nullptr);  // action=0 (spawn)
             }
         }
     }
@@ -293,7 +303,8 @@ bool ItemInteractionHandler::harvest_crop(int32_t target_x, int32_t target_y,
     }
 
     // Add 2~3 crops to inventory (item_id=7)
-    int32_t crop_count = 2 + (std::rand() % 2);  // 2 or 3
+    std::uniform_int_distribution<int32_t> crop_dist(2, 3);
+    int32_t crop_count = crop_dist(rng_);
     int32_t max_stack = ItemEffects::get_max_stack(7);
     int32_t leftover = inventory.add_item(7, crop_count, max_stack);
 
@@ -313,10 +324,7 @@ bool ItemInteractionHandler::load_inventory(Player* player, PlayerInventory& inv
     }
 
     // Default inventory for new players
-    inv.slots[0] = {3, 1};   // axe x1
-    inv.slots[1] = {4, 1};   // hoe x1
-    inv.slots[2] = {5, 5};   // seeds x5
-    inv.slots[3] = {6, 3};   // bread x3
+    inv = PlayerInventory::create_default();
     return true;
 }
 

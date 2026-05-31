@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
+#include <random>
 #include <unordered_map>
 #include <vector>
 #include <ctime>
@@ -78,9 +80,9 @@ public:
      * @brief Get a drop item by ID.
      *
      * @param drop_id The drop item ID
-     * @return Pointer to the drop item, or nullptr if not found
+     * @return Pointer to the drop item, or std::nullopt if not found
      */
-    const DropItem* get(uint32_t drop_id) const;
+    std::optional<const DropItem*> get(uint32_t drop_id) const;
 
     /**
      * @brief Get all active drop items.
@@ -95,6 +97,7 @@ public:
 private:
     uint32_t next_id_;
     std::unordered_map<uint32_t, DropItem> drops_;
+    std::mt19937 rng_{std::random_device{}()};
 };
 
 }  // namespace farm

@@ -350,16 +350,16 @@ void GameServer::update_game_logic() {
 
         bool inventory_changed = false;
         for (uint32_t drop_id : nearby_ids) {
-            const DropItem* drop = item_handler_.drops()->get(drop_id);
+            auto drop = item_handler_.drops()->get(drop_id);
             if (!drop) continue;
 
-            int32_t max_stack = ItemEffects::get_max_stack(drop->item_id);
-            int32_t leftover = inv.add_item(drop->item_id, drop->count, max_stack);
+            int32_t max_stack = ItemEffects::get_max_stack((*drop)->item_id);
+            int32_t leftover = inv.add_item((*drop)->item_id, (*drop)->count, max_stack);
 
-            if (leftover < drop->count) {
-                int32_t picked_up = drop->count - leftover;
+            if (leftover < (*drop)->count) {
+                int32_t picked_up = (*drop)->count - leftover;
                 SPDLOG_INFO("[Game]Auto-pickup: player={} picked up {} x item_id={} (drop_id={})",
-                            player->player_id(), picked_up, drop->item_id, drop_id);
+                            player->player_id(), picked_up, (*drop)->item_id, drop_id);
 
                 item_handler_.drops()->remove(drop_id);
                 inventory_changed = true;

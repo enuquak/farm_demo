@@ -16,10 +16,11 @@ std::vector<uint32_t> DropItemManager::spawn_drops(int32_t item_id, int32_t coun
     std::vector<uint32_t> spawned_ids;
     time_t now = std::time(nullptr);
 
+    std::uniform_real_distribution<float> dist(-0.5f, 0.5f);
     for (int32_t i = 0; i < count; i++) {
         // Random offset within DROP_OFFSET_RANGE tiles (32 pixels per tile)
-        float offset_x = (static_cast<float>(std::rand()) / RAND_MAX - 0.5f) * DROP_OFFSET_RANGE * 2.0f * 32.0f;
-        float offset_y = (static_cast<float>(std::rand()) / RAND_MAX - 0.5f) * DROP_OFFSET_RANGE * 2.0f * 32.0f;
+        float offset_x = dist(rng_) * DROP_OFFSET_RANGE * 2.0f * 32.0f;
+        float offset_y = dist(rng_) * DROP_OFFSET_RANGE * 2.0f * 32.0f;
 
         DropItem drop;
         drop.drop_id = next_id_++;
@@ -60,12 +61,12 @@ std::vector<uint32_t> DropItemManager::find_nearby(float player_x, float player_
     std::vector<uint32_t> nearby;
     float pickup_dist_sq = AUTO_PICKUP_DISTANCE * AUTO_PICKUP_DISTANCE;
 
-    for (const auto& kv : drops_) {
-        float dx = kv.second.x - player_x;
-        float dy = kv.second.y - player_y;
+    for (const auto& [drop_id, item] : drops_) {
+        float dx = item.x - player_x;
+        float dy = item.y - player_y;
         float dist_sq = dx * dx + dy * dy;
         if (dist_sq < pickup_dist_sq) {
-            nearby.push_back(kv.first);
+            nearby.push_back(drop_id);
         }
     }
 
@@ -76,12 +77,12 @@ bool DropItemManager::remove(uint32_t drop_id) {
     return drops_.erase(drop_id) > 0;
 }
 
-const DropItem* DropItemManager::get(uint32_t drop_id) const {
+std::optional<const DropItem*> DropItemManager::get(uint32_t drop_id) const {
     auto it = drops_.find(drop_id);
     if (it != drops_.end()) {
         return &it->second;
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 }  // namespace farm
