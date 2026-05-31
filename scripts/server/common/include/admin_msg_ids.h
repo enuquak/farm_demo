@@ -11,8 +11,8 @@ namespace farm {
 // ===========================================
 
 // 服务管理 (5000-5099)
-static constexpr uint32_t MSG_ID_SHUTDOWN           = 5001;
-static constexpr uint32_t MSG_ID_SHUTDOWN_RESP      = 5002;
+inline constexpr uint32_t MSG_ID_SHUTDOWN           = 5001;
+inline constexpr uint32_t MSG_ID_SHUTDOWN_RESP      = 5002;
 
 // 停服请求消息结构
 struct AdminShutdownMsg {

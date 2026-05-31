@@ -13,19 +13,28 @@
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\gate_server\src\session_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\gate_server\src\message_parser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\gate_server\src\game_connection.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\gate_server\src\msvc_compat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\common\proto\generated\base.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\common\proto\generated\internal.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\common\src\admin_msg_ids.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\common\src\log_init.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\common\src\message_parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\common\src\msvc_compat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\common\src\server_main_helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

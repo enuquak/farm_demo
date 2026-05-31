@@ -317,3 +317,18 @@ Action: 创建 scripts/client/ui/time_hud.py，TimeHUD 类提供 update(day, tim
 Description: time_slot 到时分的映射公式：raw_hour = 6 + time_slot // 2, hour = raw_hour % 24, minute = (time_slot % 2) * 30。AM/PM 判断：hour < 12 为 AM，否则为 PM。显示时 hour 取模 12（0 显示为 12）。示例：slot 0 = AM 6:00, slot 12 = PM 12:00, slot 20 = PM 4:00, slot 36 = AM 0:00。
 Context: 游戏时钟需要将离散的 time_slot 转换为玩家可读的时间字符串。
 Action: 在 GameClock (Python) 和 TimeHUD (Python) 中使用相同的公式。C++ 侧不需要此公式（只传递 slot 值），客户端负责显示。
+
+[2026-05-31] [Pattern] [Python 单文件拆分为多模块架构]
+Description: 将 877 行的 game_scene.py 拆分为 4 个模块：PlayerController（玩家移动/位置同步）、NetworkMessageDispatcher（网络消息分发）、GameRenderer（渲染逻辑）、GameScene（薄协调层）。拆分原则：(1) 按职责划分，每个模块单一职责；(2) 协调层保留跨模块的交互逻辑（鼠标点击、Portal 触发）；(3) 使用回调函数解耦模块间通信（如 NetworkMessageDispatcher 接收回调函数而非持有 GameScene 引用）；(4) 子模块通过构造函数注入依赖（connection、tmx_map、player_sprite 等）。
+Context: game_scene.py 随功能增长到 877 行，包含输入处理、网络消息、渲染、位置同步等多种职责。
+Action: 创建 player_controller.py (303行)、network_dispatcher.py (176行)、game_renderer.py (120行)，game_scene.py 缩减为 493 行协调层。网络消息使用 dict 分发表 (msg_id -> handler) 替代 if-elif 链。所有模块通过构造函数注入依赖，避免循环导入。
+
+[2026-05-31] [Pattern] [常量模块拆分：sprite_data.py]
+Description: 将大型像素精灵数据（16x16 像素矩阵 + color_map）从 constants.py 的 OBJECT_PROPERTIES 中提取到独立的 sprite_data.py 模块。constants.py 保留轻量级属性（walkable、interactable、interact_type），sprite_data.py 包含 OBJECT_SPRITES 字典。避免循环导入：constants.py 定义 ObjectType 枚举，sprite_data.py 导入 ObjectType 并导出 OBJECT_SPRITES，object_sprite_manager.py 从 sprite_data.py 导入。
+Context: constants.py 包含大量嵌入式像素数据（每个 ObjectType 的 sprite_data 约 20 行），导致文件过长且难以维护。
+Action: 创建 scripts/client/sprite_data.py，将 OBJECT_PROPERTIES 中每个条目的 sprite_data 部分提取为 OBJECT_SPRITES 字典。object_sprite_manager.py 改为从 sprite_data.py 导入 OBJECT_SPRITES，不再从 OBJECT_PROPERTIES 获取 sprite_data。
+
+[2026-05-31] [Pitfall] [Python 相对导入在 Windows 上的编码问题]
+Description: 在 Windows 上使用 bash 运行 Python AST 检查时，open() 默认使用 gbk 编码读取含中文注释的 .py 文件会报 UnicodeDecodeError。需显式指定 encoding='utf-8'。
+Context: 使用 `python -c "import ast; ast.parse(open('file.py').read())"` 检查 Python 文件语法。
+Action: 改用 `open('file.py', encoding='utf-8').read()` 读取含非 ASCII 字符的 Python 文件。

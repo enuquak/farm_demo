@@ -48,24 +48,64 @@ bool MongoServer::create_indexes(const std::string& collection_name) {
         return false;
     }
 
-    // 创建索引
+    // 构建 index model 数组
+    std::vector<mongoc_index_model_t*> models;
+    for (auto* idx : indexes) {
+        bson_iter_t iter;
+        bson_t keys;
+        bson_init(&keys);
+
+        if (bson_iter_init_find(&iter, idx, "key")) {
+            const uint8_t* key_data = nullptr;
+            uint32_t key_len = 0;
+            bson_iter_document(&iter, &key_len, &key_data);
+            if (key_data && key_len > 0) {
+                bson_init_static(&keys, key_data, key_len);
+            }
+        }
+
+        bson_t opts;
+        bson_init(&opts);
+        if (bson_iter_init_find(&iter, idx, "unique")) {
+            BSON_APPEND_BOOL(&opts, "unique", bson_iter_as_bool(&iter));
+        }
+        if (bson_iter_init_find(&iter, idx, "sparse")) {
+            BSON_APPEND_BOOL(&opts, "sparse", bson_iter_as_bool(&iter));
+        }
+        if (bson_iter_init_find(&iter, idx, "expireAfterSeconds")) {
+            BSON_APPEND_INT32(&opts, "expireAfterSeconds", bson_iter_int32(&iter));
+        }
+
+        mongoc_index_model_t* model = mongoc_index_model_new(&keys, &opts);
+        models.push_back(model);
+
+        bson_destroy(&opts);
+        bson_destroy(&keys);
+    }
+
+    // 批量创建索引
     bson_error_t error;
     bson_t reply;
-    bool ok = mongoc_collection_create_indexes_with_opts(collection,
-        const_cast<const mongoc_index_model_t**>(nullptr), 0, nullptr, &reply, &error);
+    bool ok = true;
+    if (!models.empty()) {
+        ok = mongoc_collection_create_indexes_with_opts(collection,
+            models.data(), models.size(), nullptr, &reply, &error);
+        bson_destroy(&reply);
 
-    // 注意：libmongoc 需要先创建 index model，这里简化处理
-    // 实际实现需要遍历 indexes 数组，为每个创建 mongoc_index_model_t
+        if (!ok) {
+            SPDLOG_ERROR("[MongoServer]Failed to create indexes for {}: {}", collection_name, error.message);
+        }
+    }
 
-    bson_destroy(&reply);
+    // 清理 models
+    for (auto* m : models) {
+        mongoc_index_model_destroy(m);
+    }
+
     mongoc_collection_destroy(collection);
 
     for (auto* idx : indexes) {
         bson_destroy(idx);
-    }
-
-    if (!ok) {
-        SPDLOG_ERROR("[MongoServer]Failed to create indexes for {}: {}", collection_name, error.message);
     }
 
     return ok;
@@ -334,17 +374,21 @@ AccountResult MongoServer::get_account(const std::string& account_id, std::vecto
             bson_iter_recurse(&iter, &array_iter);
 
             while (bson_iter_next(&array_iter)) {
-                const bson_t* role_doc;
-                if (bson_iter_document(&array_iter, nullptr, &role_doc)) {
+                const uint8_t* role_data = nullptr;
+                uint32_t role_data_len = 0;
+                bson_iter_document(&array_iter, &role_data_len, &role_data);
+                if (role_data && role_data_len > 0) {
+                    bson_t role_doc;
+                    bson_init_static(&role_doc, role_data, role_data_len);
                     AccountRole role;
                     bson_iter_t role_iter;
-                    if (bson_iter_init_find(&role_iter, role_doc, "server_id")) {
+                    if (bson_iter_init_find(&role_iter, &role_doc, "server_id")) {
                         role.server_id = bson_iter_int32(&role_iter);
                     }
-                    if (bson_iter_init_find(&role_iter, role_doc, "player_id")) {
+                    if (bson_iter_init_find(&role_iter, &role_doc, "player_id")) {
                         role.player_id = bson_iter_int64(&role_iter);
                     }
-                    if (bson_iter_init_find(&role_iter, role_doc, "role_name")) {
+                    if (bson_iter_init_find(&role_iter, &role_doc, "role_name")) {
                         role.role_name = bson_iter_utf8(&role_iter, nullptr);
                     }
                     roles.push_back(role);

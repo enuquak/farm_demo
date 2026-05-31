@@ -53,6 +53,7 @@ target_include_directories(dbmgr PRIVATE
     ${PROTOBUF_ROOT}/include
     ${LIBEVENT_ROOT}/include
     ${MONGOC_ROOT}/include/libmongoc-1.0
+    ${MONGOC_ROOT}/include/libbson-1.0
     ${HIREDIS_ROOT}/include
     ${COMMON_PROTO_DIR}
     ${COMMON_PROTO_DIR}/generated

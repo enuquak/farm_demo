@@ -1,12 +1,11 @@
 """
 游戏场景模块
-使用 pytmx + pyscroll 渲染瓦片地图，支持玩家精灵动画、摄像机跟随和 HUD
+使用 pytmx + pyscroll 渲染瓦片地图，协调 PlayerController、NetworkMessageDispatcher、GameRenderer 等子模块。
 """
 import pygame
 import sys
 import os
 import time
-import math
 import logging
 from typing import Optional, Dict, Any
 
@@ -14,24 +13,19 @@ import pyscroll
 
 from .constants import (
     TILE_SIZE, ZOOM_FACTOR, TARGET_FPS,
-    PLAYER_SPEED, POSITION_UPDATE_INTERVAL, POSITION_CORRECT_DURATION,
     DEFAULT_MAP_PATH, PLAYER_SPRITE_PATH,
     Direction,
 )
 from .tmx_map import TmxMapLoader
 from .player_sprite import PlayerSprite
-from .hud import HUD
-from .msg_ids import (
-    MSG_ID_MAP_DATA_NOTIFY, MSG_ID_POSITION_UPDATE, MSG_ID_POSITION_CORRECT,
-    MSG_ID_ITEM_USE_RESP, MSG_ID_SCENE_CHANGE_RESP,
-    MSG_ID_CLOCK_SYNC, MSG_ID_FORCE_SLEEP_NOTIFY, MSG_ID_FORCE_SLEEP_READY
-)
 from .input_manager import InputManager, check_distance, get_interact_range
 from .interaction import ITEM_EFFECTS, match_item_effect
-from .ui.energy_bar import EnergyBar
-from .ui.exhaustion_modal import ExhaustionModal
-from .ui.time_hud import TimeHUD
 from .scene import SceneManager
+from .player_controller import PlayerController
+from .network_dispatcher import NetworkMessageDispatcher
+from .game_renderer import GameRenderer
+
+from .msg_ids import MSG_ID_FORCE_SLEEP_READY
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'common', 'proto', 'generated'))
 import player_pb2
@@ -43,7 +37,7 @@ logger = logging.getLogger("client.game_scene")
 class GameScene:
     """
     游戏场景
-    使用 pyscroll 渲染 TMX 地图，管理玩家精灵、摄像机和 HUD
+    作为薄协调层，组合 PlayerController、NetworkMessageDispatcher、GameRenderer 等子模块。
     """
 
     # 窗口尺寸（屏幕像素）
@@ -115,44 +109,34 @@ class GameScene:
         # 输入管理器
         self._input_manager = InputManager()
 
-        # HUD
-        self._hud = HUD(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
-
-        # 能量条
-        self._energy_bar = EnergyBar(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
-        self._energy_bar.set_energy(
-            player_data.get('energy_current', 100),
-            player_data.get('energy_max', 100)
+        # 渲染器
+        self._renderer = GameRenderer(
+            self.screen, self.WINDOW_WIDTH, self.WINDOW_HEIGHT, player_data
         )
 
-        # 精疲力尽弹窗
-        self._exhaustion_modal = ExhaustionModal(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+        # 玩家控制器
+        self._player_controller = PlayerController(
+            connection=connection,
+            tmx_map=self._tmx_map,
+            player_sprite=self._player_sprite,
+            scene_manager=self._scene_manager,
+            player_data=player_data,
+            input_manager=self._input_manager,
+        )
 
-        # 时间 HUD
-        self._time_hud = TimeHUD()
-        self._time_hud.update(
-            player_data.get('day', 1),
-            player_data.get('time_slot', 0)
+        # 网络消息分发器
+        self._network_dispatcher = NetworkMessageDispatcher(
+            connection=connection,
+            on_map_data_notify=self._on_map_data_notify,
+            on_position_correct=self._on_position_correct,
+            on_item_use_resp=self._on_item_use_resp,
+            on_scene_change_resp=self._on_scene_change_resp,
+            on_clock_sync=self._on_clock_sync,
+            on_force_sleep_notify=self._on_force_sleep_notify,
         )
 
         # 强制睡觉状态
         self._force_sleep_pending: bool = False
-
-        # 玩家朝向
-        self._facing_direction: str = Direction.DOWN
-
-        # 位置更新计时器
-        self._position_update_timer: float = 0.0
-        self._last_sent_x: float = init_pixel_x
-        self._last_sent_y: float = init_pixel_y
-
-        # 位置纠正状态
-        self._correcting: bool = False
-        self._correct_start_x: float = 0.0
-        self._correct_start_y: float = 0.0
-        self._correct_target_x: float = 0.0
-        self._correct_target_y: float = 0.0
-        self._correct_elapsed: float = 0.0
 
         # 是否收到地图数据
         self._map_data_received = False
@@ -187,7 +171,7 @@ class GameScene:
                     break
 
                 # 弹窗优先处理事件
-                if self._exhaustion_modal.handle_event(event):
+                if self._renderer.exhaustion_modal.handle_event(event):
                     continue
 
                 if event.type == pygame.KEYDOWN:
@@ -202,22 +186,31 @@ class GameScene:
             self._input_manager.update()
 
             # 处理网络消息
-            self._process_network_messages()
+            self._network_dispatcher.dispatch_pending()
 
             # 更新场景管理器（过渡动效）
             self._scene_manager.update(dt)
 
             # 处理玩家输入（帧率无关）
-            self._handle_input(dt)
+            self._handle_mouse_click()
+            self._handle_portal_interaction()
+            self._player_controller.handle_input(
+                dt,
+                self._renderer.exhaustion_modal.is_visible,
+                self._map_renderer,
+            )
+
+            # 检查 Portal 触发
+            self._check_portal_trigger()
 
             # 处理位置纠正插值
-            self._update_correction(dt)
+            self._player_controller.update_correction(dt)
 
             # 更新玩家动画
             self._player_sprite.update_animation(dt)
 
             # 定期发送位置更新
-            self._update_position_sending(dt)
+            self._player_controller.update_position_sending(dt)
 
             # 更新相机跟随（pyscroll center）
             player_cx = self._player_sprite.world_x + TILE_SIZE // 2
@@ -225,7 +218,10 @@ class GameScene:
             self._map_renderer.center = (int(player_cx), int(player_cy))
 
             # 渲染
-            self._render(dt)
+            self._renderer.render(
+                dt, self._group, self._player_sprite,
+                self._scene_manager, self._map_renderer,
+            )
 
             # 控制帧率
             self.clock.tick(TARGET_FPS)
@@ -233,96 +229,7 @@ class GameScene:
         logger.info("[GameScene]Game loop ended")
         pygame.quit()
 
-    # ========== 输入处理 ==========
-
-    def _handle_input(self, dt: float):
-        """
-        处理玩家输入（帧率无关移动）
-
-        Args:
-            dt: 距离上一帧的时间（秒）
-        """
-        # 弹窗显示时或场景过渡时屏蔽游戏输入
-        if self._exhaustion_modal.is_visible or self._scene_manager.is_input_blocked():
-            self._player_sprite.set_moving(False)
-            return
-
-        # 处理鼠标点击交互
-        self._handle_mouse_click()
-
-        # 处理空格键 Portal 交互
-        self._handle_portal_interaction()
-
-        # 使用 InputManager 的 Action Map 处理移动
-        input_dx = 0.0
-        input_dy = 0.0
-
-        if self._input_manager.is_action_pressed("move_left"):
-            input_dx -= 1.0
-        if self._input_manager.is_action_pressed("move_right"):
-            input_dx += 1.0
-        if self._input_manager.is_action_pressed("move_up"):
-            input_dy -= 1.0
-        if self._input_manager.is_action_pressed("move_down"):
-            input_dy += 1.0
-
-        # 无输入时静止
-        if input_dx == 0.0 and input_dy == 0.0:
-            self._player_sprite.set_moving(False)
-            return
-
-        # 标记为移动中
-        self._player_sprite.set_moving(True)
-
-        # 对角线归一化（确保对角速度与单方向一致）
-        length = math.sqrt(input_dx * input_dx + input_dy * input_dy)
-        if length > 0:
-            input_dx /= length
-            input_dy /= length
-
-        # 计算位移（像素/秒 * 秒 = 像素）
-        move_distance = PLAYER_SPEED * dt
-        dx = input_dx * move_distance
-        dy = input_dy * move_distance
-
-        # 更新朝向
-        self._update_facing_direction(input_dx, input_dy)
-        self._player_sprite.set_direction(self._facing_direction)
-
-        # 计算新位置
-        new_x = self._player_sprite.world_x + dx
-        new_y = self._player_sprite.world_y + dy
-
-        # 地图边界碰撞检测
-        new_x, new_y = self._clamp_to_map_bounds(new_x, new_y)
-
-        # 瓦片碰撞检测（使用 TMX 地图数据）
-        new_x, new_y = self._check_walkable(new_x, new_y)
-
-        # 应用移动
-        self._player_sprite.set_position(new_x, new_y)
-
-        # 检查 Portal 触发
-        self._check_portal_trigger(new_x, new_y)
-
-    def _update_facing_direction(self, dx: float, dy: float):
-        """
-        根据移动方向更新朝向
-
-        Args:
-            dx: 归一化后的 X 方向（-1, 0, 1）
-            dy: 归一化后的 Y 方向（-1, 0, 1）
-        """
-        if abs(dx) >= abs(dy):
-            if dx > 0:
-                self._facing_direction = Direction.RIGHT
-            elif dx < 0:
-                self._facing_direction = Direction.LEFT
-        else:
-            if dy > 0:
-                self._facing_direction = Direction.DOWN
-            elif dy < 0:
-                self._facing_direction = Direction.UP
+    # ========== 鼠标交互（保留在 GameScene 中，因为涉及多模块协调） ==========
 
     def _handle_mouse_click(self):
         """
@@ -371,8 +278,8 @@ class GameScene:
                 # 计算玩家屏幕位置（用于 Iris 动效中心点）
                 player_cx = int(self._player_sprite.world_x + TILE_SIZE // 2)
                 player_cy = int(self._player_sprite.world_y + TILE_SIZE // 2)
-                screen_x = int((player_cx - self._map_renderer.x) * ZOOM_FACTOR)
-                screen_y = int((player_cy - self._map_renderer.y) * ZOOM_FACTOR)
+                scr_x = int((player_cx - self._map_renderer.x) * ZOOM_FACTOR)
+                scr_y = int((player_cy - self._map_renderer.y) * ZOOM_FACTOR)
 
                 logger.info(f"[GameScene]Portal clicked: tile=({tile_x},{tile_y}), target={target_scene}")
 
@@ -382,7 +289,7 @@ class GameScene:
                 target_portal_id = "door_out" if obj_type == ObjectType.DOOR_IN else "door_in"
 
                 self._scene_manager.request_scene_change(
-                    target_scene, target_portal_id, (screen_x, screen_y)
+                    target_scene, target_portal_id, (scr_x, scr_y)
                 )
                 return
 
@@ -394,8 +301,8 @@ class GameScene:
 
         dx = tile_x - player_tile_x
         dy = tile_y - player_tile_y
-        self._update_facing_direction(dx, dy)
-        self._player_sprite.set_direction(self._facing_direction)
+        self._player_controller._update_facing_direction(dx, dy)
+        self._player_sprite.set_direction(self._player_controller.facing_direction)
 
     def _handle_portal_interaction(self):
         """
@@ -414,15 +321,15 @@ class GameScene:
         player_tile_y = int(self._player_sprite.world_y) // TILE_SIZE
 
         # 根据朝向计算面前的 tile
-        from .constants import Direction
+        facing = self._player_controller.facing_direction
         face_x, face_y = player_tile_x, player_tile_y
-        if self._facing_direction == Direction.UP:
+        if facing == Direction.UP:
             face_y -= 1
-        elif self._facing_direction == Direction.DOWN:
+        elif facing == Direction.DOWN:
             face_y += 1
-        elif self._facing_direction == Direction.LEFT:
+        elif facing == Direction.LEFT:
             face_x -= 1
-        elif self._facing_direction == Direction.RIGHT:
+        elif facing == Direction.RIGHT:
             face_x += 1
 
         # 检查面前的 tile 是否是 Portal
@@ -452,59 +359,21 @@ class GameScene:
             target_scene, target_portal_id, (screen_x, screen_y)
         )
 
-    def _clamp_to_map_bounds(self, x: float, y: float) -> tuple:
-        """
-        将坐标限制在地图边界内
-
-        Args:
-            x: 目标 X 坐标
-            y: 目标 Y 坐标
-
-        Returns:
-            (clamped_x, clamped_y)
-        """
-        x = max(0.0, x)
-        y = max(0.0, y)
-        x = min(x, self._tmx_map.pixel_width - TILE_SIZE)
-        y = min(y, self._tmx_map.pixel_height - TILE_SIZE)
-        return (x, y)
-
-    def _check_walkable(self, new_x: float, new_y: float) -> tuple:
-        """
-        检测目标位置是否可通行（基于 TMX 地图碰撞数据）
-
-        Args:
-            new_x: 目标 X 坐标
-            new_y: 目标 Y 坐标
-
-        Returns:
-            (safe_x, safe_y)
-        """
-        if self._tmx_map.check_walkable_rect(new_x, new_y, TILE_SIZE, TILE_SIZE):
-            return (new_x, new_y)
-
-        # 不可通行，返回原位置
-        return (self._player_sprite.world_x, self._player_sprite.world_y)
-
-    def _check_portal_trigger(self, player_x: float, player_y: float):
-        """
-        检查玩家当前位置是否触发 Portal
-
-        Args:
-            player_x: 玩家像素 X 坐标
-            player_y: 玩家像素 Y 坐标
-        """
+    def _check_portal_trigger(self):
+        """检查玩家当前位置是否触发 Portal"""
         # 过渡中不检查
         if self._scene_manager.is_transitioning:
             return
 
         # 计算 tile 坐标
+        player_x = self._player_sprite.world_x
+        player_y = self._player_sprite.world_y
         tile_x = int(player_x) // TILE_SIZE
         tile_y = int(player_y) // TILE_SIZE
 
         # 检查当前位置是否有 Portal
         portal = self._scene_manager.check_portal_trigger(
-            tile_x, tile_y, self._facing_direction
+            tile_x, tile_y, self._player_controller.facing_direction
         )
 
         if portal is None:
@@ -530,282 +399,70 @@ class GameScene:
             target_scene, target_portal_id, (screen_x, screen_y)
         )
 
-    # ========== 位置纠正 ==========
+    # ========== 网络回调 ==========
 
-    def _update_correction(self, dt: float):
-        """
-        更新位置纠正插值
-
-        Args:
-            dt: 距离上一帧的时间（秒）
-        """
-        if not self._correcting:
-            return
-
-        self._correct_elapsed += dt
-        t = min(self._correct_elapsed / POSITION_CORRECT_DURATION, 1.0)
-
-        # 线性插值（lerp）
-        x = self._correct_start_x + (self._correct_target_x - self._correct_start_x) * t
-        y = self._correct_start_y + (self._correct_target_y - self._correct_start_y) * t
-        self._player_sprite.set_position(x, y)
-
-        if t >= 1.0:
-            self._correcting = False
-            logger.debug(f"[GameScene]Position correction completed at ({x:.1f}, {y:.1f})")
-
-    def _start_correction(self, target_x: float, target_y: float):
-        """
-        开始位置纠正插值
-
-        Args:
-            target_x: 目标 X 坐标
-            target_y: 目标 Y 坐标
-        """
-        self._correcting = True
-        self._correct_start_x = self._player_sprite.world_x
-        self._correct_start_y = self._player_sprite.world_y
-        self._correct_target_x = target_x
-        self._correct_target_y = target_y
-        self._correct_elapsed = 0.0
-        logger.info(f"[GameScene]Position correction started: "
-                    f"({self._correct_start_x:.1f}, {self._correct_start_y:.1f}) -> ({target_x:.1f}, {target_y:.1f})")
-
-    # ========== 位置更新发送 ==========
-
-    def _update_position_sending(self, dt: float):
-        """
-        定期发送位置更新（每 100ms，静止时不发送）
-
-        Args:
-            dt: 距离上一帧的时间（秒）
-        """
-        if not self._connection or not self._connection.is_connected:
-            return
-
-        self._position_update_timer += dt
-
-        if self._position_update_timer < POSITION_UPDATE_INTERVAL:
-            return
-
-        self._position_update_timer = 0.0
-
-        moved = (
-            abs(self._player_sprite.world_x - self._last_sent_x) > 0.5 or
-            abs(self._player_sprite.world_y - self._last_sent_y) > 0.5
-        )
-
-        if not moved:
-            return
-
-        self._send_position_update()
-
-    def _send_position_update(self):
-        """发送 PositionUpdate 消息到服务器"""
-        try:
-            pos_update = player_pb2.PositionUpdate()
-            pos_update.x = self._player_sprite.world_x
-            pos_update.y = self._player_sprite.world_y
-            pos_update.direction = self._facing_direction
-            pos_update.timestamp = int(time.time() * 1000)
-
-            payload = pos_update.SerializeToString()
-
-            player_msg = base_pb2.PlayerMsg()
-            player_msg.player_id = self._player_data.get('player_id', 0)
-            player_msg.server_id = self._player_data.get('server_id', 1)
-            player_msg.msg_id = MSG_ID_POSITION_UPDATE
-            player_msg.payload = payload
-            msg_payload = player_msg.SerializeToString()
-
-            self._connection.send_message(MSG_ID_POSITION_UPDATE, msg_payload)
-
-            self._last_sent_x = self._player_sprite.world_x
-            self._last_sent_y = self._player_sprite.world_y
-
-            logger.debug(f"[GameScene]PositionUpdate sent: ({self._player_sprite.world_x:.1f}, "
-                        f"{self._player_sprite.world_y:.1f}, {self._facing_direction})")
-
-        except Exception as e:
-            logger.error(f"[GameScene]Failed to send PositionUpdate: {e}")
-
-    # ========== 网络消息处理 ==========
-
-    def _process_network_messages(self):
-        """处理网络消息"""
-        if not self._connection:
-            return
-
-        messages = self._connection.recv_all_messages()
-        for msg_id, payload in messages:
-            if msg_id == MSG_ID_MAP_DATA_NOTIFY:
-                self._handle_map_data_notify(payload)
-            elif msg_id == MSG_ID_POSITION_CORRECT:
-                self._handle_position_correct(payload)
-            elif msg_id == MSG_ID_ITEM_USE_RESP:
-                self._handle_item_use_resp(payload)
-            elif msg_id == MSG_ID_SCENE_CHANGE_RESP:
-                self._handle_scene_change_resp(payload)
-            elif msg_id == MSG_ID_CLOCK_SYNC:
-                self._handle_clock_sync(payload)
-            elif msg_id == MSG_ID_FORCE_SLEEP_NOTIFY:
-                self._handle_force_sleep_notify(payload)
-
-    def _handle_map_data_notify(self, payload: bytes):
-        """
-        处理地图数据通知
-
-        Args:
-            payload: 消息负载
-        """
-        logger.info("[GameScene]MapDataNotify received (TMX map is used, ignoring server map data)")
+    def _on_map_data_notify(self):
+        """地图数据通知回调"""
         self._map_data_received = True
 
-    def _handle_position_correct(self, payload: bytes):
-        """
-        处理位置纠正消息
+    def _on_position_correct(self, target_x: float, target_y: float):
+        """位置纠正回调"""
+        self._player_controller.start_correction(target_x, target_y)
 
-        Args:
-            payload: 消息负载
-        """
-        try:
-            player_msg = base_pb2.PlayerMsg()
-            player_msg.ParseFromString(payload)
+    def _on_item_use_resp(self, item_resp):
+        """物品使用响应回调"""
+        # 更新能量数据
+        if item_resp.HasField("energy"):
+            self._renderer.energy_bar.set_energy(item_resp.energy.current, item_resp.energy.max)
+            logger.debug(f"[GameScene]Energy updated: {item_resp.energy.current}/{item_resp.energy.max}")
 
-            pos_correct = player_pb2.PositionCorrect()
-            pos_correct.ParseFromString(player_msg.payload)
+        # 处理精疲力尽
+        if item_resp.code == 3:  # ENERGY_EXHAUSTED
+            self._renderer.exhaustion_modal.show()
+            logger.info("[GameScene]Energy exhausted, showing modal")
 
-            self._start_correction(pos_correct.x, pos_correct.y)
+    def _on_scene_change_resp(self, resp):
+        """场景切换响应回调"""
+        if resp.code != 0:
+            logger.error(f"[GameScene]Scene change failed: {resp.msg}")
+            return
 
-            logger.info(f"[GameScene]PositionCorrect received: ({pos_correct.x:.1f}, {pos_correct.y:.1f})")
+        # 处理场景切换
+        spawn_pos = self._scene_manager.handle_scene_change_resp(
+            resp.target_scene, resp.spawn_x, resp.spawn_y
+        )
 
-        except Exception as e:
-            logger.error(f"[GameScene]Failed to parse PositionCorrect: {e}")
+        if spawn_pos:
+            # 更新玩家位置
+            spawn_x, spawn_y = spawn_pos
+            self._player_sprite.set_position(spawn_x, spawn_y)
 
-    def _handle_item_use_resp(self, payload: bytes):
-        """
-        处理物品使用响应
+            # 更新玩家数据中的场景 ID
+            self._player_data['scene_id'] = resp.target_scene
 
-        Args:
-            payload: 消息负载（PlayerMsg 包装）
-        """
-        try:
-            player_msg = base_pb2.PlayerMsg()
-            player_msg.ParseFromString(payload)
+            logger.info(f"[GameScene]Scene changed to {resp.target_scene}, "
+                       f"player at ({spawn_x}, {spawn_y})")
 
-            item_resp = player_pb2.ItemUseResp()
-            item_resp.ParseFromString(player_msg.payload)
+    def _on_clock_sync(self, day: int, time_slot: int):
+        """时钟同步回调"""
+        self._renderer.time_hud.update(day, time_slot)
 
-            logger.info(f"[GameScene]ItemUseResp received: code={item_resp.code}, msg={item_resp.msg}")
+    def _on_force_sleep_notify(self, day: int):
+        """强制睡觉通知回调"""
+        # 标记强制睡觉待处理
+        self._force_sleep_pending = True
 
-            # 更新能量数据
-            if item_resp.HasField("energy"):
-                self._energy_bar.set_energy(item_resp.energy.current, item_resp.energy.max)
-                logger.debug(f"[GameScene]Energy updated: {item_resp.energy.current}/{item_resp.energy.max}")
+        # 计算玩家屏幕位置（用于 Iris 动效中心点）
+        player_cx = int(self._player_sprite.world_x + TILE_SIZE // 2)
+        player_cy = int(self._player_sprite.world_y + TILE_SIZE // 2)
+        screen_x = int((player_cx - self._map_renderer.x) * ZOOM_FACTOR)
+        screen_y = int((player_cy - self._map_renderer.y) * ZOOM_FACTOR)
 
-            # 处理精疲力尽
-            if item_resp.code == 3:  # ENERGY_EXHAUSTED
-                self._exhaustion_modal.show()
-                logger.info("[GameScene]Energy exhausted, showing modal")
-
-        except Exception as e:
-            logger.error(f"[GameScene]Failed to parse ItemUseResp: {e}")
-
-    def _handle_scene_change_resp(self, payload: bytes):
-        """
-        处理场景切换响应
-
-        Args:
-            payload: 消息负载（PlayerMsg 包装）
-        """
-        try:
-            player_msg = base_pb2.PlayerMsg()
-            player_msg.ParseFromString(payload)
-
-            resp = player_pb2.SceneChangeResp()
-            resp.ParseFromString(player_msg.payload)
-
-            logger.info(f"[GameScene]SceneChangeResp received: code={resp.code}, "
-                       f"target={resp.target_scene}, spawn=({resp.spawn_x},{resp.spawn_y})")
-
-            if resp.code != 0:
-                logger.error(f"[GameScene]Scene change failed: {resp.msg}")
-                return
-
-            # 处理场景切换
-            spawn_pos = self._scene_manager.handle_scene_change_resp(
-                resp.target_scene, resp.spawn_x, resp.spawn_y
-            )
-
-            if spawn_pos:
-                # 更新玩家位置
-                spawn_x, spawn_y = spawn_pos
-                self._player_sprite.set_position(spawn_x, spawn_y)
-
-                # 更新玩家数据中的场景 ID
-                self._player_data['scene_id'] = resp.target_scene
-
-                logger.info(f"[GameScene]Scene changed to {resp.target_scene}, "
-                           f"player at ({spawn_x}, {spawn_y})")
-
-        except Exception as e:
-            logger.error(f"[GameScene]Failed to parse SceneChangeResp: {e}")
-
-    def _handle_clock_sync(self, payload: bytes):
-        """
-        处理时钟同步消息
-
-        Args:
-            payload: 消息负载（PlayerMsg 包装）
-        """
-        try:
-            player_msg = base_pb2.PlayerMsg()
-            player_msg.ParseFromString(payload)
-
-            clock_sync = player_pb2.ClockSync()
-            clock_sync.ParseFromString(player_msg.payload)
-
-            self._time_hud.update(clock_sync.day, clock_sync.time_slot)
-
-            logger.debug(f"[GameScene]ClockSync received: day={clock_sync.day}, "
-                        f"slot={clock_sync.time_slot}, paused={clock_sync.paused}")
-
-        except Exception as e:
-            logger.error(f"[GameScene]Failed to parse ClockSync: {e}")
-
-    def _handle_force_sleep_notify(self, payload: bytes):
-        """
-        处理强制睡觉通知
-
-        Args:
-            payload: 消息负载（PlayerMsg 包装）
-        """
-        try:
-            player_msg = base_pb2.PlayerMsg()
-            player_msg.ParseFromString(payload)
-
-            notify = player_pb2.ForceSleepNotify()
-            notify.ParseFromString(player_msg.payload)
-
-            logger.info(f"[GameScene]ForceSleepNotify received: day={notify.day}")
-
-            # 标记强制睡觉待处理
-            self._force_sleep_pending = True
-
-            # 计算玩家屏幕位置（用于 Iris 动效中心点）
-            player_cx = int(self._player_sprite.world_x + TILE_SIZE // 2)
-            player_cy = int(self._player_sprite.world_y + TILE_SIZE // 2)
-            screen_x = int((player_cx - self._map_renderer.x) * ZOOM_FACTOR)
-            screen_y = int((player_cy - self._map_renderer.y) * ZOOM_FACTOR)
-
-            # 启动 Iris 收缩过渡，完成后发送 ForceSleepReady
-            self._scene_manager._transition.start(
-                (screen_x, screen_y),
-                self._on_force_sleep_iris_complete
-            )
-
-        except Exception as e:
-            logger.error(f"[GameScene]Failed to parse ForceSleepNotify: {e}")
+        # 启动 Iris 收缩过渡，完成后发送 ForceSleepReady
+        self._scene_manager._transition.start(
+            (screen_x, screen_y),
+            self._on_force_sleep_iris_complete
+        )
 
     def _on_force_sleep_iris_complete(self):
         """强制睡觉 Iris 收缩完成回调"""
@@ -815,7 +472,7 @@ class GameScene:
         if self._connection and self._connection.is_connected:
             try:
                 ready = player_pb2.ForceSleepReady()
-                ready.day = self._time_hud._day
+                ready.day = self._renderer.time_hud._day
 
                 payload = ready.SerializeToString()
 
@@ -834,44 +491,3 @@ class GameScene:
 
         # 不在这里切换场景，等待服务器的 SceneChangeResp
         # Iris 展开会在 handle_scene_change_resp 中通过场景管理器处理
-
-    # ========== 渲染 ==========
-
-    def _render(self, dt: float):
-        """
-        渲染一帧
-
-        Args:
-            dt: 距离上一帧的时间（秒）
-        """
-        # 清屏
-        self.screen.fill((0, 0, 0))
-
-        # pyscroll 渲染地图和精灵（自动处理图层遮挡）
-        self._group.draw(self.screen)
-
-        # HUD 渲染（在游戏画面上方）
-        tile_x = self._player_sprite.world_x / TILE_SIZE
-        tile_y = self._player_sprite.world_y / TILE_SIZE
-        self._hud.set_info(
-            role_name=self._player_data.get('role_name', 'Unknown'),
-            pos_x=tile_x,
-            pos_y=tile_y,
-            scene_id=self._player_data.get('scene_id', 'farm'),
-        )
-        self._hud.draw(self.screen)
-
-        # 能量条渲染（右下角）
-        self._energy_bar.draw(self.screen)
-
-        # 时间 HUD 渲染（左上角）
-        self._time_hud.draw(self.screen)
-
-        # 精疲力尽弹窗渲染（最顶层）
-        self._exhaustion_modal.draw(self.screen)
-
-        # 场景过渡 Iris 遮罩（最顶层）
-        self._scene_manager._transition.apply(self.screen)
-
-        # 刷新显示
-        pygame.display.flip()

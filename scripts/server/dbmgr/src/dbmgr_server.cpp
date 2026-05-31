@@ -361,7 +361,7 @@ void DbMgrServer::handle_player_data_req(std::shared_ptr<GameSession> session,
 
     if (!is_db_ready()) {
         resp.set_code(-1);  // DB_NOT_READY
-        resp.set_msg("Database not ready");
+        resp.set_value("Database not ready");
         std::string resp_data;
         resp.SerializeToString(&resp_data);
         send_to_game(session, MSG_ID_PLAYER_DATA_RESP, resp_data);

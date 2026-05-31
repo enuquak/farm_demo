@@ -4,6 +4,7 @@
 #include <ctime>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 namespace farm {
 
@@ -104,11 +105,17 @@ public:
     size_t count() const { return growing_tiles_.size(); }
 
 private:
-    // Key: "x,y", Value: crop growth data
-    std::unordered_map<std::string, CropData> growing_tiles_;
+    // Key: packed (x << 32 | y), Value: crop growth data
+    std::unordered_map<uint64_t, CropData> growing_tiles_;
 
-    // Helper to make tile key
-    static std::string make_key(int x, int y);
+    // Helper to make tile key from coordinates
+    static uint64_t make_key(int x, int y);
+
+    // Helper to parse key back to coordinates
+    static std::pair<int, int> parse_key(uint64_t key);
+
+    // Helper to make string key for JSON serialization
+    static std::string make_string_key(int x, int y);
 
     // Freeze timestamp (0 = not frozen)
     time_t frozen_at_;

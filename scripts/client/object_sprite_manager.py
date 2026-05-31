@@ -5,7 +5,8 @@
 import pygame
 from typing import Dict, Optional, Tuple
 
-from .constants import ObjectType, OBJECT_PROPERTIES, OBJECT_SPRITE_SIZE, TILE_SIZE
+from .constants import ObjectType, OBJECT_SPRITE_SIZE, TILE_SIZE
+from .sprite_data import OBJECT_SPRITES
 
 
 class ObjectSpriteManager:
@@ -35,11 +36,9 @@ class ObjectSpriteManager:
         Args:
             obj_type: 地物类型
         """
-        props = OBJECT_PROPERTIES.get(obj_type)
-        if not props or not props.get("sprite_data"):
+        sprite_data = OBJECT_SPRITES.get(obj_type)
+        if not sprite_data:
             return
-
-        sprite_data = props["sprite_data"]
         size = sprite_data.get("size", OBJECT_SPRITE_SIZE)
         base_color = sprite_data.get("base_color", (255, 0, 255))
         pixels = sprite_data.get("pixels", [])

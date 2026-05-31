@@ -29,12 +29,13 @@ set(SOURCES
     src/gate_server.cpp
     src/session.cpp
     src/session_manager.cpp
-    src/message_parser.cpp
     src/game_connection.cpp
-    src/msvc_compat.cpp
     ${PROTO_SRCS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/admin_msg_ids.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/log_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/admin_msg_ids.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/message_parser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/msvc_compat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/server_main_helper.cpp
 )
 
 add_executable(gate_server ${SOURCES})
@@ -48,6 +49,7 @@ target_include_directories(gate_server PRIVATE
     ${COMMON_PROTO_DIR}/generated
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/third_party
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
 )
 
 # 链接库目录
