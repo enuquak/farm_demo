@@ -86,6 +86,9 @@ bool PlayerManager::add_player_with_data_load(uint64_t player_id, GateSession* g
 }
 
 void PlayerManager::remove_player(uint64_t player_id) {
+    if (offline_callback_) {
+        offline_callback_(player_id);
+    }
     players_.erase(player_id);
 }
 
@@ -95,10 +98,12 @@ void PlayerManager::remove_player_with_save(uint64_t player_id) {
         return;
     }
 
-    // 保存数据
     save_player_data(player_id);
 
-    // 移除玩家
+    if (offline_callback_) {
+        offline_callback_(player_id);
+    }
+
     players_.erase(it);
 }
 
@@ -121,27 +126,33 @@ std::vector<Player*> PlayerManager::get_all_players() const {
 
 void PlayerManager::remove_players_by_gate(GateSession* gate_session) {
     std::vector<uint64_t> to_remove;
-    for (auto& [player_id, player] : players_) {
-        if (player->gate_session() == gate_session) {
-            to_remove.push_back(player_id);
+    for (auto& kv : players_) {
+        if (kv.second->gate_session() == gate_session) {
+            to_remove.push_back(kv.first);
         }
     }
     for (uint64_t pid : to_remove) {
         SPDLOG_INFO("[Player]Removing player {} due to Gate disconnect", pid);
+        if (offline_callback_) {
+            offline_callback_(pid);
+        }
         players_.erase(pid);
     }
 }
 
 void PlayerManager::remove_players_by_gate_with_save(GateSession* gate_session) {
     std::vector<uint64_t> to_remove;
-    for (auto& [player_id, player] : players_) {
-        if (player->gate_session() == gate_session) {
-            to_remove.push_back(player_id);
+    for (auto& kv : players_) {
+        if (kv.second->gate_session() == gate_session) {
+            to_remove.push_back(kv.first);
         }
     }
     for (uint64_t pid : to_remove) {
         SPDLOG_INFO("[Player]Removing player {} due to Gate disconnect (with save)", pid);
         save_player_data(pid);
+        if (offline_callback_) {
+            offline_callback_(pid);
+        }
         players_.erase(pid);
     }
 }

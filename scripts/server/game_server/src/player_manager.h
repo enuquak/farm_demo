@@ -14,6 +14,7 @@ class DBMgrConnectionManager;
 
 // 回调类型定义
 using PlayerJoinCallback = std::function<void(uint64_t player_id, bool success, const std::string& msg)>;
+using PlayerOfflineCallback = std::function<void(uint64_t player_id)>;
 
 class PlayerManager {
 public:
@@ -22,6 +23,11 @@ public:
 
     // 设置 DBMgr 连接管理器（用于数据加载/保存）
     void set_dbmgr_manager(DBMgrConnectionManager* dbmgr_mgr) { dbmgr_mgr_ = dbmgr_mgr; }
+
+    // Set callback for player offline events
+    void set_offline_callback(PlayerOfflineCallback callback) {
+        offline_callback_ = std::move(callback);
+    }
 
     // 添加玩家（返回 true 成功，false 重复）
     bool add_player(uint64_t player_id, GateSession* gate_session);
@@ -70,6 +76,8 @@ private:
 
     // 玩家加入回调（等待数据加载完成）
     std::unordered_map<uint64_t, PlayerJoinCallback> pending_join_callbacks_;
+
+    PlayerOfflineCallback offline_callback_;
 };
 
 }  // namespace farm
