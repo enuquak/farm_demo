@@ -4,12 +4,14 @@ project(dbmgr LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 静态链接运行时（与预编译的 absl/protobuf 匹配）
+# 静态链接运行时
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # 依赖路径
 set(LIBEVENT_ROOT "C:/libevent_install")
 set(PROTOBUF_ROOT "C:/protobuf_install")
+set(MONGOC_ROOT "C:/mongoc_install")  # libmongoc 安装路径
+set(HIREDIS_ROOT "C:/hiredis_install")  # hiredis 安装路径
 set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
 
 # Protobuf 生成的源文件
@@ -30,12 +32,17 @@ set(SOURCES
     src/main.cpp
     src/dbmgr_server.cpp
     src/game_session.cpp
-    src/data_manager.cpp
-    src/message_parser.cpp
-    src/msvc_compat.cpp
+    src/connection_manager.cpp
+    src/mongo_connection.cpp
+    src/mongo_server.cpp
+    src/redis_connection.cpp
+    src/redis_server.cpp
     ${PROTO_SRCS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/admin_msg_ids.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/log_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/admin_msg_ids.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/message_parser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/msvc_compat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/server_main_helper.cpp
 )
 
 add_executable(dbmgr ${SOURCES})
@@ -45,31 +52,34 @@ target_include_directories(dbmgr PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${PROTOBUF_ROOT}/include
     ${LIBEVENT_ROOT}/include
+    ${MONGOC_ROOT}/include/libmongoc-1.0
+    ${HIREDIS_ROOT}/include
+    ${COMMON_PROTO_DIR}
     ${COMMON_PROTO_DIR}/generated
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/third_party
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
 )
 
 # 链接库目录
 target_link_directories(dbmgr PRIVATE
     ${PROTOBUF_ROOT}/lib
     ${LIBEVENT_ROOT}/lib
+    ${MONGOC_ROOT}/lib
+    ${HIREDIS_ROOT}/lib
 )
 
 # MSVC 特定设置
 if(MSVC)
-    # 禁用安全警告
     target_compile_definitions(dbmgr PRIVATE
         _CRT_SECURE_NO_WARNINGS
         _WINSOCK_DEPRECATED_NO_WARNINGS
         NOMINMAX
     )
 
-    # UTF-8 源文件支持 + 静态运行时（匹配预编译的 absl/protobuf）
     target_compile_options(dbmgr PRIVATE /utf-8 /MT$<$<CONFIG:Debug>:d>)
 
-    # 链接库: protobuf-lite + absl + libevent + Winsock
-    # 使用 file(GLOB) 获取所有 absl 库
+    # 链接库
     file(GLOB ABSL_LIBS "${PROTOBUF_ROOT}/lib/absl_*.lib")
     target_link_libraries(dbmgr PRIVATE
         libprotobuf-lite.lib
@@ -79,6 +89,9 @@ if(MSVC)
         event.lib
         event_core.lib
         event_extra.lib
+        mongoc-1.0.lib
+        bson-1.0.lib
+        hiredis.lib
         ws2_32.lib
         advapi32.lib
         shell32.lib
@@ -90,6 +103,9 @@ else()
         event
         event_core
         event_extra
+        mongoc-1.0
+        bson-1.0
+        hiredis
         pthread
     )
 endif()
