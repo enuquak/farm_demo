@@ -1,7 +1,7 @@
 #include "player_manager.h"
 #include "gate_session.h"
 #include "dbmgr_connection_manager.h"
-#include "dbmgr_msg_ids.h"
+#include "internal_msg_ids.h"
 
 #include <cstring>
 
@@ -102,28 +102,28 @@ void PlayerManager::remove_player_with_save(uint64_t player_id) {
     players_.erase(it);
 }
 
-Player* PlayerManager::get_player(uint64_t player_id) const {
+std::optional<Player*> PlayerManager::get_player(uint64_t player_id) const {
     auto it = players_.find(player_id);
     if (it != players_.end()) {
         return it->second.get();
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 std::vector<Player*> PlayerManager::get_all_players() const {
     std::vector<Player*> result;
     result.reserve(players_.size());
-    for (auto& kv : players_) {
-        result.push_back(kv.second.get());
+    for (auto& [player_id, player] : players_) {
+        result.push_back(player.get());
     }
     return result;
 }
 
 void PlayerManager::remove_players_by_gate(GateSession* gate_session) {
     std::vector<uint64_t> to_remove;
-    for (auto& kv : players_) {
-        if (kv.second->gate_session() == gate_session) {
-            to_remove.push_back(kv.first);
+    for (auto& [player_id, player] : players_) {
+        if (player->gate_session() == gate_session) {
+            to_remove.push_back(player_id);
         }
     }
     for (uint64_t pid : to_remove) {
@@ -134,9 +134,9 @@ void PlayerManager::remove_players_by_gate(GateSession* gate_session) {
 
 void PlayerManager::remove_players_by_gate_with_save(GateSession* gate_session) {
     std::vector<uint64_t> to_remove;
-    for (auto& kv : players_) {
-        if (kv.second->gate_session() == gate_session) {
-            to_remove.push_back(kv.first);
+    for (auto& [player_id, player] : players_) {
+        if (player->gate_session() == gate_session) {
+            to_remove.push_back(player_id);
         }
     }
     for (uint64_t pid : to_remove) {
@@ -286,8 +286,8 @@ void PlayerManager::save_player_data(uint64_t player_id) {
 void PlayerManager::save_all_players() {
     SPDLOG_INFO("[Player]Saving all players data...");
 
-    for (auto& kv : players_) {
-        save_player_data(kv.first);
+    for (auto& [player_id, player] : players_) {
+        save_player_data(player_id);
     }
 
     SPDLOG_INFO("[Player]All players data save requests sent");

@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <optional>
 
 namespace farm {
 
@@ -36,7 +37,7 @@ public:
     void remove_player_with_save(uint64_t player_id);
 
     // 查找玩家
-    Player* get_player(uint64_t player_id) const;
+    std::optional<Player*> get_player(uint64_t player_id) const;
 
     // 获取所有玩家
     std::vector<Player*> get_all_players() const;

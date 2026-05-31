@@ -579,7 +579,7 @@ void GameServer::handle_client_msg(std::shared_ptr<GateSession> session,
     }
 
     // 检查玩家是否存在
-    Player* player = player_mgr_.get_player(player_id);
+    Player* player = player_mgr_.get_player(player_id).value_or(nullptr);
     if (!player) {
         SPDLOG_ERROR("[Game]Warning: player_id={} not found, discarding msg_id={}", player_id, msg_id);
         return;
@@ -638,7 +638,7 @@ void GameServer::handle_enter_game_req(std::shared_ptr<GateSession> session,
         farm::EnterGameResp resp;
         if (success) {
             // 获取玩家数据
-            Player* player = player_mgr_.get_player(pid);
+            Player* player = player_mgr_.get_player(pid).value_or(nullptr);
             if (player) {
                 const PlayerBizData& data = player->player_data();
                 farm::PlayerData player_data;
@@ -713,7 +713,7 @@ void GameServer::handle_item_use_req(uint64_t player_id,
                 player_id, req.target_x(), req.target_y(), req.direction(), req.active_slot());
 
     // Get player
-    Player* player = player_mgr_.get_player(player_id);
+    Player* player = player_mgr_.get_player(player_id).value_or(nullptr);
     if (!player) {
         SPDLOG_ERROR("[Game]ItemUseReq: player_id={} not found", player_id);
         return;
@@ -784,7 +784,7 @@ void GameServer::send_to_gate(std::shared_ptr<GateSession> session,
 void GameServer::send_game_msg(uint64_t player_id, uint32_t msg_id,
                                const uint8_t* payload, size_t payload_len) {
     // 查找玩家对应的 GateSession
-    Player* player = player_mgr_.get_player(player_id);
+    Player* player = player_mgr_.get_player(player_id).value_or(nullptr);
     if (!player || !player->gate_session()) {
         SPDLOG_ERROR("[Game]Cannot send GAME_MSG: player_id={} has no Gate session", player_id);
         return;
