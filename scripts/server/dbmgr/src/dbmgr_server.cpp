@@ -19,16 +19,18 @@
 
 namespace farm {
 
-DbMgrServer::DbMgrServer(uint32_t index, const std::string& ip, uint16_t port, const std::string& data_dir)
+DbMgrServer::DbMgrServer(uint32_t index, const std::string& ip, uint16_t port,
+                         ConnectionManager& conn_mgr, const std::string& index_config_dir)
     : index_(index)
     , ip_(ip)
     , port_(port)
-    , data_dir_(data_dir)
     , base_(nullptr)
     , listener_(nullptr)
     , heartbeat_timer_(nullptr)
     , running_(false)
-    , data_mgr_(data_dir)
+    , conn_mgr_(conn_mgr)
+    , mongo_server_(conn_mgr.mongo_connection(), index_config_dir)
+    , redis_server_(conn_mgr.redis_connection())
 {
 }
 
@@ -37,10 +39,22 @@ DbMgrServer::~DbMgrServer() {
 }
 
 bool DbMgrServer::start() {
-    // 初始化数据目录
-    if (!data_mgr_.init()) {
-        SPDLOG_ERROR("[DBMgr]Failed to initialize data directory");
-        return false;
+    // 检查连接状态
+    if (conn_mgr_.is_ready()) {
+        // 连接就绪，初始化 MongoDB 索引
+        if (!mongo_server_.init()) {
+            SPDLOG_ERROR("[DBMgr]Failed to initialize MongoDB indexes");
+            return false;
+        }
+        SPDLOG_INFO("[DBMgr]Database ready");
+    } else {
+        SPDLOG_WARN("[DBMgr]Database not ready, will reject data requests");
+        // 注册回调，连接恢复后初始化
+        conn_mgr_.set_on_ready_callback([this]() {
+            if (mongo_server_.init()) {
+                SPDLOG_INFO("[DBMgr]Database recovered and ready");
+            }
+        });
     }
 
     base_ = event_base_new();
@@ -75,13 +89,13 @@ bool DbMgrServer::start() {
 
     // 创建心跳定时器（每 5 秒触发一次）
     struct timeval tv;
-    tv.tv_sec = HEARTBEAT_INTERVAL;
+    tv.tv_sec = DBMGR_HEARTBEAT_INTERVAL;
     tv.tv_usec = 0;
     heartbeat_timer_ = event_new(base_, -1, EV_PERSIST, on_heartbeat_timer, this);
     evtimer_add(heartbeat_timer_, &tv);
 
     running_ = true;
-    SPDLOG_INFO("[DBMgr]DBMgr index={} listening on {}:{} data_dir={}", index_, ip_, port_, data_dir_);
+    SPDLOG_INFO("[DBMgr]DBMgr index={} listening on {}:{}", index_, ip_, port_);
 
     // 进入事件循环（阻塞）
     event_base_dispatch(base_);
@@ -107,6 +121,10 @@ void DbMgrServer::stop() {
         event_base_free(base_);
         base_ = nullptr;
     }
+}
+
+bool DbMgrServer::is_db_ready() const {
+    return conn_mgr_.is_ready();
 }
 
 // ===========================================
@@ -230,7 +248,7 @@ void DbMgrServer::check_heartbeat() {
         }
 
         // 检查心跳超时
-        if (now - session->last_heartbeat() > HEARTBEAT_TIMEOUT) {
+        if (now - session->last_heartbeat() > DBMGR_HEARTBEAT_TIMEOUT) {
             SPDLOG_INFO("[DBMgr]Heartbeat timeout fd={}", session->fd());
             timeout_fds.push_back(kv.first);
         }
@@ -303,8 +321,9 @@ void DbMgrServer::route_message(std::shared_ptr<GameSession> session,
 void DbMgrServer::handle_dbmgr_identify_resp(std::shared_ptr<GameSession> session,
                                               const std::vector<uint8_t>& payload) {
     farm::DBMgrIdentifyResp resp;
-    if (!payload.empty()) {
-        resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[DBMgr]Failed to parse DBMgrIdentifyResp");
+        return;
     }
 
     if (resp.code() == 0) {
@@ -324,8 +343,9 @@ void DbMgrServer::handle_dbmgr_heartbeat_resp(std::shared_ptr<GameSession> sessi
 void DbMgrServer::handle_player_data_req(std::shared_ptr<GameSession> session,
                                           const std::vector<uint8_t>& payload) {
     farm::PlayerDataReq req;
-    if (!payload.empty()) {
-        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[DBMgr]Failed to parse PlayerDataReq");
+        return;
     }
 
     uint64_t request_id = req.request_id();
@@ -336,28 +356,37 @@ void DbMgrServer::handle_player_data_req(std::shared_ptr<GameSession> session,
 
     SPDLOG_INFO("[DBMgr]PlayerDataReq request_id={} player_id={} op={} key={}", request_id, player_id, static_cast<int>(op), key);
 
-    // 构造响应
+    // 检查数据库就绪
     farm::PlayerDataResp resp;
     resp.set_request_id(request_id);
+
+    if (!is_db_ready()) {
+        resp.set_code(-1);  // DB_NOT_READY
+        resp.set_msg("Database not ready");
+        std::string resp_data;
+        resp.SerializeToString(&resp_data);
+        send_to_game(session, MSG_ID_PLAYER_DATA_RESP, resp_data);
+        return;
+    }
 
     std::vector<uint8_t> result_value;
     DataResult result;
 
     switch (op) {
         case PlayerDataOp::GET_ALL:
-            result = data_mgr_.get_all(player_id, result_value);
+            result = mongo_server_.get_all(player_id, result_value);
             break;
         case PlayerDataOp::GET:
-            result = data_mgr_.get(player_id, key, result_value);
+            result = mongo_server_.get(player_id, key, result_value);
             break;
         case PlayerDataOp::SET_ALL:
-            result = data_mgr_.set_all(player_id, std::vector<uint8_t>(value.begin(), value.end()));
+            result = mongo_server_.set_all(player_id, std::vector<uint8_t>(value.begin(), value.end()));
             break;
         case PlayerDataOp::SET:
-            result = data_mgr_.set(player_id, key, std::vector<uint8_t>(value.begin(), value.end()));
+            result = mongo_server_.set(player_id, key, std::vector<uint8_t>(value.begin(), value.end()));
             break;
         case PlayerDataOp::DEL:
-            result = data_mgr_.del(player_id, key);
+            result = mongo_server_.del(player_id, key);
             break;
         default:
             SPDLOG_ERROR("[DBMgr]Unknown op={}", static_cast<int>(op));
@@ -381,19 +410,29 @@ void DbMgrServer::handle_player_data_req(std::shared_ptr<GameSession> session,
 void DbMgrServer::handle_account_data_req(std::shared_ptr<GameSession> session,
                                            const std::vector<uint8_t>& payload) {
     farm::AccountDataReq req;
-    if (!payload.empty()) {
-        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[DBMgr]Failed to parse AccountDataReq");
+        return;
     }
 
     const std::string& account_id = req.account_id();
 
     SPDLOG_INFO("[DBMgr]AccountDataReq account_id={}", account_id);
 
-    // 构造响应
+    // 检查数据库就绪
     farm::AccountDataResp resp;
 
+    if (!is_db_ready()) {
+        resp.set_code(-1);  // DB_NOT_READY
+        resp.set_msg("Database not ready");
+        std::string resp_data;
+        resp.SerializeToString(&resp_data);
+        send_to_game(session, MSG_ID_ACCOUNT_DATA_RESP, resp_data);
+        return;
+    }
+
     std::vector<AccountRole> roles;
-    AccountResult result = data_mgr_.get_account(account_id, roles);
+    AccountResult result = mongo_server_.get_account(account_id, roles);
 
     resp.set_code(static_cast<int32_t>(result));
     if (result == AccountResult::SUCCESS) {
@@ -418,8 +457,9 @@ void DbMgrServer::handle_account_data_req(std::shared_ptr<GameSession> session,
 void DbMgrServer::handle_account_set_req(std::shared_ptr<GameSession> session,
                                           const std::vector<uint8_t>& payload) {
     farm::AccountSetReq req;
-    if (!payload.empty()) {
-        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[DBMgr]Failed to parse AccountSetReq");
+        return;
     }
 
     const std::string& account_id = req.account_id();
@@ -427,15 +467,24 @@ void DbMgrServer::handle_account_set_req(std::shared_ptr<GameSession> session,
 
     SPDLOG_INFO("[DBMgr]AccountSetReq account_id={} server_id={} player_id={} role_name={}", account_id, new_role.server_id(), new_role.player_id(), new_role.role_name());
 
-    // 构造响应
+    // 检查数据库就绪
     farm::AccountSetResp resp;
+
+    if (!is_db_ready()) {
+        resp.set_code(-1);  // DB_NOT_READY
+        resp.set_msg("Database not ready");
+        std::string resp_data;
+        resp.SerializeToString(&resp_data);
+        send_to_game(session, MSG_ID_ACCOUNT_SET_RESP, resp_data);
+        return;
+    }
 
     AccountRole role;
     role.server_id = new_role.server_id();
     role.player_id = new_role.player_id();
     role.role_name = new_role.role_name();
 
-    AccountResult result = data_mgr_.set_account(account_id, role);
+    AccountResult result = mongo_server_.set_account(account_id, role);
 
     resp.set_code(static_cast<int32_t>(result));
     if (result == AccountResult::ROLE_ALREADY_EXISTS) {
@@ -504,8 +553,8 @@ void DbMgrServer::handle_shutdown(std::shared_ptr<GameSession> session, const Ad
         SPDLOG_INFO("[DBMgr]Stopped accepting new connections");
     }
 
-    // DataManager 基于文件系统，每次写入都会直接写入文件，无需额外 flush
-    SPDLOG_INFO("[DBMgr]Data is already persisted to disk");
+    // MongoDB 数据已经持久化，无需额外 flush
+    SPDLOG_INFO("[DBMgr]Data is already persisted to MongoDB");
 
     // 发送响应给 Game
     AdminShutdownResp resp;

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "game_session.h"
-#include "data_manager.h"
+#include "connection_manager.h"
+#include "mongo_server.h"
+#include "redis_server.h"
 #include "message_parser.h"
 #include "admin_msg_ids.h"
 
@@ -17,7 +19,8 @@ namespace farm {
 
 class DbMgrServer {
 public:
-    DbMgrServer(uint32_t index, const std::string& ip, uint16_t port, const std::string& data_dir);
+    DbMgrServer(uint32_t index, const std::string& ip, uint16_t port,
+                ConnectionManager& conn_mgr, const std::string& index_config_dir);
     ~DbMgrServer();
 
     // 启动服务器（阻塞）
@@ -25,6 +28,9 @@ public:
 
     // 停止服务器
     void stop();
+
+    // 数据库是否就绪
+    bool is_db_ready() const;
 
 private:
     // libevent 回调
@@ -71,7 +77,6 @@ private:
     uint32_t index_;
     std::string ip_;
     uint16_t port_;
-    std::string data_dir_;
     struct event_base* base_;
     struct evconnlistener* listener_;
     struct event* heartbeat_timer_;
@@ -80,8 +85,10 @@ private:
     // Game 会话管理（按 fd 索引）
     std::unordered_map<evutil_socket_t, std::shared_ptr<GameSession>> game_sessions_;
 
-    // 数据管理器
-    DataManager data_mgr_;
+    // 数据库连接管理
+    ConnectionManager& conn_mgr_;
+    MongoServer mongo_server_;
+    RedisServer redis_server_;
 };
 
 }  // namespace farm
