@@ -1,9 +1,12 @@
 #include "game_server.h"
+#include "game_scene_manager.h"
+#include "game_clock.h"
+#include "account_message_handler.h"
+#include "admin_handler.h"
 #include "internal_msg_ids.h"
-#include "dbmgr_msg_ids.h"
 #include "msg_ids.h"
-#include "player_id_generator.h"
 #include "admin_msg_ids.h"
+#include "game_constants.h"
 
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
@@ -27,9 +30,6 @@
 
 namespace farm {
 
-// Reserved player_id for system/scene data persistence via DBMgr
-static constexpr uint64_t SCENE_DATA_PLAYER_ID = 0;
-
 GameServer::GameServer(const std::string& ip, uint16_t port,
                        const std::vector<DBMgrConfig>& dbmgr_configs)
     : ip_(ip)
@@ -40,10 +40,7 @@ GameServer::GameServer(const std::string& ip, uint16_t port,
     , update_timer_(nullptr)
     , running_(false)
     , dbmgr_configs_(dbmgr_configs)
-    , world_state_()
-    , drop_manager_()
-    , crop_system_()
-    , item_handler_(&world_state_, &drop_manager_, &crop_system_)
+    , item_handler_()
 {
 }
 
@@ -84,7 +81,7 @@ bool GameServer::start() {
 
     // 创建心跳定时器
     struct timeval tv;
-    tv.tv_sec = HEARTBEAT_TIMEOUT;
+    tv.tv_sec = GATE_HEARTBEAT_TIMEOUT;
     tv.tv_usec = 0;
     heartbeat_timer_ = event_new(base_, -1, EV_PERSIST, on_heartbeat_timer, this);
     evtimer_add(heartbeat_timer_, &tv);
@@ -113,8 +110,28 @@ bool GameServer::start() {
     }
 
     // 初始化世界状态
-    world_state_.generate_default();
+    item_handler_.world()->generate_default();
     SPDLOG_INFO("[Game]World state initialized");
+
+    // 创建回调函数（用于解耦子系统与 GameServer）
+    auto send_to_gate_func = [this](std::shared_ptr<GateSession> s, uint32_t msg_id, const std::string& payload) {
+        send_to_gate(s, msg_id, payload);
+    };
+    auto send_game_msg_func = [this](uint64_t pid, uint32_t msg_id, const uint8_t* payload, size_t len) {
+        send_game_msg(pid, msg_id, payload, len);
+    };
+
+    // 初始化提取的子系统
+    scene_mgr_ = std::make_unique<GameSceneManager>(&player_mgr_, &dbmgr_mgr_, send_game_msg_func);
+    game_clock_ = std::make_unique<GameClock>(&player_mgr_, scene_mgr_.get(), &dbmgr_mgr_, send_game_msg_func);
+    account_handler_ = std::make_unique<AccountMessageHandler>(&dbmgr_mgr_, &player_mgr_, send_to_gate_func);
+    account_handler_->set_clock(game_clock_.get());
+    admin_handler_ = std::make_unique<AdminHandler>(
+        &player_mgr_, scene_mgr_.get(), game_clock_.get(), &dbmgr_mgr_,
+        send_to_gate_func,
+        [this]() { if (listener_) evconnlistener_disable(listener_); },
+        [this]() { stop(); }
+    );
 
     // 注册物品交互消息处理
     msg_handler_.register_handler(MSG_ID_ITEM_USE_REQ,
@@ -126,23 +143,23 @@ bool GameServer::start() {
     // 注册场景切换消息处理
     msg_handler_.register_handler(MSG_ID_SCENE_CHANGE_REQ,
         [this](uint64_t player_id, const uint8_t* payload, size_t payload_len) {
-            handle_scene_change_req(player_id, payload, payload_len);
+            scene_mgr_->handle_scene_change_req(player_id, payload, payload_len);
         });
     SPDLOG_INFO("[Game]Scene change handler registered");
 
     // 注册强制睡觉就绪消息处理
     msg_handler_.register_handler(MSG_ID_FORCE_SLEEP_READY,
         [this](uint64_t player_id, const uint8_t* payload, size_t payload_len) {
-            handle_force_sleep_ready(player_id, payload, payload_len);
+            game_clock_->handle_force_sleep_ready(player_id, payload, payload_len);
         });
     SPDLOG_INFO("[Game]Force sleep handler registered");
 
     // 初始化默认场景（farm）
-    get_or_create_scene("farm");
+    scene_mgr_->get_or_create_scene("farm");
     SPDLOG_INFO("[Game]Default scenes initialized");
 
     // 加载时钟数据
-    load_clock_data();
+    game_clock_->load_clock_data();
 
     // 进入事件循环（阻塞）
     event_base_dispatch(base_);
@@ -285,13 +302,12 @@ void GameServer::check_heartbeat() {
     time_t now = std::time(nullptr);
     std::vector<evutil_socket_t> timeout_fds;
 
-    for (auto& kv : gate_sessions_) {
-        auto& session = kv.second;
+    for (auto& [fd, session] : gate_sessions_) {
         if (session->state() == GateSessionState::DISCONNECTED) continue;
 
-        if (now - session->last_heartbeat() > HEARTBEAT_TIMEOUT) {
+        if (now - session->last_heartbeat() > GATE_HEARTBEAT_TIMEOUT) {
             SPDLOG_INFO("[Game]Heartbeat timeout fd={} gate_id={}", session->fd(), session->gate_id());
-            timeout_fds.push_back(kv.first);
+            timeout_fds.push_back(fd);
         }
     }
 
@@ -312,7 +328,7 @@ void GameServer::update_game_logic() {
     time_t now = std::time(nullptr);
 
     // Update game clock (1 second interval)
-    update_clock();
+    game_clock_->update();
 
     // Update item handler (crops, drop expiry)
     item_handler_.update(this);
@@ -325,7 +341,7 @@ void GameServer::update_game_logic() {
         float px = player->get_pos_x();
         float py = player->get_pos_y();
 
-        auto nearby_ids = drop_manager_.find_nearby(px, py);
+        auto nearby_ids = item_handler_.drops()->find_nearby(px, py);
         if (nearby_ids.empty()) continue;
 
         // Load inventory
@@ -334,7 +350,7 @@ void GameServer::update_game_logic() {
 
         bool inventory_changed = false;
         for (uint32_t drop_id : nearby_ids) {
-            const DropItem* drop = drop_manager_.get(drop_id);
+            const DropItem* drop = item_handler_.drops()->get(drop_id);
             if (!drop) continue;
 
             int32_t max_stack = ItemEffects::get_max_stack(drop->item_id);
@@ -345,7 +361,7 @@ void GameServer::update_game_logic() {
                 SPDLOG_INFO("[Game]Auto-pickup: player={} picked up {} x item_id={} (drop_id={})",
                             player->player_id(), picked_up, drop->item_id, drop_id);
 
-                drop_manager_.remove(drop_id);
+                item_handler_.drops()->remove(drop_id);
                 inventory_changed = true;
 
                 if (leftover > 0) {
@@ -369,10 +385,7 @@ bool GameServer::load_inventory_from_player(Player* player, PlayerInventory& inv
     }
 
     // Default inventory for new players
-    inv.slots[0] = {3, 1};   // axe x1
-    inv.slots[1] = {4, 1};   // hoe x1
-    inv.slots[2] = {5, 5};   // seeds x5
-    inv.slots[3] = {6, 3};   // bread x3
+    inv = PlayerInventory::create_default();
     return true;
 }
 
@@ -390,7 +403,7 @@ void GameServer::route_internal_message(std::shared_ptr<GateSession> session,
                                         const std::vector<uint8_t>& payload) {
     // 管理消息（5000-5999）可以在任何状态下处理
     if (msg_id >= 5000 && msg_id < 6000) {
-        handle_admin_message(session, msg_id, payload);
+        admin_handler_->handle(session, msg_id, payload);
         return;
     }
 
@@ -419,7 +432,7 @@ void GameServer::route_internal_message(std::shared_ptr<GateSession> session,
             handle_client_msg(session, payload);
             break;
         case MSG_ID_ACCOUNT_MSG:
-            handle_account_msg(session, payload);
+            account_handler_->handle(session, payload);
             break;
         default:
             SPDLOG_INFO("[Game]Unknown internal msg_id={} from fd={}", msg_id, session->fd());
@@ -434,8 +447,9 @@ void GameServer::route_internal_message(std::shared_ptr<GateSession> session,
 void GameServer::handle_gate_identify(std::shared_ptr<GateSession> session,
                                       const std::vector<uint8_t>& payload) {
     farm::GateIdentify req;
-    if (!payload.empty()) {
-        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Game]Failed to parse GateIdentify");
+        return;
     }
 
     session->set_gate_id(req.gate_id());
@@ -460,8 +474,9 @@ void GameServer::handle_intern_heartbeat(std::shared_ptr<GateSession> session,
 
     // 解析心跳消息
     farm::InternHeartbeat hb;
-    if (!payload.empty()) {
-        hb.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !hb.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Game]Failed to parse InternHeartbeat");
+        return;
     }
 
     // 回复心跳
@@ -476,8 +491,9 @@ void GameServer::handle_intern_heartbeat(std::shared_ptr<GateSession> session,
 void GameServer::handle_player_join(std::shared_ptr<GateSession> session,
                                     const std::vector<uint8_t>& payload) {
     farm::PlayerJoin req;
-    if (!payload.empty()) {
-        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Game]Failed to parse PlayerJoin");
+        return;
     }
 
     uint64_t player_id = req.player_id();
@@ -508,8 +524,9 @@ void GameServer::handle_player_join(std::shared_ptr<GateSession> session,
 void GameServer::handle_player_leave(std::shared_ptr<GateSession> session,
                                      const std::vector<uint8_t>& payload) {
     farm::PlayerLeave req;
-    if (!payload.empty()) {
-        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Game]Failed to parse PlayerLeave");
+        return;
     }
 
     uint64_t player_id = req.player_id();
@@ -546,8 +563,9 @@ void GameServer::handle_player_join_callback(std::shared_ptr<GateSession> sessio
 void GameServer::handle_client_msg(std::shared_ptr<GateSession> session,
                                    const std::vector<uint8_t>& payload) {
     farm::ClientMessage req;
-    if (!payload.empty()) {
-        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Game]Failed to parse ClientMessage");
+        return;
     }
 
     uint64_t player_id = req.player_id();
@@ -576,8 +594,9 @@ void GameServer::handle_client_msg(std::shared_ptr<GateSession> session,
 void GameServer::handle_enter_game_req(std::shared_ptr<GateSession> session,
                                         uint64_t player_id, const std::string& payload) {
     farm::EnterGameReq req;
-    if (!payload.empty()) {
-        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Game]Failed to parse EnterGameReq");
+        return;
     }
 
     uint64_t req_player_id = req.player_id();
@@ -636,7 +655,7 @@ void GameServer::handle_enter_game_req(std::shared_ptr<GateSession> session,
                 // Include energy data
                 farm::EnergySync* energy_sync = resp.mutable_energy();
                 energy_sync->set_current(data.energy);
-                energy_sync->set_max(100);  // TODO: make max energy configurable
+                energy_sync->set_max(farm::MAX_ENERGY);
 
                 resp.set_code(0);
                 resp.set_msg("success");
@@ -685,8 +704,9 @@ void GameServer::handle_item_use_req(uint64_t player_id,
                                       const uint8_t* payload, size_t payload_len) {
     // Parse ItemUseReq
     farm::ItemUseReq req;
-    if (payload_len > 0) {
-        req.ParseFromArray(payload, static_cast<int>(payload_len));
+    if (payload_len > 0 && !req.ParseFromArray(payload, static_cast<int>(payload_len))) {
+        SPDLOG_ERROR("[Game]Failed to parse ItemUseReq");
+        return;
     }
 
     SPDLOG_INFO("[Game]ItemUseReq: player_id={} target=({},{}) direction={} active_slot={}",
@@ -736,7 +756,7 @@ void GameServer::handle_item_use_req(uint64_t player_id,
     // Include energy data in response
     farm::EnergySync* energy_sync = resp.mutable_energy();
     energy_sync->set_current(player->get_energy());
-    energy_sync->set_max(100);  // TODO: make max energy configurable
+    energy_sync->set_max(farm::MAX_ENERGY);
 
     // Send response via PlayerMsg wrapper
     std::string resp_data;
@@ -748,269 +768,6 @@ void GameServer::handle_item_use_req(uint64_t player_id,
 
     if (result == ItemUseResult::SUCCESS) {
         SPDLOG_INFO("[Game]ItemUseReq processed successfully for player_id={}", player_id);
-    }
-}
-
-void GameServer::handle_account_msg(std::shared_ptr<GateSession> session,
-                                    const std::vector<uint8_t>& payload) {
-    farm::AccountMessage req;
-    if (!payload.empty()) {
-        req.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
-    }
-
-    const std::string& account_id = req.account_id();
-    uint32_t msg_id = req.msg_id();
-    const std::string& inner_payload = req.payload();
-
-    SPDLOG_INFO("[Game]Account message: account_id={} msg_id={}", account_id, msg_id);
-
-    // 根据 msg_id 处理不同的账号消息
-    if (msg_id == MSG_ID_QUERY_ROLES_REQ) {
-        // 查询角色列表
-        dbmgr_mgr_.send_account_data_req(account_id,
-            [this, session, account_id](int32_t code, const std::vector<std::tuple<uint32_t, uint64_t, std::string>>& roles) {
-                // 构造响应
-                farm::AccountMessageResp resp;
-                resp.set_account_id(account_id);
-                resp.set_msg_id(MSG_ID_QUERY_ROLES_RESP);
-
-                // 构造 QueryRolesResp
-                farm::QueryRolesResp roles_resp;
-                roles_resp.set_code(code);
-                if (code == 0) {
-                    for (const auto& role : roles) {
-                        auto* r = roles_resp.add_roles();
-                        r->set_server_id(std::get<0>(role));
-                        r->set_player_id(std::get<1>(role));
-                        r->set_role_name(std::get<2>(role));
-                    }
-                } else {
-                    roles_resp.set_msg("Failed to query roles");
-                }
-
-                std::string resp_data;
-                roles_resp.SerializeToString(&resp_data);
-                resp.set_payload(resp_data);
-
-                std::string final_resp;
-                resp.SerializeToString(&final_resp);
-
-                send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
-            });
-    } else if (msg_id == MSG_ID_CREATE_ROLE_REQ) {
-        // 创建角色
-        farm::CreateRoleReq create_req;
-        if (!inner_payload.empty()) {
-            create_req.ParseFromArray(inner_payload.data(), static_cast<int>(inner_payload.size()));
-        }
-
-        uint32_t server_id = create_req.server_id();
-        const std::string& role_name = create_req.role_name();
-
-        // 生成 player_id
-        uint64_t player_id = player_id_gen_.generate(server_id);
-
-        dbmgr_mgr_.send_account_set_req(account_id,
-            server_id, player_id, role_name,
-            [this, session, account_id, player_id](int32_t code, const std::string& msg) {
-                // 构造响应
-                farm::AccountMessageResp resp;
-                resp.set_account_id(account_id);
-                resp.set_msg_id(MSG_ID_CREATE_ROLE_RESP);
-
-                // 构造 CreateRoleResp
-                farm::CreateRoleResp create_resp;
-                create_resp.set_code(code);
-                create_resp.set_msg(msg);
-                if (code == 0) {
-                    create_resp.set_player_id(player_id);
-                }
-
-                std::string resp_data;
-                create_resp.SerializeToString(&resp_data);
-                resp.set_payload(resp_data);
-
-                std::string final_resp;
-                resp.SerializeToString(&final_resp);
-
-                send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
-            });
-    } else if (msg_id == MSG_ID_ACCOUNT_DATA_REQ) {
-        // 查询账号数据（内部使用）
-        dbmgr_mgr_.send_account_data_req(account_id,
-            [this, session, account_id](int32_t code, const std::vector<std::tuple<uint32_t, uint64_t, std::string>>& roles) {
-                // 构造响应
-                farm::AccountMessageResp resp;
-                resp.set_account_id(account_id);
-                resp.set_msg_id(MSG_ID_ACCOUNT_DATA_RESP);
-
-                // 构造 AccountDataResp
-                farm::AccountDataResp data_resp;
-                data_resp.set_code(code);
-                if (code == 0) {
-                    for (const auto& role : roles) {
-                        auto* r = data_resp.add_roles();
-                        r->set_server_id(std::get<0>(role));
-                        r->set_player_id(std::get<1>(role));
-                        r->set_role_name(std::get<2>(role));
-                    }
-                } else {
-                    data_resp.set_msg("Failed to get account data");
-                }
-
-                std::string resp_data;
-                data_resp.SerializeToString(&resp_data);
-                resp.set_payload(resp_data);
-
-                std::string final_resp;
-                resp.SerializeToString(&final_resp);
-
-                send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
-            });
-    } else if (msg_id == MSG_ID_ACCOUNT_SET_REQ) {
-        // 设置账号数据（内部使用）
-        farm::AccountSetReq set_req;
-        if (!inner_payload.empty()) {
-            set_req.ParseFromArray(inner_payload.data(), static_cast<int>(inner_payload.size()));
-        }
-
-        const auto& new_role = set_req.new_role();
-        dbmgr_mgr_.send_account_set_req(account_id,
-            new_role.server_id(), new_role.player_id(), new_role.role_name(),
-            [this, session, account_id](int32_t code, const std::string& msg) {
-                // 构造响应
-                farm::AccountMessageResp resp;
-                resp.set_account_id(account_id);
-                resp.set_msg_id(MSG_ID_ACCOUNT_SET_RESP);
-
-                // 构造 AccountSetResp
-                farm::AccountSetResp set_resp;
-                set_resp.set_code(code);
-                set_resp.set_msg(msg);
-
-                std::string resp_data;
-                set_resp.SerializeToString(&resp_data);
-                resp.set_payload(resp_data);
-
-                std::string final_resp;
-                resp.SerializeToString(&final_resp);
-
-                send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
-            });
-    } else if (msg_id == MSG_ID_ENTER_GAME_REQ) {
-        // 进入游戏（通过账号消息通道）
-        farm::EnterGameReq enter_req;
-        if (!inner_payload.empty()) {
-            enter_req.ParseFromArray(inner_payload.data(), static_cast<int>(inner_payload.size()));
-        }
-
-        uint64_t req_player_id = enter_req.player_id();
-        uint32_t server_id = enter_req.server_id();
-
-        SPDLOG_INFO("[Game]EnterGameReq (account): player_id={} server_id={}", req_player_id, server_id);
-
-        // 检查 DBMgr 是否可用
-        if (!dbmgr_mgr_.is_connected(0)) {
-            SPDLOG_ERROR("[Game]DBMgr not available for EnterGameReq (account), player_id={}", req_player_id);
-
-            // 回复失败
-            farm::AccountMessageResp resp;
-            resp.set_account_id(account_id);
-            resp.set_msg_id(MSG_ID_ENTER_GAME_RESP);
-
-            farm::EnterGameResp enter_resp;
-            enter_resp.set_code(-1);
-            enter_resp.set_msg("DBMgr not available");
-
-            std::string resp_data;
-            enter_resp.SerializeToString(&resp_data);
-            resp.set_payload(resp_data);
-
-            std::string final_resp;
-            resp.SerializeToString(&final_resp);
-
-            send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
-            return;
-        }
-
-        // 使用 PlayerManager 创建玩家并加载数据
-        auto callback = [this, session, account_id, req_player_id](uint64_t pid, bool success, const std::string& msg) {
-            // 构造响应
-            farm::AccountMessageResp resp;
-            resp.set_account_id(account_id);
-            resp.set_msg_id(MSG_ID_ENTER_GAME_RESP);
-
-            farm::EnterGameResp enter_resp;
-            if (success) {
-                // 获取玩家数据
-                Player* player = player_mgr_.get_player(pid);
-                if (player) {
-                    const PlayerBizData& data = player->player_data();
-                    farm::PlayerData player_data;
-                    player_data.set_player_id(pid);
-                    player_data.set_role_name(data.role_name);
-                    player_data.set_level(data.level);
-                    player_data.set_exp(data.experience);
-                    player_data.set_pos_x(data.pos_x);
-                    player_data.set_pos_y(data.pos_y);
-                    player_data.set_pos_z(data.pos_z);
-                    player_data.set_scene_id(data.scene_id);
-                    *enter_resp.mutable_player_data() = player_data;
-
-                    // Include energy data
-                    farm::EnergySync* energy_sync = enter_resp.mutable_energy();
-                    energy_sync->set_current(data.energy);
-                    energy_sync->set_max(100);  // TODO: make max energy configurable
-
-                    enter_resp.set_code(0);
-                    enter_resp.set_msg("success");
-
-                    // Include clock data
-                    farm::ClockSync* clock_sync = enter_resp.mutable_clock();
-                    clock_sync->set_day(clock_day_);
-                    clock_sync->set_time_slot(clock_time_slot_);
-                    clock_sync->set_paused(clock_paused_);
-                } else {
-                    enter_resp.set_code(-1);
-                    enter_resp.set_msg("Player not found after data load");
-                }
-            } else {
-                enter_resp.set_code(-1);
-                enter_resp.set_msg(msg);
-            }
-
-            std::string resp_data;
-            enter_resp.SerializeToString(&resp_data);
-            resp.set_payload(resp_data);
-
-            std::string final_resp;
-            resp.SerializeToString(&final_resp);
-
-            send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
-        };
-
-        bool added = player_mgr_.add_player_with_data_load(req_player_id, session.get(), std::move(callback));
-        if (!added) {
-            // 玩家已存在，直接回复失败
-            farm::AccountMessageResp resp;
-            resp.set_account_id(account_id);
-            resp.set_msg_id(MSG_ID_ENTER_GAME_RESP);
-
-            farm::EnterGameResp enter_resp;
-            enter_resp.set_code(1);
-            enter_resp.set_msg("Player already in game");
-
-            std::string resp_data;
-            enter_resp.SerializeToString(&resp_data);
-            resp.set_payload(resp_data);
-
-            std::string final_resp;
-            resp.SerializeToString(&final_resp);
-
-            send_to_gate(session, MSG_ID_ACCOUNT_MSG_RESP, final_resp);
-        }
-    } else {
-        SPDLOG_INFO("[Game]Unknown account msg_id={}", msg_id);
     }
 }
 
@@ -1048,648 +805,6 @@ void GameServer::send_game_msg(uint64_t player_id, uint32_t msg_id,
     if (it != gate_sessions_.end()) {
         send_to_gate(it->second, MSG_ID_GAME_MSG, resp_data);
     }
-}
-
-// ===========================================
-// 管理消息处理
-// ===========================================
-
-void GameServer::handle_admin_message(std::shared_ptr<GateSession> session,
-                                      uint32_t msg_id, const std::vector<uint8_t>& payload) {
-    std::string payload_str(payload.begin(), payload.end());
-
-    switch (msg_id) {
-        case MSG_ID_SHUTDOWN: {
-            AdminShutdownMsg msg;
-            if (AdminShutdownMsg::deserialize(payload_str, msg)) {
-                handle_shutdown(session, msg);
-            } else {
-                SPDLOG_ERROR("[Game]Failed to parse MSG_ID_SHUTDOWN");
-            }
-            break;
-        }
-        case MSG_ID_SHUTDOWN_RESP: {
-            AdminShutdownResp resp;
-            if (AdminShutdownResp::deserialize(payload_str, resp)) {
-                handle_shutdown_resp(session, resp);
-            } else {
-                SPDLOG_ERROR("[Game]Failed to parse MSG_ID_SHUTDOWN_RESP");
-            }
-            break;
-        }
-        default:
-            SPDLOG_INFO("[Game]Unknown admin msg_id={}", msg_id);
-            break;
-    }
-}
-
-void GameServer::handle_shutdown(std::shared_ptr<GateSession> session, const AdminShutdownMsg& msg) {
-    SPDLOG_INFO("[Game]Received shutdown request: reason={}, timeout_ms={}", msg.reason, msg.timeout_ms);
-
-    // 停止接受新连接
-    if (listener_) {
-        evconnlistener_disable(listener_);
-        SPDLOG_INFO("[Game]Stopped accepting new connections");
-    }
-
-    // 保存所有玩家数据
-    SPDLOG_INFO("[Game]Saving all player data...");
-    player_mgr_.save_all_players();
-
-    // 保存所有场景数据
-    SPDLOG_INFO("[Game]Saving all scene data...");
-    save_all_scenes();
-
-    // 保存时钟数据
-    SPDLOG_INFO("[Game]Saving clock data...");
-    save_clock_data();
-
-    // 向所有 DBMgr 发送 MSG_ID_SHUTDOWN
-    AdminShutdownMsg forward_msg;
-    forward_msg.reason = msg.reason;
-    forward_msg.timeout_ms = msg.timeout_ms;
-    std::string forward_payload = forward_msg.serialize();
-
-    dbmgr_mgr_.broadcast_message(MSG_ID_SHUTDOWN, forward_payload);
-    SPDLOG_INFO("[Game]Forwarded shutdown to all DBMgrs");
-
-    // 发送响应给 Gate
-    AdminShutdownResp resp;
-    resp.code = 0;
-    resp.msg = "GameServer shutting down";
-    std::string resp_payload = resp.serialize();
-
-    send_to_gate(session, MSG_ID_SHUTDOWN_RESP, resp_payload);
-    SPDLOG_INFO("[Game]Sent shutdown response to Gate");
-
-    // 等待 DBMgr 响应（简化实现：直接退出）
-    SPDLOG_INFO("[Game]Shutdown initiated, stopping server...");
-    stop();
-}
-
-void GameServer::handle_shutdown_resp(std::shared_ptr<GateSession> session, const AdminShutdownResp& resp) {
-    SPDLOG_INFO("[Game]Received shutdown response: code={}, msg={}", resp.code, resp.msg);
-
-    // 如果 DBMgr 响应了就绪，可以安全退出
-    if (resp.code == 0) {
-        SPDLOG_INFO("[Game]DBMgr ready to shutdown");
-    }
-}
-
-// ===========================================
-// 场景管理
-// ===========================================
-
-SceneState* GameServer::get_or_create_scene(const std::string& scene_id) {
-    auto it = scenes_.find(scene_id);
-    if (it != scenes_.end()) {
-        return it->second.get();
-    }
-
-    // Scene dimensions (matching client scene_defs.py)
-    int width = 60;
-    int height = 50;
-    if (scene_id == "house") {
-        width = 10;
-        height = 8;
-    }
-
-    auto scene = std::make_unique<SceneState>(scene_id, width, height);
-    scene->generate_default();
-
-    SceneState* ptr = scene.get();
-    scenes_[scene_id] = std::move(scene);
-
-    SPDLOG_INFO("[Game]Created scene: {} ({}x{})", scene_id, width, height);
-
-    // Attempt to load saved scene data from DBMgr (async, will overwrite defaults if found)
-    load_scene_data(scene_id);
-
-    return ptr;
-}
-
-void GameServer::handle_scene_change_req(uint64_t player_id,
-                                          const uint8_t* payload, size_t payload_len) {
-    // Parse SceneChangeReq
-    farm::SceneChangeReq req;
-    if (payload_len > 0) {
-        req.ParseFromArray(payload, static_cast<int>(payload_len));
-    }
-
-    const std::string& target_scene = req.target_scene();
-    const std::string& target_portal_id = req.target_portal_id();
-
-    SPDLOG_INFO("[Game]SceneChangeReq: player_id={} target_scene={} target_portal={}",
-                player_id, target_scene, target_portal_id);
-
-    // Get player
-    Player* player = player_mgr_.get_player(player_id);
-    if (!player) {
-        SPDLOG_ERROR("[Game]SceneChangeReq: player_id={} not found", player_id);
-        return;
-    }
-
-    const std::string& current_scene_id = player->get_scene_id();
-
-    // Validate target scene exists in our scene definitions
-    if (target_scene != "farm" && target_scene != "house") {
-        SPDLOG_ERROR("[Game]SceneChangeReq: invalid target_scene={}", target_scene);
-
-        // Send failure response
-        farm::SceneChangeResp resp;
-        resp.set_code(1);
-        resp.set_msg("invalid target scene");
-        resp.set_target_scene(target_scene);
-
-        std::string resp_data;
-        resp.SerializeToString(&resp_data);
-        send_game_msg(player_id, MSG_ID_SCENE_CHANGE_RESP,
-                      reinterpret_cast<const uint8_t*>(resp_data.data()),
-                      resp_data.size());
-        return;
-    }
-
-    // Freeze current scene (if player was in one)
-    if (!current_scene_id.empty()) {
-        auto it = scenes_.find(current_scene_id);
-        if (it != scenes_.end()) {
-            it->second->remove_player();
-        }
-    }
-
-    // Get or create target scene
-    SceneState* target = get_or_create_scene(target_scene);
-
-    // Thaw if frozen
-    if (target->is_frozen()) {
-        target->thaw();
-    }
-    target->add_player();
-
-    // Determine spawn position
-    int spawn_x = 5;
-    int spawn_y = 5;
-    if (target_scene == "farm") {
-        // Farm spawn near the door
-        spawn_x = 30;
-        spawn_y = 25;
-    } else if (target_scene == "house") {
-        // House spawn inside
-        spawn_x = 5;
-        spawn_y = 6;
-    }
-
-    // Update player data
-    player->set_scene_id(target_scene);
-    player->set_pos_x(static_cast<float>(spawn_x * 16));  // TILE_SIZE = 16
-    player->set_pos_y(static_cast<float>(spawn_y * 16));
-    player->set_dirty(true);
-
-    // Send response
-    farm::SceneChangeResp resp;
-    resp.set_code(0);
-    resp.set_msg("success");
-    resp.set_target_scene(target_scene);
-    resp.set_spawn_x(spawn_x);
-    resp.set_spawn_y(spawn_y);
-    resp.set_active_scene(target_scene);
-
-    std::string resp_data;
-    resp.SerializeToString(&resp_data);
-    send_game_msg(player_id, MSG_ID_SCENE_CHANGE_RESP,
-                  reinterpret_cast<const uint8_t*>(resp_data.data()),
-                  resp_data.size());
-
-    SPDLOG_INFO("[Game]SceneChangeReq: player_id={} switched to scene={} spawn=({},{})",
-                player_id, target_scene, spawn_x, spawn_y);
-}
-
-// ===========================================
-// Scene data persistence (via DBMgr)
-// ===========================================
-
-std::string GameServer::make_scene_data_key(const std::string& scene_id) {
-    return "scene:" + scene_id;
-}
-
-void GameServer::save_all_scenes() {
-    SPDLOG_INFO("[Game]Saving all scene data...");
-    for (auto& kv : scenes_) {
-        save_scene_data(kv.first);
-    }
-    SPDLOG_INFO("[Game]All scene data save requests sent");
-}
-
-void GameServer::save_scene_data(const std::string& scene_id) {
-    if (!dbmgr_mgr_.is_connected(0)) {
-        SPDLOG_INFO("[Game]No DBMgr connected, skipping scene save for {}", scene_id);
-        return;
-    }
-
-    auto it = scenes_.find(scene_id);
-    if (it == scenes_.end()) {
-        return;
-    }
-
-    // Build multi-scene save format: {"active_scene": "farm", "scenes": {"farm": {...}, "house": {...}}}
-    // For individual scene save, wrap in the expected format
-    nlohmann::json save_data;
-    save_data["active_scene"] = scene_id;
-    save_data["scenes"][scene_id] = nlohmann::json::parse(it->second->serialize());
-
-    std::string value = save_data.dump();
-    std::string key = make_scene_data_key(scene_id);
-
-    auto callback = [scene_id](int32_t code, const uint8_t* /*data*/, size_t /*len*/) {
-        if (code == 0) {
-            SPDLOG_INFO("[Game]Scene data saved: scene={}", scene_id);
-        } else {
-            SPDLOG_ERROR("[Game]Scene data save failed: scene={} code={}", scene_id, code);
-        }
-    };
-
-    dbmgr_mgr_.send_player_data_req(
-        SCENE_DATA_PLAYER_ID,
-        static_cast<int32_t>(farm::PlayerDataOp::SET),
-        key, value,
-        std::move(callback));
-}
-
-// ===========================================
-// 游戏时钟
-// ===========================================
-
-void GameServer::save_clock_data() {
-    if (!dbmgr_mgr_.is_connected(0)) {
-        SPDLOG_INFO("[Game]No DBMgr connected, skipping clock data save");
-        return;
-    }
-
-    nlohmann::json clock_json;
-    clock_json["day"] = clock_day_;
-    clock_json["time_slot"] = clock_time_slot_;
-    clock_json["elapsed"] = clock_elapsed_;
-
-    std::string value = clock_json.dump();
-    std::string key = "server:game_clock";
-
-    auto callback = [](int32_t code, const uint8_t* /*data*/, size_t /*len*/) {
-        if (code == 0) {
-            SPDLOG_INFO("[Game]Clock data saved to DBMgr");
-        } else {
-            SPDLOG_ERROR("[Game]Clock data save failed: code={}", code);
-        }
-    };
-
-    dbmgr_mgr_.send_player_data_req(
-        SCENE_DATA_PLAYER_ID,
-        static_cast<int32_t>(farm::PlayerDataOp::SET),
-        key, value,
-        std::move(callback));
-}
-
-void GameServer::load_clock_data() {
-    if (!dbmgr_mgr_.is_connected(0)) {
-        SPDLOG_INFO("[Game]No DBMgr connected, cannot load clock data");
-        return;
-    }
-
-    std::string key = "server:game_clock";
-
-    auto callback = [this](int32_t code, const uint8_t* value_data, size_t value_len) {
-        if (code != 0 || !value_data || value_len == 0) {
-            SPDLOG_INFO("[Game]No saved clock data, using defaults (day=1, slot=0)");
-            return;
-        }
-
-        try {
-            std::string json_str(reinterpret_cast<const char*>(value_data), value_len);
-            nlohmann::json clock_json = nlohmann::json::parse(json_str);
-
-            clock_day_ = clock_json.value("day", 1);
-            clock_time_slot_ = clock_json.value("time_slot", 0);
-            clock_elapsed_ = clock_json.value("elapsed", 0.0);
-
-            SPDLOG_INFO("[Game]Loaded clock data from DBMgr: day={}, slot={}, elapsed={}",
-                        clock_day_, clock_time_slot_, clock_elapsed_);
-        } catch (const std::exception& e) {
-            SPDLOG_ERROR("[Game]Error loading clock data: {}", e.what());
-        }
-    };
-
-    dbmgr_mgr_.send_player_data_req(
-        SCENE_DATA_PLAYER_ID,
-        static_cast<int32_t>(farm::PlayerDataOp::GET),
-        key, "",
-        std::move(callback));
-}
-
-void GameServer::update_clock() {
-    // 暂停状态不更新
-    if (clock_paused_) {
-        // 但仍然检查强制睡觉超时
-        if (force_sleep_pending_) {
-            force_sleep_timeout_counter_++;
-            if (force_sleep_timeout_counter_ >= 10) {
-                SPDLOG_WARN("[Game]Force sleep timeout (10s), forcing completion");
-                force_sleep_pending_ = false;
-                force_sleep_timeout_counter_ = 0;
-
-                // 强制完成：切换场景 + 恢复体力 + 推进天数
-                // 获取当前玩家（简化：遍历所有玩家）
-                auto all_players = player_mgr_.get_all_players();
-                for (Player* player : all_players) {
-                    if (!player || player->data_state() != PlayerBizDataState::LOADED) continue;
-
-                    uint64_t player_id = player->player_id();
-
-                    // 切换到 house 场景
-                    const std::string& current_scene = player->get_scene_id();
-                    if (!current_scene.empty()) {
-                        auto it = scenes_.find(current_scene);
-                        if (it != scenes_.end()) {
-                            it->second->remove_player();
-                        }
-                    }
-
-                    SceneState* house = get_or_create_scene("house");
-                    if (house->is_frozen()) house->thaw();
-                    house->add_player();
-
-                    player->set_scene_id("house");
-                    player->set_pos_x(5.0f * 16);
-                    player->set_pos_y(6.0f * 16);
-
-                    // 恢复体力 50% of max energy
-                    int32_t current_energy = player->get_energy();
-                    int32_t max_energy = 100;  // TODO: make configurable
-                    int32_t restore = max_energy / 2;
-                    player->set_energy(std::min(current_energy + restore, max_energy));
-
-                    // 推进天数
-                    clock_day_++;
-                    clock_time_slot_ = 0;
-                    clock_elapsed_ = 0.0;
-
-                    // 恢复时钟
-                    clock_paused_ = false;
-
-                    // 发送 SceneChangeResp
-                    farm::SceneChangeResp scene_resp;
-                    scene_resp.set_code(0);
-                    scene_resp.set_msg("force sleep");
-                    scene_resp.set_target_scene("house");
-                    scene_resp.set_spawn_x(5);
-                    scene_resp.set_spawn_y(6);
-                    scene_resp.set_active_scene("house");
-
-                    std::string scene_resp_data;
-                    scene_resp.SerializeToString(&scene_resp_data);
-                    send_game_msg(player_id, MSG_ID_SCENE_CHANGE_RESP,
-                                  reinterpret_cast<const uint8_t*>(scene_resp_data.data()),
-                                  scene_resp_data.size());
-
-                    // 发送 ClockSync
-                    broadcast_clock_sync();
-
-                    // 发送 EnergySync
-                    farm::ItemUseResp energy_resp;
-                    energy_resp.set_code(0);
-                    energy_resp.set_msg("force sleep restore");
-                    farm::EnergySync* energy_sync = energy_resp.mutable_energy();
-                    energy_sync->set_current(player->get_energy());
-                    energy_sync->set_max(max_energy);
-
-                    std::string energy_resp_data;
-                    energy_resp.SerializeToString(&energy_resp_data);
-                    send_game_msg(player_id, MSG_ID_ITEM_USE_RESP,
-                                  reinterpret_cast<const uint8_t*>(energy_resp_data.data()),
-                                  energy_resp_data.size());
-
-                    SPDLOG_INFO("[Game]Force sleep timeout: player={} switched to house, day={}", player_id, clock_day_);
-                }
-            }
-        }
-        return;
-    }
-
-    // 推进时钟（update_game_logic 每秒调用一次）
-    clock_elapsed_ += 1.0;
-
-    // 检查是否推进一个 slot (60秒 = 1个slot)
-    while (clock_elapsed_ >= 60.0) {
-        clock_elapsed_ -= 60.0;
-        clock_time_slot_++;
-
-        if (clock_time_slot_ >= 40) {
-            // 一天结束
-            SPDLOG_INFO("[Game]Day {} ended (slot={})", clock_day_, clock_time_slot_);
-            on_day_end();
-            return;
-        } else {
-            SPDLOG_INFO("[Game]New slot: day={}, slot={}", clock_day_, clock_time_slot_);
-            broadcast_clock_sync();
-        }
-    }
-}
-
-void GameServer::broadcast_clock_sync() {
-    farm::ClockSync sync;
-    sync.set_day(clock_day_);
-    sync.set_time_slot(clock_time_slot_);
-    sync.set_paused(clock_paused_);
-
-    std::string sync_data;
-    sync.SerializeToString(&sync_data);
-
-    // 发送给所有在线玩家
-    auto all_players = player_mgr_.get_all_players();
-    for (Player* player : all_players) {
-        if (!player || player->data_state() != PlayerBizDataState::LOADED) continue;
-        send_game_msg(player->player_id(), MSG_ID_CLOCK_SYNC,
-                      reinterpret_cast<const uint8_t*>(sync_data.data()),
-                      sync_data.size());
-    }
-
-    SPDLOG_DEBUG("[Game]ClockSync broadcast: day={}, slot={}, paused={}",
-                 clock_day_, clock_time_slot_, clock_paused_);
-}
-
-void GameServer::on_day_end() {
-    // 暂停时钟
-    clock_paused_ = true;
-    force_sleep_pending_ = true;
-    force_sleep_timeout_counter_ = 0;
-
-    // 发送 ForceSleepNotify 给所有在线玩家
-    farm::ForceSleepNotify notify;
-    notify.set_day(clock_day_);
-
-    std::string notify_data;
-    notify.SerializeToString(&notify_data);
-
-    auto all_players = player_mgr_.get_all_players();
-    for (Player* player : all_players) {
-        if (!player || player->data_state() != PlayerBizDataState::LOADED) continue;
-        send_game_msg(player->player_id(), MSG_ID_FORCE_SLEEP_NOTIFY,
-                      reinterpret_cast<const uint8_t*>(notify_data.data()),
-                      notify_data.size());
-    }
-
-    SPDLOG_INFO("[Game]Force sleep initiated: day={}, waiting for client ready", clock_day_);
-}
-
-void GameServer::handle_force_sleep_ready(uint64_t player_id,
-                                           const uint8_t* payload, size_t payload_len) {
-    farm::ForceSleepReady req;
-    if (payload_len > 0) {
-        req.ParseFromArray(payload, static_cast<int>(payload_len));
-    }
-
-    SPDLOG_INFO("[Game]ForceSleepReady received: player_id={}, day={}", player_id, req.day());
-
-    if (!force_sleep_pending_) {
-        SPDLOG_WARN("[Game]ForceSleepReady but no force sleep pending, ignoring");
-        return;
-    }
-
-    // 清除强制睡觉状态
-    force_sleep_pending_ = false;
-    force_sleep_timeout_counter_ = 0;
-
-    // 获取玩家
-    Player* player = player_mgr_.get_player(player_id);
-    if (!player) {
-        SPDLOG_ERROR("[Game]ForceSleepReady: player_id={} not found", player_id);
-        return;
-    }
-
-    // 1. 冻结当前场景
-    const std::string& current_scene = player->get_scene_id();
-    if (!current_scene.empty()) {
-        auto it = scenes_.find(current_scene);
-        if (it != scenes_.end()) {
-            it->second->remove_player();
-        }
-    }
-
-    // 2. 切换到 house 场景
-    SceneState* house = get_or_create_scene("house");
-    if (house->is_frozen()) house->thaw();
-    house->add_player();
-
-    // 3. 设置玩家位置到 BED 旁边
-    player->set_scene_id("house");
-    player->set_pos_x(5.0f * 16);  // TILE_SIZE = 16
-    player->set_pos_y(6.0f * 16);
-    player->set_dirty(true);
-
-    // 4. 恢复体力 50% of max energy
-    int32_t current_energy = player->get_energy();
-    int32_t max_energy = 100;  // TODO: make configurable
-    int32_t restore = max_energy / 2;
-    player->set_energy(std::min(current_energy + restore, max_energy));
-
-    // 5. 推进天数
-    clock_day_++;
-    clock_time_slot_ = 0;
-    clock_elapsed_ = 0.0;
-
-    // 6. 恢复时钟
-    clock_paused_ = false;
-
-    // 7. 发送 SceneChangeResp
-    farm::SceneChangeResp scene_resp;
-    scene_resp.set_code(0);
-    scene_resp.set_msg("force sleep");
-    scene_resp.set_target_scene("house");
-    scene_resp.set_spawn_x(5);
-    scene_resp.set_spawn_y(6);
-    scene_resp.set_active_scene("house");
-
-    std::string scene_resp_data;
-    scene_resp.SerializeToString(&scene_resp_data);
-    send_game_msg(player_id, MSG_ID_SCENE_CHANGE_RESP,
-                  reinterpret_cast<const uint8_t*>(scene_resp_data.data()),
-                  scene_resp_data.size());
-
-    // 8. 发送 ClockSync
-    broadcast_clock_sync();
-
-    // 9. 发送 EnergySync (via ItemUseResp with energy field)
-    farm::ItemUseResp energy_resp;
-    energy_resp.set_code(0);
-    energy_resp.set_msg("force sleep restore");
-    farm::EnergySync* energy_sync = energy_resp.mutable_energy();
-    energy_sync->set_current(player->get_energy());
-    energy_sync->set_max(max_energy);
-
-    std::string energy_resp_data;
-    energy_resp.SerializeToString(&energy_resp_data);
-    send_game_msg(player_id, MSG_ID_ITEM_USE_RESP,
-                  reinterpret_cast<const uint8_t*>(energy_resp_data.data()),
-                  energy_resp_data.size());
-
-    SPDLOG_INFO("[Game]Force sleep completed: player={}, day={}, energy={}/{}",
-                player_id, clock_day_, player->get_energy(), max_energy);
-}
-
-void GameServer::load_scene_data(const std::string& scene_id) {
-    if (!dbmgr_mgr_.is_connected(0)) {
-        SPDLOG_INFO("[Game]No DBMgr connected, cannot load scene data for {}", scene_id);
-        return;
-    }
-
-    std::string key = make_scene_data_key(scene_id);
-
-    auto callback = [this, scene_id](int32_t code, const uint8_t* value_data, size_t value_len) {
-        if (code != 0 || !value_data || value_len == 0) {
-            SPDLOG_INFO("[Game]No saved data for scene {}, using default", scene_id);
-            return;
-        }
-
-        auto it = scenes_.find(scene_id);
-        if (it == scenes_.end()) {
-            return;
-        }
-
-        try {
-            std::string json_str(reinterpret_cast<const char*>(value_data), value_len);
-            nlohmann::json save_data = nlohmann::json::parse(json_str);
-
-            // BUG-003 fix: handle old single-scene format migration
-            // Old format: {"width": ..., "height": ..., "ground": [...], "objects": [...]}
-            // New format: {"active_scene": "farm", "scenes": {"farm": {...}}}
-            std::string scene_json;
-            if (save_data.contains("scenes") && save_data["scenes"].is_object()) {
-                // New multi-scene format
-                if (save_data["scenes"].contains(scene_id)) {
-                    scene_json = save_data["scenes"][scene_id].dump();
-                }
-            } else if (save_data.contains("ground") && save_data.contains("objects")) {
-                // Old single-scene format - migrate to current scene
-                SPDLOG_INFO("[Game]Migrating old save format for scene {}", scene_id);
-                scene_json = save_data.dump();
-            }
-
-            if (!scene_json.empty()) {
-                if (it->second->deserialize(scene_json)) {
-                    SPDLOG_INFO("[Game]Loaded saved data for scene {}", scene_id);
-                } else {
-                    SPDLOG_ERROR("[Game]Failed to deserialize scene data for {}, using default", scene_id);
-                    it->second->generate_default();
-                }
-            }
-        } catch (const std::exception& e) {
-            SPDLOG_ERROR("[Game]Error loading scene data for {}: {}", scene_id, e.what());
-        }
-    };
-
-    dbmgr_mgr_.send_player_data_req(
-        SCENE_DATA_PLAYER_ID,
-        static_cast<int32_t>(farm::PlayerDataOp::GET),
-        key, "",
-        std::move(callback));
 }
 
 }  // namespace farm
