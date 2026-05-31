@@ -1,0 +1,4 @@
+[
+    { "key": "player_id", "unique": true },
+    { "key": "data.level", "unique": false }
+]
