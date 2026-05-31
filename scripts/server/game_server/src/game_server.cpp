@@ -1,7 +1,6 @@
 #include "game_server.h"
 #include "game_scene_manager.h"
 #include "game_clock.h"
-#include "account_message_handler.h"
 #include "admin_handler.h"
 #include "internal_msg_ids.h"
 #include "msg_ids.h"
@@ -31,7 +30,9 @@
 namespace farm {
 
 GameServer::GameServer(const std::string& ip, uint16_t port,
-                       const std::vector<DBMgrConfig>& dbmgr_configs)
+                       const std::vector<DBMgrConfig>& dbmgr_configs,
+                       const std::string& redis_uri,
+                       uint32_t server_id)
     : ip_(ip)
     , port_(port)
     , base_(nullptr)
@@ -40,6 +41,8 @@ GameServer::GameServer(const std::string& ip, uint16_t port,
     , update_timer_(nullptr)
     , running_(false)
     , dbmgr_configs_(dbmgr_configs)
+    , redis_uri_(redis_uri)
+    , server_id_(server_id)
     , item_handler_()
 {
 }
@@ -124,8 +127,23 @@ bool GameServer::start() {
     // 初始化提取的子系统
     scene_mgr_ = std::make_unique<GameSceneManager>(&player_mgr_, &dbmgr_mgr_, send_game_msg_func);
     game_clock_ = std::make_unique<GameClock>(&player_mgr_, scene_mgr_.get(), &dbmgr_mgr_, send_game_msg_func);
-    account_handler_ = std::make_unique<AccountMessageHandler>(&dbmgr_mgr_, &player_mgr_, send_to_gate_func);
-    account_handler_->set_clock(game_clock_.get());
+    // Initialize Redis connection
+    if (!redis_uri_.empty()) {
+        if (redis_conn_.connect(redis_uri_)) {
+            SPDLOG_INFO("[Game]Redis connected: {}", redis_uri_);
+        } else {
+            SPDLOG_WARN("[Game]Redis connection failed: {} (online tracking disabled)", redis_uri_);
+        }
+    } else {
+        SPDLOG_INFO("[Game]No Redis URI configured, online tracking disabled");
+    }
+
+    // Initialize stubs
+    login_stub_ = std::make_unique<LoginStub>(&player_mgr_, &dbmgr_mgr_, &redis_conn_, server_id_, send_to_gate_func);
+    login_stub_->set_clock(game_clock_.get());
+    online_stub_ = std::make_unique<OnlineStub>(&redis_conn_);
+    SPDLOG_INFO("[Game]LoginStub and OnlineStub initialized");
+
     admin_handler_ = std::make_unique<AdminHandler>(
         &player_mgr_, scene_mgr_.get(), game_clock_.get(), &dbmgr_mgr_,
         send_to_gate_func,
@@ -170,6 +188,8 @@ bool GameServer::start() {
 
 void GameServer::stop() {
     running_ = false;
+    // Disconnect Redis
+    redis_conn_.disconnect();
     // Shutdown DBMgr connections first
     dbmgr_mgr_.shutdown();
     if (update_timer_) {
@@ -432,7 +452,7 @@ void GameServer::route_internal_message(std::shared_ptr<GateSession> session,
             handle_client_msg(session, payload);
             break;
         case MSG_ID_ACCOUNT_MSG:
-            account_handler_->handle(session, payload);
+            login_stub_->handle_account_msg(session, payload);
             break;
         default:
             SPDLOG_INFO("[Game]Unknown internal msg_id={} from fd={}", msg_id, session->fd());
@@ -592,112 +612,8 @@ void GameServer::handle_client_msg(std::shared_ptr<GateSession> session,
 }
 
 void GameServer::handle_enter_game_req(std::shared_ptr<GateSession> session,
-                                        uint64_t player_id, std::string_view payload) {
-    farm::EnterGameReq req;
-    if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
-        SPDLOG_ERROR("[Game]Failed to parse EnterGameReq");
-        return;
-    }
-
-    uint64_t req_player_id = req.player_id();
-    uint32_t server_id = req.server_id();
-
-    SPDLOG_INFO("[Game]EnterGameReq: player_id={} server_id={}", req_player_id, server_id);
-
-    // 检查 DBMgr 是否可用
-    if (!dbmgr_mgr_.is_connected(0)) {
-        SPDLOG_ERROR("[Game]DBMgr not available for EnterGameReq, player_id={}", req_player_id);
-
-        // 回复失败
-        farm::GameMessage game_msg;
-        game_msg.set_player_id(req_player_id);
-        game_msg.set_msg_id(MSG_ID_ENTER_GAME_RESP);
-
-        farm::EnterGameResp resp;
-        resp.set_code(-1);
-        resp.set_msg("DBMgr not available");
-
-        std::string resp_data;
-        resp.SerializeToString(&resp_data);
-        game_msg.set_payload(resp_data);
-
-        std::string final_resp;
-        game_msg.SerializeToString(&final_resp);
-
-        send_to_gate(session, MSG_ID_GAME_MSG, final_resp);
-        return;
-    }
-
-    // 使用 PlayerManager 创建玩家并加载数据
-    auto callback = [this, session, req_player_id](uint64_t pid, bool success, const std::string& msg) {
-        // 构造响应
-        farm::GameMessage game_msg;
-        game_msg.set_player_id(req_player_id);
-        game_msg.set_msg_id(MSG_ID_ENTER_GAME_RESP);
-
-        farm::EnterGameResp resp;
-        if (success) {
-            // 获取玩家数据
-            Player* player = player_mgr_.get_player(pid).value_or(nullptr);
-            if (player) {
-                const PlayerBizData& data = player->player_data();
-                farm::PlayerData player_data;
-                player_data.set_player_id(pid);
-                player_data.set_role_name(data.role_name);
-                player_data.set_level(data.level);
-                player_data.set_exp(data.experience);
-                player_data.set_pos_x(data.pos_x);
-                player_data.set_pos_y(data.pos_y);
-                player_data.set_pos_z(data.pos_z);
-                player_data.set_scene_id(data.scene_id);
-                *resp.mutable_player_data() = player_data;
-
-                // Include energy data
-                farm::EnergySync* energy_sync = resp.mutable_energy();
-                energy_sync->set_current(data.energy);
-                energy_sync->set_max(farm::MAX_ENERGY);
-
-                resp.set_code(0);
-                resp.set_msg("success");
-            } else {
-                resp.set_code(-1);
-                resp.set_msg("Player not found after data load");
-            }
-        } else {
-            resp.set_code(-1);
-            resp.set_msg(msg);
-        }
-
-        std::string resp_data;
-        resp.SerializeToString(&resp_data);
-        game_msg.set_payload(resp_data);
-
-        std::string final_resp;
-        game_msg.SerializeToString(&final_resp);
-
-        send_to_gate(session, MSG_ID_GAME_MSG, final_resp);
-    };
-
-    bool added = player_mgr_.add_player_with_data_load(req_player_id, session.get(), std::move(callback));
-    if (!added) {
-        // 玩家已存在，直接回复失败
-        farm::GameMessage game_msg;
-        game_msg.set_player_id(req_player_id);
-        game_msg.set_msg_id(MSG_ID_ENTER_GAME_RESP);
-
-        farm::EnterGameResp resp;
-        resp.set_code(1);
-        resp.set_msg("Player already in game");
-
-        std::string resp_data;
-        resp.SerializeToString(&resp_data);
-        game_msg.set_payload(resp_data);
-
-        std::string final_resp;
-        game_msg.SerializeToString(&final_resp);
-
-        send_to_gate(session, MSG_ID_GAME_MSG, final_resp);
-    }
+                                        uint64_t player_id, const std::string& payload) {
+    login_stub_->handle_enter_game_req(session, player_id, payload);
 }
 
 void GameServer::handle_item_use_req(uint64_t player_id,

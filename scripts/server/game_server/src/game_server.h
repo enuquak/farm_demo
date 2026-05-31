@@ -6,6 +6,9 @@
 #include "message_parser.h"
 #include "dbmgr_connection_manager.h"
 #include "item_interaction_handler.h"
+#include "login_stub.h"
+#include "online_stub.h"
+#include "redis_connection.h"
 
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -26,13 +29,14 @@ using PlayerJoinCallback = std::function<void(uint64_t player_id, bool success, 
 // Forward declarations for extracted subsystems
 class GameSceneManager;
 class GameClock;
-class AccountMessageHandler;
 class AdminHandler;
 
 class GameServer {
 public:
     GameServer(const std::string& ip, uint16_t port,
-               const std::vector<DBMgrConfig>& dbmgr_configs = {});
+               const std::vector<DBMgrConfig>& dbmgr_configs = {},
+               const std::string& redis_uri = "",
+               uint32_t server_id = 1);
     ~GameServer();
 
     // 启动服务器（阻塞）
@@ -83,7 +87,7 @@ private:
     void handle_item_use_req(uint64_t player_id,
                               const uint8_t* payload, size_t payload_len);
     void handle_enter_game_req(std::shared_ptr<GateSession> session,
-                               uint64_t player_id, std::string_view payload);
+                               uint64_t player_id, const std::string& payload);
 
     // 玩家加入回调处理
     void handle_player_join_callback(std::shared_ptr<GateSession> session,
@@ -120,10 +124,20 @@ private:
     // 物品交互处理器
     ItemInteractionHandler item_handler_;
 
+    // Redis connection
+    RedisConnection redis_conn_;
+
+    // Stubs
+    std::unique_ptr<LoginStub> login_stub_;
+    std::unique_ptr<OnlineStub> online_stub_;
+
+    // Config
+    std::string redis_uri_;
+    uint32_t server_id_;
+
     // Extracted subsystems (initialized in start())
     std::unique_ptr<GameSceneManager> scene_mgr_;
     std::unique_ptr<GameClock> game_clock_;
-    std::unique_ptr<AccountMessageHandler> account_handler_;
     std::unique_ptr<AdminHandler> admin_handler_;
 };
 
