@@ -2,12 +2,19 @@
     "server": {
         "index": 0,
         "ip": "0.0.0.0",
-        "port": 5000,
-        "data_dir": "./data"
+        "port": 5000
     },
     "database": {
-        "uri": "",
-        "type": "file"
+        "mongo": {
+            "uri": "mongodb://localhost:27017/farm",
+            "retry_interval_ms": 3000,
+            "max_retry_count": 0
+        },
+        "redis": {
+            "uri": "redis://localhost:6379",
+            "retry_interval_ms": 3000,
+            "max_retry_count": 0
+        }
     },
     "shutdown": {
         "timeout_ms": 60000
@@ -15,7 +22,7 @@
     "pid_file": "./runtimeData/dbmgr.pid",
     "logging": {
         "dir": "./runtimeData/logs/server",
-        "level": "info",
+        "level": "debug",
         "max_file_size_mb": 20,
         "max_files": 7
     }
