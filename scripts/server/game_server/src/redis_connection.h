@@ -10,9 +10,11 @@ public:
     RedisConnection();
     ~RedisConnection();
 
-    // Non-copyable
+    // Non-copyable, non-movable (owns a raw hiredis context)
     RedisConnection(const RedisConnection&) = delete;
     RedisConnection& operator=(const RedisConnection&) = delete;
+    RedisConnection(RedisConnection&&) = delete;
+    RedisConnection& operator=(RedisConnection&&) = delete;
 
     // Connection management
     bool connect(const std::string& uri);

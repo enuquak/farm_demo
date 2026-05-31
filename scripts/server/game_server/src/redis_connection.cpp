@@ -25,7 +25,12 @@ bool RedisConnection::parse_uri(const std::string& uri, std::string& host, int& 
         port = 6379;
     } else {
         host = clean_uri.substr(0, colon_pos);
-        port = std::stoi(clean_uri.substr(colon_pos + 1));
+        try {
+            port = std::stoi(clean_uri.substr(colon_pos + 1));
+        } catch (const std::exception& e) {
+            SPDLOG_ERROR("[Redis]Failed to parse port from URI '{}': {}", uri, e.what());
+            return false;
+        }
     }
     return true;
 }
