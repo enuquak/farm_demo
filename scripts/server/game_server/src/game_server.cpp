@@ -592,7 +592,7 @@ void GameServer::handle_client_msg(std::shared_ptr<GateSession> session,
 }
 
 void GameServer::handle_enter_game_req(std::shared_ptr<GateSession> session,
-                                        uint64_t player_id, const std::string& payload) {
+                                        uint64_t player_id, std::string_view payload) {
     farm::EnterGameReq req;
     if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
         SPDLOG_ERROR("[Game]Failed to parse EnterGameReq");
@@ -776,7 +776,7 @@ void GameServer::handle_item_use_req(uint64_t player_id,
 // ===========================================
 
 void GameServer::send_to_gate(std::shared_ptr<GateSession> session,
-                              uint32_t msg_id, const std::string& payload) {
+                              uint32_t msg_id, std::string_view payload) {
     auto packed = MessageParser::pack(msg_id, payload);
     bufferevent_write(session->bev(), packed.data(), packed.size());
 }

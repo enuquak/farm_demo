@@ -683,7 +683,7 @@ std::vector<std::pair<uint32_t, DBMgrConnectionState>> DBMgrConnectionManager::g
 // ===========================================
 
 void DBMgrConnectionManager::send_to_dbmgr(DBMgrConnection* conn, uint32_t msg_id,
-                                             const std::string& payload) {
+                                             std::string_view payload) {
     if (!conn || !conn->bev()) return;
     auto packed = MessageParser::pack(msg_id, payload);
     bufferevent_write(conn->bev(), packed.data(), packed.size());
@@ -697,7 +697,7 @@ std::optional<DBMgrConnection*> DBMgrConnectionManager::find_connection_by_bev(s
     return connections_[idx].get();
 }
 
-void DBMgrConnectionManager::broadcast_message(uint32_t msg_id, const std::string& payload) {
+void DBMgrConnectionManager::broadcast_message(uint32_t msg_id, std::string_view payload) {
     for (auto& conn_ptr : connections_) {
         if (!conn_ptr) continue;
         if (conn_ptr->state() != DBMgrConnectionState::IDENTIFIED) continue;

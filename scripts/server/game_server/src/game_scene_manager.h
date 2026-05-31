@@ -4,6 +4,7 @@
 #include "game_types.h"
 
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <memory>
 #include <optional>
@@ -31,7 +32,7 @@ public:
     void save_all_scenes();
     void save_scene_data(const std::string& scene_id);
     void load_scene_data(const std::string& scene_id);
-    static std::string make_scene_data_key(const std::string& scene_id);
+    static std::string make_scene_data_key(std::string_view scene_id);
 
 private:
     PlayerManager* player_mgr_;

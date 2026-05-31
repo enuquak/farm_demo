@@ -107,7 +107,7 @@ public:
     std::vector<std::pair<uint32_t, DBMgrConnectionState>> get_all_status() const;
 
     // Broadcast message to all connected DBMgrs
-    void broadcast_message(uint32_t msg_id, const std::string& payload);
+    void broadcast_message(uint32_t msg_id, std::string_view payload);
 
 private:
     // libevent callbacks (static -> this pointer)
@@ -149,7 +149,7 @@ private:
     uint32_t hash_account_id(std::string_view account_id) const;
 
     // Send helper
-    void send_to_dbmgr(DBMgrConnection* conn, uint32_t msg_id, const std::string& payload);
+    void send_to_dbmgr(DBMgrConnection* conn, uint32_t msg_id, std::string_view payload);
 
     // Lookup connection by bev pointer (for callbacks)
     std::optional<DBMgrConnection*> find_connection_by_bev(struct bufferevent* bev);

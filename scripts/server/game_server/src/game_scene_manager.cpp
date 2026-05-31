@@ -161,8 +161,8 @@ void GameSceneManager::handle_scene_change_req(uint64_t player_id,
 // Scene data persistence (via DBMgr)
 // ===========================================
 
-std::string GameSceneManager::make_scene_data_key(const std::string& scene_id) {
-    return "scene:" + scene_id;
+std::string GameSceneManager::make_scene_data_key(std::string_view scene_id) {
+    return std::string("scene:").append(scene_id);
 }
 
 void GameSceneManager::save_all_scenes() {
