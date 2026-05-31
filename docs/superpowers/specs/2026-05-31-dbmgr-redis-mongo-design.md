@@ -17,6 +17,7 @@
 | Redis TTL | 无默认值，由调用方传入 |
 | MongoDB 集合 | `players` 和 `accounts` |
 | 数据库名 | 包含在 MongoDB URI 中 |
+| 索引配置 | 独立文件 `config/mongo/<collection>_index.json` |
 
 ## 配置格式
 
@@ -57,6 +58,52 @@
 - `retry_interval_ms`：重试间隔（毫秒）
 - `max_retry_count`：最大重试次数，`0` 表示无限重试
 - 删除了原有的 `server.data_dir`（不再需要文件存储）
+
+## MongoDB 索引配置
+
+每个集合的索引配置存放在 `config/mongo/` 目录下，文件名为 `<collection>_index.json`。
+
+**目录结构：**
+```
+config/mongo/
+├── players_index.json
+└── accounts_index.json
+```
+
+**配置格式：**
+```json
+[
+    { "key": "player_id", "unique": true },
+    { "key": "data.level", "unique": false, "sparse": true }
+]
+```
+
+**支持的索引选项：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `key` | string | 索引字段，支持嵌套（如 `data.level`） |
+| `unique` | bool | 是否唯一索引 |
+| `sparse` | bool | 是否稀疏索引（跳过不包含该字段的文档） |
+| `expireAfterSeconds` | int | TTL 索引，文档过期时间（秒） |
+
+**示例 - `config/mongo/players_index.json`：**
+```json
+[
+    { "key": "player_id", "unique": true },
+    { "key": "data.level", "unique": false },
+    { "key": "data.last_login", "unique": false, "expireAfterSeconds": 2592000 }
+]
+```
+
+**示例 - `config/mongo/accounts_index.json`：**
+```json
+[
+    { "key": "account_id", "unique": true }
+]
+```
+
+**索引创建时机：** `MongoServer::init()` 时读取配置文件，检查索引是否存在，不存在则自动创建。已存在的索引不会被修改或删除。
 
 ## 架构设计
 
@@ -103,6 +150,7 @@
 
 **MongoServer（MongoDB 业务层）：**
 - 依赖 MongoConnection
+- `init(index_config_dir)`：读取索引配置，自动创建缺失的索引
 - 实现玩家数据和账号数据的 CRUD 操作
 
 **RedisConnection（Redis 连接层）：**
@@ -193,7 +241,7 @@ main()
   ├── 创建 DbMgrServer（传入 ConnectionManager）
   └── DbMgrServer::start()
         ├── 检查 ConnectionManager::is_ready()
-        │     ├── true → 正常启动监听，对外服务
+        │     ├── true → MongoServer::init()（创建索引）→ 正常启动监听，对外服务
         │     └── false → 仅启动监听，拒绝数据请求（返回错误码），记录日志
         └── 进入事件循环
 ```
@@ -255,7 +303,10 @@ class MongoConnection {
 ```cpp
 class MongoServer {
 public:
-    MongoServer(MongoConnection& conn);
+    MongoServer(MongoConnection& conn, const std::string& index_config_dir);
+
+    // 初始化：读取索引配置，创建缺失索引
+    bool init();
 
     DataResult get_all(uint64_t player_id, std::vector<uint8_t>& value);
     DataResult get(uint64_t player_id, const std::string& key, std::vector<uint8_t>& value);
@@ -304,6 +355,14 @@ scripts/server/dbmgr/src/
 └── redis_server.h / .cpp
 ```
 
+### 新增配置文件
+
+```
+config/mongo/
+├── players_index.json             // players 集合索引配置
+└── accounts_index.json            // accounts 集合索引配置
+```
+
 ### 修改文件
 
 ```
@@ -336,3 +395,4 @@ DbMgrServer(uint32_t index, const std::string& ip, uint16_t port,
 - 移除 `data_dir` 参数
 - 新增 `ConnectionManager&` 参数
 - 内部持有 `MongoServer` 和 `RedisServer`，通过 `ConnectionManager` 获取的连接构造
+- `MongoServer` 构造时传入 `config/mongo/` 路径，用于读取索引配置
