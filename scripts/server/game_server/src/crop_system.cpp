@@ -11,7 +11,18 @@ CropSystem::CropSystem()
 {
 }
 
-std::string CropSystem::make_key(int x, int y) {
+uint64_t CropSystem::make_key(int x, int y) {
+    return (static_cast<uint64_t>(static_cast<int32_t>(x)) << 32) |
+           static_cast<uint32_t>(static_cast<int32_t>(y));
+}
+
+std::pair<int, int> CropSystem::parse_key(uint64_t key) {
+    int x = static_cast<int32_t>(key >> 32);
+    int y = static_cast<int32_t>(key & 0xFFFFFFFF);
+    return {x, y};
+}
+
+std::string CropSystem::make_string_key(int x, int y) {
     return std::to_string(x) + "," + std::to_string(y);
 }
 
@@ -28,7 +39,7 @@ bool CropSystem::register_crop(int x, int y, WorldState* world,
         return false;
     }
 
-    std::string key = make_key(x, y);
+    uint64_t key = make_key(x, y);
     CropData crop;
     crop.planted_at = (planted_at > 0) ? planted_at : std::time(nullptr);
     crop.grow_time = grow_time;
@@ -45,19 +56,8 @@ void CropSystem::update(WorldState* world) {
     time_t now = std::time(nullptr);
 
     for (auto it = growing_tiles_.begin(); it != growing_tiles_.end(); ) {
-        const std::string& key = it->first;
+        auto [tx, ty] = parse_key(it->first);
         CropData& crop = it->second;
-
-        // Parse tile coordinates from key
-        size_t comma = key.find(',');
-        if (comma == std::string::npos) {
-            SPDLOG_WARN("[CropSystem]Invalid key format: {}", key);
-            it = growing_tiles_.erase(it);
-            continue;
-        }
-
-        int tx = std::stoi(key.substr(0, comma));
-        int ty = std::stoi(key.substr(comma + 1));
 
         // Cleanup: if the object is no longer CROP_GROWING, remove stale data
         if (world->get_object(tx, ty) != ObjectType::CROP_GROWING) {
@@ -83,17 +83,8 @@ void CropSystem::simulate_elapsed(time_t elapsed, WorldState* world) {
     time_t effective_now = std::time(nullptr);
 
     for (auto it = growing_tiles_.begin(); it != growing_tiles_.end(); ) {
-        const std::string& key = it->first;
+        auto [tx, ty] = parse_key(it->first);
         CropData& crop = it->second;
-
-        size_t comma = key.find(',');
-        if (comma == std::string::npos) {
-            it = growing_tiles_.erase(it);
-            continue;
-        }
-
-        int tx = std::stoi(key.substr(0, comma));
-        int ty = std::stoi(key.substr(comma + 1));
 
         // Cleanup stale data
         if (world->get_object(tx, ty) != ObjectType::CROP_GROWING) {
@@ -102,9 +93,6 @@ void CropSystem::simulate_elapsed(time_t elapsed, WorldState* world) {
         }
 
         // Check if the crop would have matured during the elapsed time
-        // The total time since planting = (effective_now - planted_at)
-        // But we simulate as if elapsed seconds passed from the freeze point
-        // So: effective planted_at is shifted earlier by elapsed
         time_t effective_planted = crop.planted_at - elapsed;
         if (effective_now - effective_planted >= crop.grow_time) {
             world->set_object(tx, ty, ObjectType::CROP_READY);
@@ -119,7 +107,7 @@ void CropSystem::simulate_elapsed(time_t elapsed, WorldState* world) {
 }
 
 void CropSystem::remove_crop(int x, int y) {
-    std::string key = make_key(x, y);
+    uint64_t key = make_key(x, y);
     auto it = growing_tiles_.find(key);
     if (it != growing_tiles_.end()) {
         growing_tiles_.erase(it);
@@ -128,7 +116,7 @@ void CropSystem::remove_crop(int x, int y) {
 }
 
 bool CropSystem::has_crop(int x, int y) const {
-    std::string key = make_key(x, y);
+    uint64_t key = make_key(x, y);
     return growing_tiles_.find(key) != growing_tiles_.end();
 }
 
@@ -136,11 +124,14 @@ std::string CropSystem::serialize() const {
     nlohmann::json j;
     nlohmann::json tiles = nlohmann::json::object();
 
-    for (const auto& kv : growing_tiles_) {
+    for (const auto& [tile_key, crop] : growing_tiles_) {
+        auto [x, y] = parse_key(tile_key);
+        std::string str_key = make_string_key(x, y);
+
         nlohmann::json tile_data;
-        tile_data["planted_at"] = kv.second.planted_at;
-        tile_data["grow_time"] = kv.second.grow_time;
-        tiles[kv.first] = tile_data;
+        tile_data["planted_at"] = crop.planted_at;
+        tile_data["grow_time"] = crop.grow_time;
+        tiles[str_key] = tile_data;
     }
 
     j["tiles"] = tiles;
@@ -171,19 +162,28 @@ bool CropSystem::deserialize(const std::string& json_str) {
         }
 
         for (auto& kv : tiles_ptr->items()) {
-            const std::string& key = kv.key();
+            const std::string& str_key = kv.key();
             auto& tile_data = kv.value();
 
             if (!tile_data.contains("planted_at") || !tile_data.contains("grow_time")) {
-                SPDLOG_WARN("[CropSystem]Skipping invalid crop entry: {}", key);
+                SPDLOG_WARN("[CropSystem]Skipping invalid crop entry: {}", str_key);
                 continue;
             }
+
+            // Parse "x,y" string key back to coordinates
+            size_t comma = str_key.find(',');
+            if (comma == std::string::npos) {
+                SPDLOG_WARN("[CropSystem]Invalid key format: {}", str_key);
+                continue;
+            }
+            int x = std::stoi(str_key.substr(0, comma));
+            int y = std::stoi(str_key.substr(comma + 1));
 
             CropData crop;
             crop.planted_at = tile_data["planted_at"].get<time_t>();
             crop.grow_time = tile_data["grow_time"].get<int>();
 
-            growing_tiles_[key] = crop;
+            growing_tiles_[make_key(x, y)] = crop;
         }
 
         SPDLOG_INFO("[CropSystem]Deserialized {} crop entries", growing_tiles_.size());
