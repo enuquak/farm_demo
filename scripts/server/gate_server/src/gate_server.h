@@ -7,6 +7,7 @@
 #include <event2/listener.h>
 #include <string>
 #include <cstdint>
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -30,11 +31,8 @@ public:
     // 停止服务器
     void stop();
 
-    // 配置 Game Server 连接（单个，向后兼容）
-    void set_game_server(const std::string& ip, uint16_t port);
-
-    // 加载 game_servers 配置文件
-    bool load_game_servers_config(const std::string& config_file);
+    // 添加 Game Server 连接配置
+    void add_game_server(uint32_t server_id, const std::string& ip, uint16_t port);
 
 private:
     // libevent 回调
@@ -78,8 +76,8 @@ private:
     void handle_shutdown_resp(const AdminShutdownResp& resp);
 
     // 获取 Game 连接
-    GameConnection* get_game_connection(uint32_t server_id);
-    GameConnection* get_any_game_connection();
+    std::optional<GameConnection*> get_game_connection(uint32_t server_id);
+    std::optional<GameConnection*> get_any_game_connection();
 
     std::string ip_;
     uint16_t port_;
