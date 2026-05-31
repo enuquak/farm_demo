@@ -9,6 +9,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # 依赖路径
 set(LIBEVENT_ROOT "C:/libevent_install")
+set(HIREDIS_ROOT "C:/hiredis_install")
 set(PROTOBUF_ROOT "C:/protobuf_install")
 set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
 
@@ -37,41 +38,48 @@ set(SOURCES
     src/player.cpp
     src/player_manager.cpp
     src/message_handler.cpp
-    src/message_parser.cpp
     src/dbmgr_connection.cpp
     src/dbmgr_connection_manager.cpp
-    src/msvc_compat.cpp
     src/item_effects.cpp
     src/world_state.cpp
     src/drop_item_manager.cpp
     src/item_interaction_handler.cpp
     src/crop_system.cpp
     src/scene_state.cpp
+    src/game_scene_manager.cpp
+    src/game_clock.cpp
+    src/redis_connection.cpp
+    src/login_stub.cpp
+    src/online_stub.cpp
+    src/admin_handler.cpp
     ${PROTO_SRCS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/admin_msg_ids.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/src/log_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/admin_msg_ids.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/message_parser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/msvc_compat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/server_main_helper.cpp
 )
 
 add_executable(game_server ${SOURCES})
 
 # Include 目录
-# Note: dbmgr src is added for internal_msg_ids.h (Game<->DBMgr message IDs)
-set(DBMGR_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../dbmgr/src")
 target_include_directories(game_server PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${PROTOBUF_ROOT}/include
     ${LIBEVENT_ROOT}/include
+    ${HIREDIS_ROOT}/include
     ${COMMON_PROTO_DIR}
     ${COMMON_PROTO_DIR}/generated
-    ${DBMGR_SRC_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/third_party
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
 )
 
 # 链接库目录
 target_link_directories(game_server PRIVATE
     ${PROTOBUF_ROOT}/lib
     ${LIBEVENT_ROOT}/lib
+    ${HIREDIS_ROOT}/lib
 )
 
 # MSVC 特定设置
@@ -97,6 +105,7 @@ if(MSVC)
         event.lib
         event_core.lib
         event_extra.lib
+        hiredis.lib
         ws2_32.lib
         advapi32.lib
         shell32.lib
@@ -108,12 +117,100 @@ else()
         event
         event_core
         event_extra
+        hiredis
         pthread
     )
 endif()
 
 # 输出目录
 set_target_properties(game_server PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../../../bin"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/../../../bin"
+)
+
+# ========== 测试目标 ==========
+# 测试源文件（排除 main.cpp）
+set(TEST_SOURCES
+    tests/test_game_clock.cpp
+    src/game_clock.cpp
+    src/game_scene_manager.cpp
+    src/gate_session.cpp
+    src/player.cpp
+    src/player_manager.cpp
+    src/message_handler.cpp
+    src/dbmgr_connection.cpp
+    src/dbmgr_connection_manager.cpp
+    src/item_effects.cpp
+    src/world_state.cpp
+    src/drop_item_manager.cpp
+    src/item_interaction_handler.cpp
+    src/crop_system.cpp
+    src/scene_state.cpp
+    src/redis_connection.cpp
+    src/login_stub.cpp
+    src/online_stub.cpp
+    src/admin_handler.cpp
+    ${PROTO_SRCS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/admin_msg_ids.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/message_parser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/msvc_compat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/server_main_helper.cpp
+)
+
+add_executable(game_tests ${TEST_SOURCES})
+
+target_include_directories(game_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${PROTOBUF_ROOT}/include
+    ${LIBEVENT_ROOT}/include
+    ${HIREDIS_ROOT}/include
+    ${COMMON_PROTO_DIR}
+    ${COMMON_PROTO_DIR}/generated
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/third_party
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
+)
+
+target_link_directories(game_tests PRIVATE
+    ${PROTOBUF_ROOT}/lib
+    ${LIBEVENT_ROOT}/lib
+    ${HIREDIS_ROOT}/lib
+)
+
+if(MSVC)
+    target_compile_definitions(game_tests PRIVATE
+        _CRT_SECURE_NO_WARNINGS
+        _WINSOCK_DEPRECATED_NO_WARNINGS
+        NOMINMAX
+    )
+    target_compile_options(game_tests PRIVATE /utf-8 /MT$<$<CONFIG:Debug>:d>)
+    file(GLOB ABSL_LIBS_TEST "${PROTOBUF_ROOT}/lib/absl_*.lib")
+    target_link_libraries(game_tests PRIVATE
+        libprotobuf-lite.lib
+        libutf8_range.lib
+        libutf8_validity.lib
+        ${ABSL_LIBS_TEST}
+        event.lib
+        event_core.lib
+        event_extra.lib
+        hiredis.lib
+        ws2_32.lib
+        advapi32.lib
+        shell32.lib
+    )
+else()
+    target_link_libraries(game_tests PRIVATE
+        protobuf
+        event
+        event_core
+        event_extra
+        hiredis
+        pthread
+    )
+endif()
+
+set_target_properties(game_tests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../../../bin"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/../../../bin"
 )
