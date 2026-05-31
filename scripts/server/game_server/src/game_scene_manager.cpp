@@ -24,12 +24,12 @@ GameSceneManager::GameSceneManager(PlayerManager* player_mgr,
 {
 }
 
-SceneState* GameSceneManager::get_scene(const std::string& scene_id) const {
+std::optional<SceneState*> GameSceneManager::get_scene(const std::string& scene_id) const {
     auto it = scenes_.find(scene_id);
     if (it != scenes_.end()) {
         return it->second.get();
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 SceneState* GameSceneManager::get_or_create_scene(const std::string& scene_id) {
@@ -167,8 +167,8 @@ std::string GameSceneManager::make_scene_data_key(const std::string& scene_id) {
 
 void GameSceneManager::save_all_scenes() {
     SPDLOG_INFO("[Game]Saving all scene data...");
-    for (auto& kv : scenes_) {
-        save_scene_data(kv.first);
+    for (auto& [scene_id, scene] : scenes_) {
+        save_scene_data(scene_id);
     }
     SPDLOG_INFO("[Game]All scene data save requests sent");
 }

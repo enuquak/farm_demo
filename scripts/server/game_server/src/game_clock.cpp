@@ -218,9 +218,9 @@ void GameClock::complete_force_sleep(Player* player) {
     // 1. Freeze current scene
     const std::string& current_scene = player->get_scene_id();
     if (!current_scene.empty()) {
-        SceneState* scene = scene_mgr_->get_scene(current_scene);
+        auto scene = scene_mgr_->get_scene(current_scene);
         if (scene) {
-            scene->remove_player();
+            (*scene)->remove_player();
         }
     }
 
