@@ -1,5 +1,5 @@
 #include "dbmgr_connection_manager.h"
-#include "dbmgr_msg_ids.h"
+#include "internal_msg_ids.h"
 #include "message_parser.h"
 
 #include <event2/bufferevent.h>
@@ -265,8 +265,9 @@ void DBMgrConnectionManager::route_message(DBMgrConnection* conn, uint32_t msg_i
 void DBMgrConnectionManager::handle_dbmgr_identify(DBMgrConnection* conn,
                                                      const std::vector<uint8_t>& payload) {
     farm::DBMgrIdentify identify;
-    if (!payload.empty()) {
-        identify.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !identify.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[DBMgrConnMgr]Failed to parse DBMgrIdentify");
+        return;
     }
 
     conn->set_remote_index(identify.index());
@@ -292,8 +293,9 @@ void DBMgrConnectionManager::handle_dbmgr_heartbeat(DBMgrConnection* conn,
 
     // Parse heartbeat for timestamp
     farm::DBMgrHeartbeat hb;
-    if (!payload.empty()) {
-        hb.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !hb.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[DBMgrConnMgr]Failed to parse DBMgrHeartbeat");
+        return;
     }
 
     // Reply with DBMgrHeartbeatResp
@@ -308,8 +310,9 @@ void DBMgrConnectionManager::handle_dbmgr_heartbeat(DBMgrConnection* conn,
 void DBMgrConnectionManager::handle_player_data_resp(DBMgrConnection* conn,
                                                        const std::vector<uint8_t>& payload) {
     farm::PlayerDataResp resp;
-    if (!payload.empty()) {
-        resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[DBMgrConnMgr]Failed to parse PlayerDataResp");
+        return;
     }
 
     uint64_t request_id = resp.request_id();
@@ -335,8 +338,9 @@ void DBMgrConnectionManager::handle_player_data_resp(DBMgrConnection* conn,
 void DBMgrConnectionManager::handle_account_data_resp(DBMgrConnection* conn,
                                                         const std::vector<uint8_t>& payload) {
     farm::AccountDataResp resp;
-    if (!payload.empty()) {
-        resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[DBMgrConnMgr]Failed to parse AccountDataResp");
+        return;
     }
 
     // Find pending request by account_id (stored in request_id for simplicity)
@@ -376,8 +380,9 @@ void DBMgrConnectionManager::handle_account_data_resp(DBMgrConnection* conn,
 void DBMgrConnectionManager::handle_account_set_resp(DBMgrConnection* conn,
                                                        const std::vector<uint8_t>& payload) {
     farm::AccountSetResp resp;
-    if (!payload.empty()) {
-        resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()));
+    if (!payload.empty() && !resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[DBMgrConnMgr]Failed to parse AccountSetResp");
+        return;
     }
 
     // Find pending request
@@ -419,7 +424,7 @@ void DBMgrConnectionManager::check_heartbeat() {
         if (!conn_ptr) continue;
         if (conn_ptr->state() != DBMgrConnectionState::IDENTIFIED) continue;
 
-        if (now - conn_ptr->last_heartbeat() > HEARTBEAT_TIMEOUT_DBMGR) {
+        if (now - conn_ptr->last_heartbeat() > DBMGR_HEARTBEAT_TIMEOUT) {
             SPDLOG_INFO("[DBMgrConnection]Heartbeat timeout for DBMgr index={}", conn_ptr->config_index());
             handle_disconnect(conn_ptr.get());
         }
@@ -618,7 +623,7 @@ uint64_t DBMgrConnectionManager::send_account_set_req(const std::string& account
     return request_id;
 }
 
-uint32_t DBMgrConnectionManager::hash_account_id(const std::string& account_id) const {
+uint32_t DBMgrConnectionManager::hash_account_id(std::string_view account_id) const {
     // Simple hash algorithm (djb2)
     uint32_t hash = 5381;
     for (char c : account_id) {

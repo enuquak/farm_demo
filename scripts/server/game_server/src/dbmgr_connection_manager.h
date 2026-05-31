@@ -5,6 +5,7 @@
 #include <event2/event.h>
 #include <event2/bufferevent.h>
 #include <string>
+#include <string_view>
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
@@ -144,7 +145,7 @@ private:
     void cleanup_stale_requests();
 
     // Account ID hash
-    uint32_t hash_account_id(const std::string& account_id) const;
+    uint32_t hash_account_id(std::string_view account_id) const;
 
     // Send helper
     void send_to_dbmgr(DBMgrConnection* conn, uint32_t msg_id, const std::string& payload);
