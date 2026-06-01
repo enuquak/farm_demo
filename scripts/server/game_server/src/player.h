@@ -9,6 +9,7 @@
 namespace farm {
 
 class GateSession;
+class DBMgrConnectionManager;
 
 // 玩家数据加载状态
 enum class PlayerBizDataState : int32_t {
@@ -36,7 +37,8 @@ struct PlayerBizData {
 
 class Player {
 public:
-    Player(uint64_t player_id, GateSession* gate_session);
+    Player(uint64_t player_id, GateSession* gate_session,
+           DBMgrConnectionManager* dbmgr_mgr = nullptr);
     ~Player();
 
     uint64_t player_id() const { return player_id_; }
@@ -44,6 +46,7 @@ public:
     time_t join_time() const { return join_time_; }
 
     void set_gate_session(GateSession* session) { gate_session_ = session; }
+    void set_dbmgr_mgr(DBMgrConnectionManager* mgr) { dbmgr_mgr_ = mgr; }
 
     // 数据加载状态
     PlayerBizDataState data_state() const { return data_state_; }
@@ -108,6 +111,7 @@ private:
     PlayerBizDataState data_state_ = PlayerBizDataState::NOT_LOADED;
     bool dirty_ = false;
     std::unordered_set<std::string> dirty_fields_;
+    DBMgrConnectionManager* dbmgr_mgr_ = nullptr;
 
     void mark_dirty(const std::string& field);
 };
