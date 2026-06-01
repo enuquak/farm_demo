@@ -102,6 +102,11 @@
     },
     {
       "code": 3003,
+      "name": "MSG_ID_FARM_STATE_SYNC",
+      "description": "农场状态同步"
+    },
+    {
+      "code": 3004,
       "name": "MSG_ID_DROP_ITEM_SYNC",
       "description": "掉落物同步"
     },
