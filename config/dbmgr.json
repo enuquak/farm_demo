@@ -1,4 +1,8 @@
 {
+    "etcd": {
+        "endpoints": "http://localhost:2379",
+        "lease_ttl": 15
+    },
     "server": {
         "index": 0,
         "ip": "0.0.0.0",

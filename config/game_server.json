@@ -1,18 +1,16 @@
 {
+    "etcd": {
+        "endpoints": "http://localhost:2379",
+        "lease_ttl": 15
+    },
     "server": {
         "id": 1,
         "ip": "0.0.0.0",
-        "port": 6000
+        "port": 9090
     },
     "redis": {
         "uri": "redis://localhost:6379"
     },
-    "dbmgrs": [
-        {
-            "host": "127.0.0.1",
-            "port": 5000
-        }
-    ],
     "pid_file": "./runtimeData/game_server.pid",
     "logging": {
         "dir": "./runtimeData/logs/server",

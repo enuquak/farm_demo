@@ -1,11 +1,13 @@
 {
+    "etcd": {
+        "endpoints": "http://localhost:2379",
+        "lease_ttl": 15,
+        "instance_id": "gate-1"
+    },
     "server": {
         "ip": "0.0.0.0",
         "port": 8080
     },
-    "game_servers": [
-        { "server_id": 1, "ip": "127.0.0.1", "port": 9090 }
-    ],
     "shutdown": {
         "timeout_ms": 60000
     },
