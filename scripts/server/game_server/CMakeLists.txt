@@ -7,7 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 静态链接运行时（与预编译的 absl/protobuf 匹配）
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-# 可选依赖: etcd（默认关闭，需要安装 etcd-cpp-apiv3）
+# 可选依赖: etcd（默认关闭）
+# 启用方法: cmake ... -DENABLE_ETCD=ON
+# 需要: 1) vcpkg install grpc cpprestsdk  2) 编译安装 etcd-cpp-apiv3
 option(ENABLE_ETCD "Enable etcd service discovery" OFF)
 
 # 依赖路径
@@ -18,6 +20,8 @@ set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
 
 if(ENABLE_ETCD)
     set(ETCD_ROOT "C:/vcpkg/installed/x64-windows" CACHE PATH "etcd-cpp-apiv3 install path")
+    set(ETCD_LIB_DIR "C:/etcd-cpp-apiv3_install/lib" CACHE PATH "etcd-cpp-api lib path")
+    set(ETCD_INCLUDE_DIR "C:/etcd-cpp-apiv3_install/include" CACHE PATH "etcd-cpp-api include path")
 endif()
 
 # Protobuf 生成的源文件
