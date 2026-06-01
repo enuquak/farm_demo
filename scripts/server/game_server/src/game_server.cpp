@@ -3,7 +3,7 @@
 #include "game_clock.h"
 #include "admin_handler.h"
 #include "internal_msg_ids.h"
-#include "msg_ids.h"
+#include "message_ids.h"
 #include "admin_msg_ids.h"
 #include "game_constants.h"
 

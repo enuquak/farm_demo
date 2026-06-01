@@ -7,7 +7,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from scripts.client.network_dispatcher import NetworkMessageDispatcher
-from scripts.client.msg_ids import (
+from scripts.client.message_ids import (
     MSG_ID_MAP_DATA_NOTIFY, MSG_ID_CLOCK_SYNC, MSG_ID_FORCE_SLEEP_NOTIFY,
 )
 

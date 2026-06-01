@@ -5,7 +5,7 @@
 #include "player.h"
 #include "redis_connection.h"
 #include "internal_msg_ids.h"
-#include "msg_ids.h"
+#include "message_ids.h"
 #include "game_constants.h"
 #include "log_macros.h"
 

@@ -247,7 +247,7 @@ class SceneManager:
             import player_pb2
             import base_pb2
 
-            from ..msg_ids import MSG_ID_SCENE_CHANGE_REQ
+            from ..message_ids import MSG_ID_SCENE_CHANGE_REQ
 
             req = player_pb2.SceneChangeReq()
             req.target_scene = target_scene

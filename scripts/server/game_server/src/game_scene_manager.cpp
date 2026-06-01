@@ -2,7 +2,7 @@
 #include "player_manager.h"
 #include "dbmgr_connection_manager.h"
 #include "player.h"
-#include "msg_ids.h"
+#include "message_ids.h"
 #include "log_macros.h"
 
 #include "player.pb.h"

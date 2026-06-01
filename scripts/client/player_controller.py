@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'scripts'
 import player_pb2
 import base_pb2
 
-from .msg_ids import MSG_ID_POSITION_UPDATE
+from .message_ids import MSG_ID_POSITION_UPDATE
 
 logger = logging.getLogger("client.player_controller")
 

@@ -80,25 +80,21 @@ def to_pascal_case(snake_str: str) -> str:
 
 
 def generate_python_code(config_name: str, constants: List[Dict[str, Any]], output_path: Path) -> None:
-    """生成 Python 代码"""
+    """生成 Python 代码（模块级常量，兼容 from xxx import XXX 的用法）"""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    class_name = to_pascal_case(config_name)
 
     lines = [
         '# 自动生成，请勿手动修改',
         f'# 生成时间：{timestamp}',
         f'# 源文件：shared/{config_name}.json',
         '',
-        '',
-        f'class {class_name}:',
-        f'    """{config_name} 常量定义"""',
     ]
 
     for item in constants:
         name = item['name']
         code = item['code']
         desc = item.get('description', '')
-        lines.append(f'    {name} = {code}  # {desc}')
+        lines.append(f'{name} = {code}  # {desc}')
 
     lines.append('')  # 文件末尾换行
 
@@ -111,9 +107,8 @@ def generate_python_code(config_name: str, constants: List[Dict[str, Any]], outp
 
 
 def generate_cpp_code(config_name: str, constants: List[Dict[str, Any]], output_path: Path) -> None:
-    """生成 C++ 代码"""
+    """生成 C++ 代码（static constexpr，兼容直接使用 MSG_ID_XXX 的用法）"""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    enum_name = to_pascal_case(config_name)
 
     lines = [
         '// 自动生成，请勿手动修改',
@@ -125,20 +120,19 @@ def generate_cpp_code(config_name: str, constants: List[Dict[str, Any]], output_
         '',
         'namespace farm {',
         '',
-        f'enum class {enum_name} : uint32_t {{',
     ]
 
-    for i, item in enumerate(constants):
+    for item in constants:
         name = item['name']
         code = item['code']
         desc = item.get('description', '')
-        comma = ',' if i < len(constants) - 1 else ''
-        lines.append(f'    {name} = {code}{comma}  // {desc}')
+        # 对齐到最长名称
+        padding = ' ' * max(1, 40 - len(name))
+        lines.append(f'static constexpr uint32_t {name}{padding}= {code};  // {desc}')
 
     lines.extend([
-        '};',
         '',
-        '} // namespace farm',
+        '}  // namespace farm',
         '',  # 文件末尾换行
     ])
 

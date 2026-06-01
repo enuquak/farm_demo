@@ -1,7 +1,7 @@
 #include "item_interaction_handler.h"
 #include "player.h"
 #include "game_server.h"
-#include "msg_ids.h"
+#include "message_ids.h"
 #include "game_constants.h"
 #include "log_macros.h"
 

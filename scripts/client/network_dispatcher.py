@@ -6,7 +6,7 @@
 import logging
 from typing import Callable, Dict, Any
 
-from .msg_ids import (
+from .message_ids import (
     MSG_ID_MAP_DATA_NOTIFY, MSG_ID_POSITION_CORRECT,
     MSG_ID_ITEM_USE_RESP, MSG_ID_SCENE_CHANGE_RESP,
     MSG_ID_CLOCK_SYNC, MSG_ID_FORCE_SLEEP_NOTIFY, MSG_ID_FORCE_SLEEP_READY,

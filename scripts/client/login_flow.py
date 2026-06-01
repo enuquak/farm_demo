@@ -17,7 +17,7 @@ import account_pb2
 import player_pb2
 
 from .connection import GateConnection, ConnectionState
-from .msg_ids import (
+from .message_ids import (
     MSG_ID_LOGIN_REQ, MSG_ID_LOGIN_RESP,
     MSG_ID_QUERY_ROLES_REQ, MSG_ID_QUERY_ROLES_RESP,
     MSG_ID_CREATE_ROLE_REQ, MSG_ID_CREATE_ROLE_RESP,

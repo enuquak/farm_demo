@@ -1,7 +1,7 @@
 #include "gate_server.h"
 #include "message_parser.h"
 #include "internal_msg_ids.h"
-#include "msg_ids.h"
+#include "message_ids.h"
 #include "admin_msg_ids.h"
 
 #include <event2/bufferevent.h>

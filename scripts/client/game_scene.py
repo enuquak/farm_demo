@@ -25,7 +25,7 @@ from .player_controller import PlayerController
 from .network_dispatcher import NetworkMessageDispatcher
 from .game_renderer import GameRenderer
 
-from .msg_ids import MSG_ID_FORCE_SLEEP_READY
+from .message_ids import MSG_ID_FORCE_SLEEP_READY
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'common', 'proto', 'generated'))
 import player_pb2
