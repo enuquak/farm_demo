@@ -101,6 +101,15 @@ public:
     // 初始化默认数据（新玩家）
     void init_default_data();
 
+    // 存盘接口
+    void save();                              // 差量存盘：遍历 dirty_fields_ 发 SET
+    void save_field(const std::string& field); // 单字段存盘：发 SET
+    void save_full();                         // 全量存盘：发 SET_ALL
+
+    // 是否有脏数据
+    bool has_dirty_fields() const { return !dirty_fields_.empty(); }
+    const std::unordered_set<std::string>& dirty_fields() const { return dirty_fields_; }
+
 private:
     uint64_t player_id_;
     GateSession* gate_session_;
@@ -114,6 +123,9 @@ private:
     DBMgrConnectionManager* dbmgr_mgr_ = nullptr;
 
     void mark_dirty(const std::string& field);
+    std::string get_field_json(const std::string& field) const;
+    std::string get_all_data_json() const;
+    void clear_dirty();
 };
 
 }  // namespace farm

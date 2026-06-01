@@ -1,6 +1,9 @@
 #include "player.h"
 
 #include "log_macros.h"
+#include "dbmgr_connection_manager.h"
+#include "dbmgr.pb.h"
+#include <nlohmann/json.hpp>
 
 namespace farm {
 
@@ -19,6 +22,132 @@ Player::~Player() {
 void Player::mark_dirty(const std::string& field) {
     dirty_ = true;
     dirty_fields_.insert(field);
+}
+
+std::string Player::get_all_data_json() const {
+    nlohmann::json data;
+    data["role_name"] = player_data_.role_name;
+    data["level"] = player_data_.level;
+    data["gold"] = player_data_.gold;
+    data["experience"] = player_data_.experience;
+    data["pos_x"] = player_data_.pos_x;
+    data["pos_y"] = player_data_.pos_y;
+    data["pos_z"] = player_data_.pos_z;
+    data["energy"] = player_data_.energy;
+    data["scene_id"] = player_data_.scene_id;
+    data["inventory"] = player_data_.inventory;
+    data["farm_state"] = player_data_.farm_state;
+    data["extra_data"] = player_data_.extra_data;
+    return data.dump();
+}
+
+std::string Player::get_field_json(const std::string& field) const {
+    nlohmann::json val;
+    if (field == "role_name") val = player_data_.role_name;
+    else if (field == "level") val = player_data_.level;
+    else if (field == "gold") val = player_data_.gold;
+    else if (field == "experience") val = player_data_.experience;
+    else if (field == "pos_x") val = player_data_.pos_x;
+    else if (field == "pos_y") val = player_data_.pos_y;
+    else if (field == "pos_z") val = player_data_.pos_z;
+    else if (field == "energy") val = player_data_.energy;
+    else if (field == "scene_id") val = player_data_.scene_id;
+    else if (field == "inventory") {
+        // inventory is already a JSON string, parse it first to avoid double-encoding
+        try { val = nlohmann::json::parse(player_data_.inventory); }
+        catch (...) { val = player_data_.inventory; }
+    }
+    else if (field == "farm_state") {
+        try { val = nlohmann::json::parse(player_data_.farm_state); }
+        catch (...) { val = player_data_.farm_state; }
+    }
+    else if (field == "extra_data") {
+        try { val = nlohmann::json::parse(player_data_.extra_data); }
+        catch (...) { val = player_data_.extra_data; }
+    }
+    else val = nullptr;
+    return val.dump();
+}
+
+void Player::clear_dirty() {
+    dirty_ = false;
+    dirty_fields_.clear();
+}
+
+void Player::save_full() {
+    if (!dbmgr_mgr_ || !dirty_) return;
+
+    std::string value = get_all_data_json();
+
+    auto callback = [this](int32_t code, const uint8_t*, size_t) {
+        if (code == 0) {
+            SPDLOG_INFO("[Player]Full save success for player_id={}", player_id_);
+        } else {
+            SPDLOG_ERROR("[Player]Full save failed for player_id={} code={}", player_id_, code);
+        }
+    };
+
+    uint64_t request_id = dbmgr_mgr_->send_player_data_req(
+        player_id_,
+        static_cast<int32_t>(farm::PlayerDataOp::SET_ALL),
+        "", value, std::move(callback));
+
+    if (request_id == 0) {
+        SPDLOG_ERROR("[Player]Failed to send full save for player_id={}", player_id_);
+    } else {
+        clear_dirty();
+    }
+}
+
+void Player::save() {
+    if (!dbmgr_mgr_ || dirty_fields_.empty()) return;
+
+    auto callback = [pid = player_id_](int32_t code, const uint8_t*, size_t) {
+        if (code == 0) {
+            SPDLOG_INFO("[Player]Field save success for player_id={}", pid);
+        } else {
+            SPDLOG_ERROR("[Player]Field save failed for player_id={} code={}", pid, code);
+        }
+    };
+
+    for (const auto& field : dirty_fields_) {
+        std::string value = get_field_json(field);
+        uint64_t request_id = dbmgr_mgr_->send_player_data_req(
+            player_id_,
+            static_cast<int32_t>(farm::PlayerDataOp::SET),
+            field, value, callback);
+        if (request_id == 0) {
+            SPDLOG_ERROR("[Player]Failed to send field save '{}' for player_id={}", field, player_id_);
+        }
+    }
+
+    clear_dirty();
+}
+
+void Player::save_field(const std::string& field) {
+    if (!dbmgr_mgr_) return;
+
+    std::string value = get_field_json(field);
+
+    auto callback = [pid = player_id_, field](int32_t code, const uint8_t*, size_t) {
+        if (code == 0) {
+            SPDLOG_INFO("[Player]Field '{}' saved for player_id={}", field, pid);
+        } else {
+            SPDLOG_ERROR("[Player]Field '{}' save failed for player_id={} code={}", field, pid, code);
+        }
+    };
+
+    uint64_t request_id = dbmgr_mgr_->send_player_data_req(
+        player_id_,
+        static_cast<int32_t>(farm::PlayerDataOp::SET),
+        field, value, std::move(callback));
+
+    if (request_id == 0) {
+        SPDLOG_ERROR("[Player]Failed to send field '{}' save for player_id={}", field, player_id_);
+    } else {
+        dirty_fields_.erase(field);
+        if (dirty_fields_.empty()) dirty_ = false;
+    }
 }
 
 void Player::set_player_data(const PlayerBizData& data) {
