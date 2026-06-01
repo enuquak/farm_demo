@@ -83,6 +83,7 @@ bool GateServer::start() {
 
     // 连接到所有配置的 Game Server
     if (!game_server_configs_.empty()) {
+        std::lock_guard<std::mutex> lock(game_conns_mutex_);
         for (const auto& config : game_server_configs_) {
             auto conn = std::make_unique<GameConnection>(base_, "gate-1");
             uint32_t server_id = config.server_id;
@@ -106,10 +107,13 @@ bool GateServer::start() {
 void GateServer::stop() {
     running_ = false;
     // 断开所有 Game 连接
-    for (auto& [server_id, conn] : game_conns_) {
-        conn->disconnect();
+    {
+        std::lock_guard<std::mutex> lock(game_conns_mutex_);
+        for (auto& [server_id, conn] : game_conns_) {
+            conn->disconnect();
+        }
+        game_conns_.clear();
     }
-    game_conns_.clear();
     if (heartbeat_timer_) {
         event_free(heartbeat_timer_);
         heartbeat_timer_ = nullptr;
@@ -126,14 +130,65 @@ void GateServer::stop() {
 }
 
 void GateServer::add_game_server(uint32_t server_id, const std::string& ip, uint16_t port) {
-    GameServerConfig config;
-    config.server_id = server_id;
-    config.ip = ip;
-    config.port = port;
-    game_server_configs_.push_back(config);
+    std::lock_guard<std::mutex> lock(game_conns_mutex_);
+
+    // 如果已存在，先断开旧连接
+    auto it = game_conns_.find(server_id);
+    if (it != game_conns_.end()) {
+        SPDLOG_INFO("[Gate]Replacing existing Game Server {} connection", server_id);
+        it->second->disconnect();
+        game_conns_.erase(it);
+    }
+
+    // 如果 base_ 已初始化，直接连接
+    if (base_) {
+        auto conn = std::make_unique<GameConnection>(base_, "gate-1");
+        conn->set_message_callback(
+            [this, server_id](uint32_t msg_id, const std::vector<uint8_t>& payload) {
+                handle_game_message(server_id, msg_id, payload);
+            });
+        conn->connect(ip, port);
+        game_conns_[server_id] = std::move(conn);
+        SPDLOG_INFO("[Gate]Connecting to Game Server {} at {}:{}", server_id, ip, port);
+    } else {
+        // base_ 未初始化，存储配置供 start() 使用
+        GameServerConfig config;
+        config.server_id = server_id;
+        config.ip = ip;
+        config.port = port;
+        game_server_configs_.push_back(config);
+    }
+}
+
+void GateServer::remove_game_server(uint32_t server_id) {
+    std::lock_guard<std::mutex> lock(game_conns_mutex_);
+
+    auto it = game_conns_.find(server_id);
+    if (it == game_conns_.end()) {
+        SPDLOG_WARN("[Gate]Game Server {} not found for removal", server_id);
+        return;
+    }
+
+    // 断开连接
+    it->second->disconnect();
+    game_conns_.erase(it);
+
+    // 清理该 server_id 的玩家路由
+    for (auto it_route = player_to_server_.begin(); it_route != player_to_server_.end(); ) {
+        if (it_route->second == server_id) {
+            SPDLOG_INFO("[Gate]Removed player route: player_id={} server_id={}",
+                        it_route->first, it_route->second);
+            it_route = player_to_server_.erase(it_route);
+        } else {
+            ++it_route;
+        }
+    }
+
+    SPDLOG_INFO("[Gate]Removed Game Server {}", server_id);
 }
 
 std::optional<GameConnection*> GateServer::get_game_connection(uint32_t server_id) {
+    std::lock_guard<std::mutex> lock(game_conns_mutex_);
     auto it = game_conns_.find(server_id);
     if (it != game_conns_.end() && it->second->is_identified()) {
         return it->second.get();
@@ -142,6 +197,7 @@ std::optional<GameConnection*> GateServer::get_game_connection(uint32_t server_i
 }
 
 std::optional<GameConnection*> GateServer::get_any_game_connection() {
+    std::lock_guard<std::mutex> lock(game_conns_mutex_);
     if (game_conns_.empty()) {
         return std::nullopt;
     }

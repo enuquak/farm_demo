@@ -1,4 +1,5 @@
 #include "gate_server.h"
+#include "etcd_manager.h"
 #include "server_main_helper.h"
 #include "log_init.h"
 #include "log_macros.h"
@@ -10,11 +11,15 @@
 #include <string>
 
 static farm::GateServer* g_server = nullptr;
+static farm::EtcdManager* g_etcd = nullptr;
 
 static void signal_handler(int sig) {
     if (g_server) {
         SPDLOG_INFO("[Main]Received signal {}, shutting down...", sig);
         g_server->stop();
+    }
+    if (g_etcd) {
+        g_etcd->shutdown();
     }
 }
 
@@ -47,6 +52,32 @@ int main(int argc, char* argv[]) {
     uint16_t port = static_cast<uint16_t>(config.value("/server/port"_json_pointer, 8080));
     std::string pid_file = config.value("pid_file", "./runtimeData/gate_server.pid");
 
+    // etcd 配置
+    std::string etcd_endpoints = config.value("/etcd/endpoints"_json_pointer, "http://localhost:2379");
+    uint32_t lease_ttl = config.value("/etcd/lease_ttl"_json_pointer, 15u);
+    std::string instance_id = config.value("/etcd/instance_id"_json_pointer, "gate-1");
+
+    // 初始化 etcd
+    farm::EtcdManager etcd(etcd_endpoints, lease_ttl);
+    if (!etcd.connect()) {
+        SPDLOG_ERROR("[Main]Failed to connect to etcd");
+        return 1;
+    }
+    g_etcd = &etcd;
+
+    // 注册服务到 etcd
+    nlohmann::json service_info = {
+        {"ip", ip},
+        {"port", port},
+        {"status", "online"}
+    };
+    if (!etcd.register_service("gate", instance_id, service_info.dump())) {
+        SPDLOG_ERROR("[Main]Failed to register service to etcd");
+        return 1;
+    }
+
+    SPDLOG_INFO("[Main]Registered to etcd as gate/{}", instance_id);
+
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 
@@ -58,16 +89,31 @@ int main(int argc, char* argv[]) {
 
     farm::GateServer server(ip, port);
 
-    // 加载 Game Server 配置
-    if (config.contains("game_servers") && config["game_servers"].is_array()) {
-        for (const auto& gs : config["game_servers"]) {
-            std::string game_ip = gs.value("ip", "127.0.0.1");
-            uint16_t game_port = static_cast<uint16_t>(gs.value("port", 9090));
-            uint32_t server_id = gs.value("server_id", 1);
-            SPDLOG_INFO("[Main]Game Server [{}]: {}:{}", server_id, game_ip, game_port);
-            server.add_game_server(server_id, game_ip, game_port);
-        }
+    // 从 etcd 发现 game servers
+    auto games = etcd.discover_services("game");
+    for (const auto& game : games) {
+        SPDLOG_INFO("[Main]Discovered Game Server from etcd: server_id={} at {}:{}",
+                    game.server_id, game.ip, game.port);
+        server.add_game_server(game.server_id, game.ip, game.port);
     }
+
+    if (games.empty()) {
+        SPDLOG_WARN("[Main]No Game Server instances found in etcd");
+    }
+
+    // 监听 game server 变更
+    etcd.watch_services("game", [&](const std::string& id,
+                                     const farm::ServiceInstance& inst,
+                                     bool is_delete) {
+        if (is_delete) {
+            SPDLOG_INFO("[Main]Game Server {} removed from etcd", id);
+            server.remove_game_server(inst.server_id);
+        } else {
+            SPDLOG_INFO("[Main]Game Server {} added to etcd: {}:{}",
+                        id, inst.ip, inst.port);
+            server.add_game_server(inst.server_id, inst.ip, inst.port);
+        }
+    });
 
     g_server = &server;
 

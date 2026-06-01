@@ -8,6 +8,7 @@
 #include <string>
 #include <cstdint>
 #include <optional>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -33,6 +34,9 @@ public:
 
     // 添加 Game Server 连接配置
     void add_game_server(uint32_t server_id, const std::string& ip, uint16_t port);
+
+    // 移除 Game Server 连接（用于 etcd watch 回调）
+    void remove_game_server(uint32_t server_id);
 
 private:
     // libevent 回调
@@ -86,6 +90,9 @@ private:
     struct event* heartbeat_timer_;
     SessionManager session_mgr_;
     bool running_;
+
+    // 保护 game_conns_ 的互斥锁（watch 回调在后台线程）
+    mutable std::mutex game_conns_mutex_;
 
     // Game Server 配置
     std::vector<GameServerConfig> game_server_configs_;
