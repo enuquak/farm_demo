@@ -14,7 +14,9 @@
  */
 
 #include <etcd/Client.hpp>
+#include <etcd/SyncClient.hpp>
 #include <etcd/Watcher.hpp>
+#include <etcd/KeepAlive.hpp>
 
 #include <atomic>
 #include <cstdint>
@@ -23,7 +25,6 @@
 #include <mutex>
 #include <optional>
 #include <string>
-#include <thread>
 #include <vector>
 
 namespace farm {
@@ -56,15 +57,13 @@ public:
     // === 生命周期 ===
 
     /**
-     * @brief 连接 etcd，创建租约，启动续租线程
+     * @brief 连接 etcd，创建租约，启动续租
      * @return true 成功，false 失败
      */
     bool connect();
 
     /**
      * @brief 主动注销所有服务并关闭连接
-     *
-     * 会删除所有已注册的 key，停止 watch，等待续租线程结束
      */
     void shutdown();
 
@@ -147,9 +146,6 @@ public:
     void watch_config(const std::string& key_prefix, ConfigChangeCallback callback);
 
 private:
-    // 续租后台线程
-    void lease_keepalive_loop();
-
     // 解析 ServiceInstance JSON
     static ServiceInstance parse_service_json(const std::string& instance_id,
                                               const std::string& json_str);
@@ -163,13 +159,15 @@ private:
     static constexpr int ETCD_KEY_NOT_FOUND = 100;
 
     // 成员变量
-    std::unique_ptr<etcd::Client> client_;
     std::string endpoints_;
     uint32_t lease_ttl_;
     int64_t lease_id_ = 0;
 
-    std::thread keepalive_thread_;
-    std::atomic<bool> running_{false};
+    // etcd 客户端
+    std::unique_ptr<etcd::SyncClient> client_;
+
+    // KeepAlive 对象（自动续租）
+    std::unique_ptr<etcd::KeepAlive> keep_alive_;
 
     // watch 对象（需要保持存活）
     // 注意：当前只支持一个 service watcher 和一个 config watcher。
@@ -184,6 +182,8 @@ private:
 
     std::mutex error_mutex_;
     ErrorCallback error_callback_;
+
+    std::atomic<bool> running_{false};
 };
 
 }  // namespace farm

@@ -29,25 +29,36 @@ EtcdManager::~EtcdManager() {
 
 bool EtcdManager::connect() {
     try {
-        // 创建 etcd 客户端
-        client_ = std::make_unique<etcd::Client>(endpoints_);
+        // 创建 etcd 同步客户端
+        client_ = std::make_unique<etcd::SyncClient>(endpoints_);
         if (!client_) {
             SPDLOG_ERROR("[Etcd]Failed to create client for endpoints: {}", endpoints_);
             return false;
         }
 
-        // 创建租约
-        auto resp = client_->leasegrant(lease_ttl_).get();
-        if (resp.error_code() != 0) {
-            SPDLOG_ERROR("[Etcd]Failed to create lease: {} - {}",
-                         resp.error_code(), resp.error_message());
-            return false;
-        }
-        lease_id_ = resp.value().lease();
+        // 创建 KeepAlive（自动续租）
+        keep_alive_ = std::make_unique<etcd::KeepAlive>(
+            endpoints_,
+            [this](std::exception_ptr eptr) {
+                try {
+                    if (eptr) std::rethrow_exception(eptr);
+                } catch (const std::exception& e) {
+                    SPDLOG_ERROR("[Etcd]KeepAlive error: {}", e.what());
+                    ErrorCallback cb;
+                    {
+                        std::lock_guard<std::mutex> lock(error_mutex_);
+                        cb = error_callback_;
+                    }
+                    if (cb) cb(std::string("KeepAlive error: ") + e.what());
+                }
+            },
+            static_cast<int>(lease_ttl_)
+        );
 
-        // 启动续租线程
+        // 获取 lease ID
+        lease_id_ = keep_alive_->Lease();
+
         running_ = true;
-        keepalive_thread_ = std::thread(&EtcdManager::lease_keepalive_loop, this);
 
         SPDLOG_INFO("[Etcd]Connected to {}, lease_id={}, ttl={}", endpoints_, lease_id_, lease_ttl_);
         return true;
@@ -58,10 +69,14 @@ bool EtcdManager::connect() {
 }
 
 void EtcdManager::shutdown() {
-    // 设置 running_ 为 false（通知 keepalive 线程退出），
-    // 但无论之前状态如何都继续执行清理，因为 keepalive 失败时
-    // running_ 已被设为 false，但仍需注销已注册的服务。
+    // 设置 running_ 为 false
     running_ = false;
+
+    // 停止 KeepAlive
+    if (keep_alive_) {
+        keep_alive_->Cancel();
+        keep_alive_.reset();
+    }
 
     // 注销所有已注册的服务
     {
@@ -69,7 +84,7 @@ void EtcdManager::shutdown() {
         for (const auto& key : registered_keys_) {
             try {
                 if (client_) {
-                    client_->rm(key).get();
+                    client_->rm(key);
                     SPDLOG_INFO("[Etcd]Deregistered key: {}", key);
                 }
             } catch (const std::exception& e) {
@@ -79,14 +94,9 @@ void EtcdManager::shutdown() {
         registered_keys_.clear();
     }
 
-    // 停止 watch（必须在 join 线程之前，因为 watch 可能持有回调）
+    // 停止 watch
     service_watcher_.reset();
     config_watcher_.reset();
-
-    // 等待续租线程结束
-    if (keepalive_thread_.joinable()) {
-        keepalive_thread_.join();
-    }
 
     // 关闭客户端
     client_.reset();
@@ -97,54 +107,6 @@ void EtcdManager::shutdown() {
 void EtcdManager::set_error_callback(ErrorCallback callback) {
     std::lock_guard<std::mutex> lock(error_mutex_);
     error_callback_ = std::move(callback);
-}
-
-// ============================================================================
-// 续租后台线程
-// ============================================================================
-
-void EtcdManager::lease_keepalive_loop() {
-    // 每隔 lease_ttl_/2 秒续租一次
-    auto interval = std::chrono::seconds(lease_ttl_ / 2);
-    if (interval.count() < 1) {
-        interval = std::chrono::seconds(1);
-    }
-
-    int retry_count = 0;
-    const int max_retries = 3;
-
-    while (running_) {
-        std::this_thread::sleep_for(interval);
-        if (!running_) break;
-
-        try {
-            auto resp = client_->leasekeepalive(lease_id_).get();
-            if (resp.is_ok()) {
-                retry_count = 0;
-            } else {
-                SPDLOG_WARN("[Etcd]Lease keepalive failed: {}", resp.error_message());
-                retry_count++;
-            }
-        } catch (const std::exception& e) {
-            SPDLOG_ERROR("[Etcd]Lease keepalive exception: {}", e.what());
-            retry_count++;
-        }
-
-        if (retry_count >= max_retries) {
-            SPDLOG_ERROR("[Etcd]Lease keepalive failed {} times, shutting down", max_retries);
-            {
-                ErrorCallback cb;
-                {
-                    std::lock_guard<std::mutex> lock(error_mutex_);
-                    cb = error_callback_;
-                }
-                if (cb) cb("Lease keepalive failed after " +
-                           std::to_string(max_retries) + " retries");
-            }
-            running_ = false;
-            break;
-        }
-    }
 }
 
 // ============================================================================
@@ -162,7 +124,7 @@ bool EtcdManager::register_service(const std::string& service_type,
     std::string key = std::string(SERVICES_PREFIX) + service_type + "/" + instance_id;
 
     try {
-        auto resp = client_->set(key, value_json, lease_id_).get();
+        auto resp = client_->set(key, value_json, lease_id_);
         if (resp.error_code() != 0) {
             SPDLOG_ERROR("[Etcd]Register service failed: {} - {}",
                          resp.error_code(), resp.error_message());
@@ -191,7 +153,7 @@ void EtcdManager::deregister_service(const std::string& service_type,
     std::string key = std::string(SERVICES_PREFIX) + service_type + "/" + instance_id;
 
     try {
-        client_->rm(key).get();
+        client_->rm(key);
         SPDLOG_INFO("[Etcd]Deregistered service: {}", key);
     } catch (const std::exception& e) {
         SPDLOG_ERROR("[Etcd]Deregister service exception: {}", e.what());
@@ -218,7 +180,7 @@ std::vector<ServiceInstance> EtcdManager::discover_services(const std::string& s
     std::string prefix = std::string(SERVICES_PREFIX) + service_type + "/";
 
     try {
-        auto resp = client_->ls(prefix).get();
+        auto resp = client_->ls(prefix);
         if (resp.error_code() != 0) {
             // error_code 100 = key not found, 这是正常情况（还没有注册的实例）
             if (resp.error_code() != ETCD_KEY_NOT_FOUND) {
@@ -276,7 +238,7 @@ void EtcdManager::watch_services(const std::string& service_type,
     // 创建 watch（异步）
     service_watcher_ = std::make_unique<etcd::Watcher>(
         *client_, prefix,
-        [this, prefix, cb = std::move(callback)](etcd::Response resp) {
+        [this, prefix, service_type, cb = std::move(callback)](etcd::Response resp) {
             if (resp.error_code() != 0) {
                 SPDLOG_ERROR("[Etcd]Watch services error: {} - {}",
                              resp.error_code(), resp.error_message());
@@ -326,7 +288,7 @@ bool EtcdManager::put_config(const std::string& key, const std::string& value_js
     std::string full_key = std::string(CONFIG_PREFIX) + key;
 
     try {
-        auto resp = client_->set(full_key, value_json).get();
+        auto resp = client_->set(full_key, value_json);
         if (resp.error_code() != 0) {
             SPDLOG_ERROR("[Etcd]Put config failed: {} - {}",
                          resp.error_code(), resp.error_message());
@@ -347,7 +309,7 @@ std::optional<std::string> EtcdManager::get_config(const std::string& key) {
     std::string full_key = std::string(CONFIG_PREFIX) + key;
 
     try {
-        auto resp = client_->get(full_key).get();
+        auto resp = client_->get(full_key);
         if (resp.error_code() != 0) {
             if (resp.error_code() == ETCD_KEY_NOT_FOUND) {
                 SPDLOG_INFO("[Etcd]Config not found: {}", full_key);
@@ -390,7 +352,8 @@ void EtcdManager::watch_config(const std::string& key_prefix,
 
             for (const auto& ev : resp.events()) {
                 if (etcd::Event::EventType::DELETE_ == ev.event_type()) {
-                    continue;  // 忽略删除事件
+                    SPDLOG_WARN("[Etcd]Config key deleted: {}", ev.kv().key());
+                    continue;
                 }
 
                 std::string key = ev.kv().key();

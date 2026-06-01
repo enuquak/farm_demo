@@ -19,9 +19,8 @@ set(PROTOBUF_ROOT "C:/protobuf_install")
 set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
 
 if(ENABLE_ETCD)
-    set(ETCD_ROOT "C:/vcpkg/installed/x64-windows" CACHE PATH "etcd-cpp-apiv3 install path")
-    set(ETCD_LIB_DIR "C:/etcd-cpp-apiv3_install/lib" CACHE PATH "etcd-cpp-api lib path")
-    set(ETCD_INCLUDE_DIR "C:/etcd-cpp-apiv3_install/include" CACHE PATH "etcd-cpp-api include path")
+    set(VCPKG_ROOT "C:/vcpkg/installed/x64-windows" CACHE PATH "vcpkg install path")
+    set(ETCD_ROOT "C:/etcd-cpp-apiv3_install" CACHE PATH "etcd-cpp-apiv3 install path")
 endif()
 
 # Protobuf 生成的源文件
@@ -96,7 +95,7 @@ set(GAME_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
 )
 if(ENABLE_ETCD)
-    list(APPEND GAME_INCLUDE_DIRS ${ETCD_ROOT}/include)
+    list(APPEND GAME_INCLUDE_DIRS ${ETCD_ROOT}/include ${VCPKG_ROOT}/include)
 endif()
 target_include_directories(game_server PRIVATE ${GAME_INCLUDE_DIRS})
 
@@ -107,7 +106,7 @@ set(GAME_LINK_DIRS
     ${HIREDIS_ROOT}/lib
 )
 if(ENABLE_ETCD)
-    list(APPEND GAME_LINK_DIRS ${ETCD_ROOT}/lib)
+    list(APPEND GAME_LINK_DIRS ${ETCD_ROOT}/lib ${VCPKG_ROOT}/lib)
 endif()
 target_link_directories(game_server PRIVATE ${GAME_LINK_DIRS})
 
@@ -149,9 +148,12 @@ if(MSVC)
             cares.lib
             libprotobuf.lib
             re2.lib
-            ssl.lib
-            crypto.lib
-            zlib.lib
+            libssl.lib
+            libcrypto.lib
+            cpprest_2_10.lib
+            bcrypt.lib
+            winhttp.lib
+            crypt32.lib
         )
     endif()
     target_link_libraries(game_server PRIVATE ${GAME_LINK_LIBS})
@@ -238,7 +240,7 @@ set(TEST_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
 )
 if(ENABLE_ETCD)
-    list(APPEND TEST_INCLUDE_DIRS ${ETCD_ROOT}/include)
+    list(APPEND TEST_INCLUDE_DIRS ${ETCD_ROOT}/include ${VCPKG_ROOT}/include)
 endif()
 target_include_directories(game_tests PRIVATE ${TEST_INCLUDE_DIRS})
 
@@ -249,7 +251,7 @@ set(TEST_LINK_DIRS
     ${HIREDIS_ROOT}/lib
 )
 if(ENABLE_ETCD)
-    list(APPEND TEST_LINK_DIRS ${ETCD_ROOT}/lib)
+    list(APPEND TEST_LINK_DIRS ${ETCD_ROOT}/lib ${VCPKG_ROOT}/lib)
 endif()
 target_link_directories(game_tests PRIVATE ${TEST_LINK_DIRS})
 
@@ -284,9 +286,12 @@ if(MSVC)
             cares.lib
             libprotobuf.lib
             re2.lib
-            ssl.lib
-            crypto.lib
-            zlib.lib
+            libssl.lib
+            libcrypto.lib
+            cpprest_2_10.lib
+            bcrypt.lib
+            winhttp.lib
+            crypt32.lib
         )
     endif()
     target_link_libraries(game_tests PRIVATE ${TEST_LINK_LIBS})

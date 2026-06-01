@@ -12,7 +12,8 @@ set(LIBEVENT_ROOT "C:/libevent_install")
 set(PROTOBUF_ROOT "C:/protobuf_install")
 set(MONGOC_ROOT "C:/mongoc_install")  # libmongoc 安装路径
 set(HIREDIS_ROOT "C:/hiredis_install")  # hiredis 安装路径
-set(ETCD_ROOT "C:/vcpkg/installed/x64-windows")
+set(VCPKG_ROOT "C:/vcpkg/installed/x64-windows")
+set(ETCD_ROOT "C:/etcd-cpp-apiv3_install")
 set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
 
 # Protobuf 生成的源文件
@@ -63,6 +64,7 @@ target_include_directories(dbmgr PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/third_party
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
     ${ETCD_ROOT}/include
+    ${VCPKG_ROOT}/include
 )
 
 # 链接库目录
@@ -72,6 +74,7 @@ target_link_directories(dbmgr PRIVATE
     ${MONGOC_ROOT}/lib
     ${HIREDIS_ROOT}/lib
     ${ETCD_ROOT}/lib
+    ${VCPKG_ROOT}/lib
 )
 
 # MSVC 特定设置
@@ -108,9 +111,12 @@ if(MSVC)
         cares.lib
         libprotobuf.lib
         re2.lib
-        ssl.lib
-        crypto.lib
-        zlib.lib
+        libssl.lib
+        libcrypto.lib
+        cpprest_2_10.lib
+        bcrypt.lib
+        winhttp.lib
+        crypt32.lib
     )
 else()
     # Linux/macOS
