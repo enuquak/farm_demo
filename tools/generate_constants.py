@@ -5,11 +5,27 @@
 """
 
 import json
+import logging
 import os
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any
+
+# 配置日志
+log_dir = Path(__file__).parent.parent / 'logs'
+log_dir.mkdir(exist_ok=True)
+
+log_file = log_dir / 'generate_constants.log'
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 
 def load_json_config(file_path: Path) -> Dict[str, Any]:
@@ -156,7 +172,7 @@ def process_config_file(json_file: Path, project_root: Path) -> bool:
         errors = validate_config(config, json_file)
         if errors:
             for error in errors:
-                print(f"错误: {error}", file=sys.stderr)
+                logger.error(error)
             return False
 
         constants = config[config_name]
@@ -164,20 +180,20 @@ def process_config_file(json_file: Path, project_root: Path) -> bool:
         # 生成 Python 代码
         python_output = project_root / 'scripts' / 'client' / f'{config_name}.py'
         generate_python_code(config_name, constants, python_output)
-        print(f"生成 Python 代码: {python_output}")
+        logger.info(f"生成 Python 代码: {python_output}")
 
         # 生成 C++ 代码
         cpp_output = project_root / 'scripts' / 'server' / 'common' / 'include' / f'{config_name}.h'
         generate_cpp_code(config_name, constants, cpp_output)
-        print(f"生成 C++ 代码: {cpp_output}")
+        logger.info(f"生成 C++ 代码: {cpp_output}")
 
         return True
 
     except json.JSONDecodeError as e:
-        print(f"错误: {json_file} JSON 格式错误: {e}", file=sys.stderr)
+        logger.error(f"{json_file} JSON 格式错误: {e}")
         return False
     except Exception as e:
-        print(f"错误: 处理 {json_file} 时出错: {e}", file=sys.stderr)
+        logger.error(f"处理 {json_file} 时出错: {e}")
         return False
 
 
@@ -189,26 +205,26 @@ def main() -> int:
 
     # 检查 shared 目录是否存在
     if not shared_dir.exists():
-        print(f"错误: shared 目录不存在: {shared_dir}", file=sys.stderr)
+        logger.error(f"shared 目录不存在: {shared_dir}")
         return 1
 
     # 遍历 shared 目录下的所有 JSON 文件
     json_files = list(shared_dir.glob('*.json'))
     if not json_files:
-        print("警告: shared 目录下没有 JSON 文件")
+        logger.warning("shared 目录下没有 JSON 文件")
         return 0
 
     success_count = 0
     fail_count = 0
 
     for json_file in sorted(json_files):
-        print(f"\n处理文件: {json_file}")
+        logger.info(f"处理文件: {json_file}")
         if process_config_file(json_file, project_root):
             success_count += 1
         else:
             fail_count += 1
 
-    print(f"\n生成完成: 成功 {success_count}, 失败 {fail_count}")
+    logger.info(f"生成完成: 成功 {success_count}, 失败 {fail_count}")
 
     return 1 if fail_count > 0 else 0
 

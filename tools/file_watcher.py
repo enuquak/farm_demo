@@ -4,12 +4,28 @@
 监控 shared/ 目录下的 JSON 文件变化，自动触发代码生成
 """
 
+import logging
 import os
 import sys
 import time
 import threading
 from pathlib import Path
 from typing import Set
+
+# 配置日志（在导入生成脚本之前，确保日志目录存在）
+log_dir = Path(__file__).parent.parent / 'logs'
+log_dir.mkdir(exist_ok=True)
+
+log_file = log_dir / 'file_watcher.log'
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileModifiedEvent, FileCreatedEvent, FileDeletedEvent
@@ -38,7 +54,7 @@ class ConfigFileHandler(FileSystemEventHandler):
         if not self.pending_files:
             return
 
-        print(f"\n检测到文件变化，开始重新生成...")
+        logger.info("检测到文件变化，开始重新生成...")
 
         success_count = 0
         fail_count = 0
@@ -51,7 +67,7 @@ class ConfigFileHandler(FileSystemEventHandler):
                     fail_count += 1
 
         self.pending_files.clear()
-        print(f"重新生成完成: 成功 {success_count}, 失败 {fail_count}")
+        logger.info(f"重新生成完成: 成功 {success_count}, 失败 {fail_count}")
 
     def _schedule_generation(self, path: str) -> None:
         """调度生成任务（带防抖）"""
@@ -94,12 +110,12 @@ def main() -> int:
 
     # 检查 shared 目录是否存在
     if not shared_dir.exists():
-        print(f"错误: shared 目录不存在: {shared_dir}", file=sys.stderr)
+        logger.error(f"shared 目录不存在: {shared_dir}")
         return 1
 
-    print(f"启动文件监控服务...")
-    print(f"监控目录: {shared_dir}")
-    print(f"按 Ctrl+C 停止服务")
+    logger.info("启动文件监控服务...")
+    logger.info(f"监控目录: {shared_dir}")
+    logger.info("按 Ctrl+C 停止服务")
 
     # 创建事件处理器
     event_handler = ConfigFileHandler(project_root)
@@ -115,11 +131,11 @@ def main() -> int:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n停止文件监控服务...")
+        logger.info("停止文件监控服务...")
         observer.stop()
 
     observer.join()
-    print("文件监控服务已停止")
+    logger.info("文件监控服务已停止")
 
     return 0
 

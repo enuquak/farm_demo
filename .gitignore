@@ -31,3 +31,6 @@ runtimeData/
 
 # 运行时日志文件
 runtimeData/logs/
+
+# 工具日志
+logs/
