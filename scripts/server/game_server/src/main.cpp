@@ -1,6 +1,8 @@
 #include "game_server.h"
 #include "dbmgr_connection_manager.h"
+#ifdef ENABLE_ETCD
 #include "etcd_manager.h"
+#endif
 #include "server_main_helper.h"
 #include "log_init.h"
 #include "log_macros.h"
@@ -13,16 +15,20 @@
 #include <vector>
 
 static farm::GameServer* g_server = nullptr;
+#ifdef ENABLE_ETCD
 static farm::EtcdManager* g_etcd = nullptr;
+#endif
 
 static void signal_handler(int sig) {
     if (g_server) {
         SPDLOG_INFO("[Main]Received signal {}, shutting down...", sig);
         g_server->stop();
     }
+#ifdef ENABLE_ETCD
     if (g_etcd) {
         g_etcd->shutdown();
     }
+#endif
 }
 
 int main(int argc, char* argv[]) {
@@ -65,6 +71,10 @@ int main(int argc, char* argv[]) {
         gm_static_dir = config["gm_server"].value("static_dir", "static");
     }
 
+    // DBMgr 配置
+    std::vector<farm::DBMgrConfig> dbmgr_configs;
+
+#ifdef ENABLE_ETCD
     // etcd 配置
     std::string etcd_endpoints = config.value("/etcd/endpoints"_json_pointer, "http://localhost:2379");
     uint32_t lease_ttl = config.value("/etcd/lease_ttl"_json_pointer, 15u);
@@ -91,7 +101,6 @@ int main(int argc, char* argv[]) {
     SPDLOG_INFO("[Main]Registered to etcd as game/{}", server_id);
 
     // 从 etcd 发现 dbmgr 服务
-    std::vector<farm::DBMgrConfig> dbmgr_configs;
     auto dbmgrs = etcd.discover_services("dbmgr");
     for (const auto& dbmgr : dbmgrs) {
         farm::DBMgrConfig cfg;
@@ -112,12 +121,26 @@ int main(int argc, char* argv[]) {
                                       bool is_delete) {
         if (is_delete) {
             SPDLOG_INFO("[Main]DBMgr {} removed from etcd", instance_id);
-            // TODO: 动态移除 dbmgr 连接（需要 DBMgrConnectionManager 支持动态增减）
         } else {
             SPDLOG_INFO("[Main]DBMgr {} added to etcd: {}:{}", instance_id, inst.ip, inst.port);
-            // TODO: 动态添加 dbmgr 连接（需要 DBMgrConnectionManager 支持动态增减）
         }
     });
+#else
+    // 从配置文件读取 DBMgr 地址
+    if (config.contains("dbmgrs") && config["dbmgrs"].is_array()) {
+        for (const auto& db : config["dbmgrs"]) {
+            farm::DBMgrConfig cfg;
+            cfg.host = db.value("host", "127.0.0.1");
+            cfg.port = static_cast<uint16_t>(db.value("port", 5000));
+            dbmgr_configs.push_back(cfg);
+        }
+    }
+
+    if (dbmgr_configs.empty()) {
+        SPDLOG_ERROR("[Main]No DBMgr instances configured");
+        return 1;
+    }
+#endif
 
     // Parse Redis config
     std::string redis_uri = config.value("/redis/uri"_json_pointer, "");
