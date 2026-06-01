@@ -58,10 +58,10 @@ bool EtcdManager::connect() {
 }
 
 void EtcdManager::shutdown() {
-    if (!running_.exchange(false)) {
-        // 已经在 shutdown 中或未连接
-        return;
-    }
+    // 设置 running_ 为 false（通知 keepalive 线程退出），
+    // 但无论之前状态如何都继续执行清理，因为 keepalive 失败时
+    // running_ 已被设为 false，但仍需注销已注册的服务。
+    running_ = false;
 
     // 注销所有已注册的服务
     {
@@ -95,6 +95,7 @@ void EtcdManager::shutdown() {
 }
 
 void EtcdManager::set_error_callback(ErrorCallback callback) {
+    std::lock_guard<std::mutex> lock(error_mutex_);
     error_callback_ = std::move(callback);
 }
 
@@ -131,9 +132,14 @@ void EtcdManager::lease_keepalive_loop() {
 
         if (retry_count >= max_retries) {
             SPDLOG_ERROR("[Etcd]Lease keepalive failed {} times, shutting down", max_retries);
-            if (error_callback_) {
-                error_callback_("Lease keepalive failed after " +
-                                std::to_string(max_retries) + " retries");
+            {
+                ErrorCallback cb;
+                {
+                    std::lock_guard<std::mutex> lock(error_mutex_);
+                    cb = error_callback_;
+                }
+                if (cb) cb("Lease keepalive failed after " +
+                           std::to_string(max_retries) + " retries");
             }
             running_ = false;
             break;
@@ -165,7 +171,9 @@ bool EtcdManager::register_service(const std::string& service_type,
 
         {
             std::lock_guard<std::mutex> lock(registered_keys_mutex_);
-            registered_keys_.push_back(key);
+            if (std::find(registered_keys_.begin(), registered_keys_.end(), key) == registered_keys_.end()) {
+                registered_keys_.push_back(key);
+            }
         }
 
         SPDLOG_INFO("[Etcd]Registered service: {} = {}", key, value_json);
@@ -213,7 +221,7 @@ std::vector<ServiceInstance> EtcdManager::discover_services(const std::string& s
         auto resp = client_->ls(prefix).get();
         if (resp.error_code() != 0) {
             // error_code 100 = key not found, 这是正常情况（还没有注册的实例）
-            if (resp.error_code() != 100) {
+            if (resp.error_code() != ETCD_KEY_NOT_FOUND) {
                 SPDLOG_ERROR("[Etcd]Discover services failed: {} - {}",
                              resp.error_code(), resp.error_message());
             }
@@ -272,8 +280,13 @@ void EtcdManager::watch_services(const std::string& service_type,
             if (resp.error_code() != 0) {
                 SPDLOG_ERROR("[Etcd]Watch services error: {} - {}",
                              resp.error_code(), resp.error_message());
-                if (error_callback_) {
-                    error_callback_("Watch services error: " + resp.error_message());
+                {
+                    ErrorCallback err_cb;
+                    {
+                        std::lock_guard<std::mutex> lock(error_mutex_);
+                        err_cb = error_callback_;
+                    }
+                    if (err_cb) err_cb("Watch services error: " + resp.error_message());
                 }
                 return;
             }
@@ -336,7 +349,7 @@ std::optional<std::string> EtcdManager::get_config(const std::string& key) {
     try {
         auto resp = client_->get(full_key).get();
         if (resp.error_code() != 0) {
-            if (resp.error_code() == 100) {  // Key not found
+            if (resp.error_code() == ETCD_KEY_NOT_FOUND) {
                 SPDLOG_INFO("[Etcd]Config not found: {}", full_key);
                 return std::nullopt;
             }
@@ -364,8 +377,13 @@ void EtcdManager::watch_config(const std::string& key_prefix,
             if (resp.error_code() != 0) {
                 SPDLOG_ERROR("[Etcd]Config watch error: {} - {}",
                              resp.error_code(), resp.error_message());
-                if (error_callback_) {
-                    error_callback_("Config watch error: " + resp.error_message());
+                {
+                    ErrorCallback err_cb;
+                    {
+                        std::lock_guard<std::mutex> lock(error_mutex_);
+                        err_cb = error_callback_;
+                    }
+                    if (err_cb) err_cb("Config watch error: " + resp.error_message());
                 }
                 return;
             }

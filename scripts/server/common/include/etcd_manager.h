@@ -47,9 +47,11 @@ public:
     EtcdManager(const std::string& etcd_endpoints, uint32_t lease_ttl = 15);
     ~EtcdManager();
 
-    // 禁止拷贝
+    // 禁止拷贝和移动
     EtcdManager(const EtcdManager&) = delete;
     EtcdManager& operator=(const EtcdManager&) = delete;
+    EtcdManager(EtcdManager&&) = delete;
+    EtcdManager& operator=(EtcdManager&&) = delete;
 
     // === 生命周期 ===
 
@@ -157,6 +159,9 @@ private:
     static constexpr const char* SERVICES_PREFIX = "/farm/services/";
     static constexpr const char* CONFIG_PREFIX = "/farm/config/";
 
+    // etcd 错误码常量
+    static constexpr int ETCD_KEY_NOT_FOUND = 100;
+
     // 成员变量
     std::unique_ptr<etcd::Client> client_;
     std::string endpoints_;
@@ -167,6 +172,9 @@ private:
     std::atomic<bool> running_{false};
 
     // watch 对象（需要保持存活）
+    // 注意：当前只支持一个 service watcher 和一个 config watcher。
+    //       如果后续需要监听多个 service_type 或 key_prefix，
+    //       应改为 std::map<std::string, std::unique_ptr<etcd::Watcher>>。
     std::unique_ptr<etcd::Watcher> service_watcher_;
     std::unique_ptr<etcd::Watcher> config_watcher_;
 
@@ -174,6 +182,7 @@ private:
     std::vector<std::string> registered_keys_;
     std::mutex registered_keys_mutex_;
 
+    std::mutex error_mutex_;
     ErrorCallback error_callback_;
 };
 
