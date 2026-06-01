@@ -459,4 +459,102 @@ AccountResult MongoServer::set_account(const std::string& account_id, const Acco
     return AccountResult::SUCCESS;
 }
 
+bool MongoServer::init_counter() {
+    mongoc_collection_t* collection = get_collection("counters");
+    if (!collection) return false;
+
+    // Upsert: ensure the counter document exists
+    bson_t filter;
+    bson_init(&filter);
+    BSON_APPEND_UTF8(&filter, "_id", "player_id");
+
+    bson_t update;
+    bson_init(&update);
+    bson_t set_on_insert;
+    BSON_APPEND_DOCUMENT_BEGIN(&update, "$setOnInsert", &set_on_insert);
+    BSON_APPEND_INT64(&set_on_insert, "seq", 0);
+    bson_append_document_end(&update, &set_on_insert);
+
+    bson_t opts;
+    bson_init(&opts);
+    BSON_APPEND_BOOL(&opts, "upsert", true);
+
+    bson_error_t error;
+    bson_t reply;
+    bool ok = mongoc_collection_update_one(collection, &filter, &update, &opts, &reply, &error);
+
+    bson_destroy(&reply);
+    bson_destroy(&opts);
+    bson_destroy(&update);
+    bson_destroy(&filter);
+    mongoc_collection_destroy(collection);
+
+    if (!ok) {
+        SPDLOG_ERROR("[MongoServer]init_counter failed: {}", error.message);
+        return false;
+    }
+
+    SPDLOG_INFO("[MongoServer]Counter initialized");
+    return true;
+}
+
+int64_t MongoServer::alloc_player_ids(uint32_t count) {
+    mongoc_collection_t* collection = get_collection("counters");
+    if (!collection) return 0;
+
+    bson_t filter;
+    bson_init(&filter);
+    BSON_APPEND_UTF8(&filter, "_id", "player_id");
+
+    bson_t update;
+    bson_init(&update);
+    bson_t inc_doc;
+    BSON_APPEND_DOCUMENT_BEGIN(&update, "$inc", &inc_doc);
+    BSON_APPEND_INT64(&inc_doc, "seq", static_cast<int64_t>(count));
+    bson_append_document_end(&update, &inc_doc);
+
+    // 使用 find_and_modify_opts API (兼容当前 libmongoc 版本)
+    mongoc_find_and_modify_opts_t* opts = mongoc_find_and_modify_opts_new();
+    mongoc_find_and_modify_opts_set_update(opts, &update);
+    mongoc_find_and_modify_opts_set_flags(opts,
+        static_cast<mongoc_find_and_modify_flags_t>(
+            MONGOC_FIND_AND_MODIFY_UPSERT | MONGOC_FIND_AND_MODIFY_RETURN_NEW));
+
+    bson_error_t error;
+    bson_t reply;
+    bool ok = mongoc_collection_find_and_modify_with_opts(collection, &filter, opts, &reply, &error);
+
+    int64_t new_seq = 0;
+    if (ok) {
+        bson_iter_t iter;
+        if (bson_iter_init_find(&iter, &reply, "value") && BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+            const uint8_t* val_data = nullptr;
+            uint32_t val_len = 0;
+            bson_iter_document(&iter, &val_len, &val_data);
+            if (val_data && val_len > 0) {
+                bson_t val_doc;
+                bson_init_static(&val_doc, val_data, val_len);
+                bson_iter_t val_iter;
+                if (bson_iter_init_find(&val_iter, &val_doc, "seq")) {
+                    new_seq = bson_iter_int64(&val_iter);
+                }
+            }
+        }
+    } else {
+        SPDLOG_ERROR("[MongoServer]alloc_player_ids failed: {}", error.message);
+    }
+
+    bson_destroy(&reply);
+    mongoc_find_and_modify_opts_destroy(opts);
+    bson_destroy(&update);
+    bson_destroy(&filter);
+    mongoc_collection_destroy(collection);
+
+    if (new_seq > 0) {
+        SPDLOG_INFO("[MongoServer]Allocated {} player IDs, seq now at {}", count, new_seq);
+    }
+
+    return new_seq;
+}
+
 }  // namespace farm

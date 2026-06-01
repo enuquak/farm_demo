@@ -27,6 +27,13 @@ public:
     AccountResult get_account(const std::string& account_id, std::vector<AccountRole>& roles);
     AccountResult set_account(const std::string& account_id, const AccountRole& new_role);
 
+    // 初始化 counters 集合（确保 player_id 计数器文档存在）
+    bool init_counter();
+
+    // 原子分配 N 个 player_id，返回起始 ID
+    // 成功: 返回 start_id (>0), 失败: 返回 0
+    int64_t alloc_player_ids(uint32_t count);
+
 private:
     // 创建集合索引
     bool create_indexes(const std::string& collection_name);
