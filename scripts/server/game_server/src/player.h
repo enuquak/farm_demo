@@ -4,6 +4,7 @@
 #include <ctime>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace farm {
 
@@ -106,6 +107,9 @@ private:
     PlayerBizData player_data_;
     PlayerBizDataState data_state_ = PlayerBizDataState::NOT_LOADED;
     bool dirty_ = false;
+    std::unordered_set<std::string> dirty_fields_;
+
+    void mark_dirty(const std::string& field);
 };
 
 }  // namespace farm
