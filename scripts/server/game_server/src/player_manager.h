@@ -23,6 +23,9 @@ public:
 
     // 设置 DBMgr 连接管理器（用于数据加载/保存）
     void set_dbmgr_manager(DBMgrConnectionManager* dbmgr_mgr) { dbmgr_mgr_ = dbmgr_mgr; }
+    DBMgrConnectionManager* dbmgr_mgr() const { return dbmgr_mgr_; }
+
+    void set_event_base(struct event_base* base) { base_ = base; }
 
     // Set callback for player offline events
     void set_offline_callback(PlayerOfflineCallback callback) {
@@ -73,6 +76,7 @@ private:
 
     std::unordered_map<uint64_t, std::unique_ptr<Player>> players_;
     DBMgrConnectionManager* dbmgr_mgr_ = nullptr;
+    struct event_base* base_ = nullptr;
 
     // 玩家加入回调（等待数据加载完成）
     std::unordered_map<uint64_t, PlayerJoinCallback> pending_join_callbacks_;

@@ -111,6 +111,7 @@ bool GameServer::start() {
             SPDLOG_INFO("[Game]DBMgr connections initialized ({} DBMgrs)", dbmgr_configs_.size());
             // 设置 PlayerManager 的 DBMgr 连接管理器
             player_mgr_.set_dbmgr_manager(&dbmgr_mgr_);
+            player_mgr_.set_event_base(base_);
         }
     } else {
         SPDLOG_INFO("[Game]No DBMgr configs, skipping DBMgr connections");
