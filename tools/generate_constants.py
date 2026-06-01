@@ -107,12 +107,7 @@ def generate_python_code(config_name: str, constants: List[Dict[str, Any]], outp
     with open(temp_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines))
 
-    # 备份原文件
-    if output_path.exists():
-        backup_path = output_path.with_suffix('.py.bak')
-        output_path.rename(backup_path)
-
-    temp_path.rename(output_path)
+    os.replace(temp_path, output_path)
 
 
 def generate_cpp_code(config_name: str, constants: List[Dict[str, Any]], output_path: Path) -> None:
@@ -152,12 +147,7 @@ def generate_cpp_code(config_name: str, constants: List[Dict[str, Any]], output_
     with open(temp_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines))
 
-    # 备份原文件
-    if output_path.exists():
-        backup_path = output_path.with_suffix('.h.bak')
-        output_path.rename(backup_path)
-
-    temp_path.rename(output_path)
+    os.replace(temp_path, output_path)
 
 
 def process_config_file(json_file: Path, project_root: Path) -> bool:
