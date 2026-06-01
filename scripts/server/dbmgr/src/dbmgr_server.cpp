@@ -46,12 +46,17 @@ bool DbMgrServer::start() {
             SPDLOG_ERROR("[DBMgr]Failed to initialize MongoDB indexes");
             return false;
         }
+        // 初始化 player_id 计数器
+        if (!mongo_server_.init_counter()) {
+            SPDLOG_ERROR("[DBMgr]Failed to initialize player ID counter");
+            return false;
+        }
         SPDLOG_INFO("[DBMgr]Database ready");
     } else {
         SPDLOG_WARN("[DBMgr]Database not ready, will reject data requests");
         // 注册回调，连接恢复后初始化
         conn_mgr_.set_on_ready_callback([this]() {
-            if (mongo_server_.init()) {
+            if (mongo_server_.init() && mongo_server_.init_counter()) {
                 SPDLOG_INFO("[DBMgr]Database recovered and ready");
             }
         });
