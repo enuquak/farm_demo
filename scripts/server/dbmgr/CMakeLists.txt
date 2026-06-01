@@ -12,6 +12,7 @@ set(LIBEVENT_ROOT "C:/libevent_install")
 set(PROTOBUF_ROOT "C:/protobuf_install")
 set(MONGOC_ROOT "C:/mongoc_install")  # libmongoc 安装路径
 set(HIREDIS_ROOT "C:/hiredis_install")  # hiredis 安装路径
+set(ETCD_ROOT "C:/vcpkg/installed/x64-windows")
 set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
 
 # Protobuf 生成的源文件
@@ -43,6 +44,7 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/message_parser.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/msvc_compat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/server_main_helper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/etcd_manager.cpp
 )
 
 add_executable(dbmgr ${SOURCES})
@@ -60,6 +62,7 @@ target_include_directories(dbmgr PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/third_party
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
+    ${ETCD_ROOT}/include
 )
 
 # 链接库目录
@@ -68,6 +71,7 @@ target_link_directories(dbmgr PRIVATE
     ${LIBEVENT_ROOT}/lib
     ${MONGOC_ROOT}/lib
     ${HIREDIS_ROOT}/lib
+    ${ETCD_ROOT}/lib
 )
 
 # MSVC 特定设置
@@ -96,6 +100,17 @@ if(MSVC)
         ws2_32.lib
         advapi32.lib
         shell32.lib
+        etcd-cpp-api.lib
+        grpc.lib
+        grpc++.lib
+        gpr.lib
+        address_sorting.lib
+        cares.lib
+        libprotobuf.lib
+        re2.lib
+        ssl.lib
+        crypto.lib
+        zlib.lib
     )
 else()
     # Linux/macOS
@@ -107,6 +122,11 @@ else()
         mongoc-1.0
         bson-1.0
         hiredis
+        etcd-cpp-api
+        grpc++
+        grpc
+        gpr
+        protobuf
         pthread
     )
 endif()

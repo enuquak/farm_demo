@@ -11,6 +11,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 set(LIBEVENT_ROOT "C:/libevent_install")
 set(HIREDIS_ROOT "C:/hiredis_install")
 set(PROTOBUF_ROOT "C:/protobuf_install")
+set(ETCD_ROOT "C:/vcpkg/installed/x64-windows")
 set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
 
 # Protobuf 生成的源文件
@@ -58,6 +59,7 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/message_parser.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/msvc_compat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/server_main_helper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/etcd_manager.cpp
 )
 
 add_executable(game_server ${SOURCES})
@@ -73,6 +75,7 @@ target_include_directories(game_server PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/third_party
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
+    ${ETCD_ROOT}/include
 )
 
 # 链接库目录
@@ -80,6 +83,7 @@ target_link_directories(game_server PRIVATE
     ${PROTOBUF_ROOT}/lib
     ${LIBEVENT_ROOT}/lib
     ${HIREDIS_ROOT}/lib
+    ${ETCD_ROOT}/lib
 )
 
 # MSVC 特定设置
@@ -109,6 +113,17 @@ if(MSVC)
         ws2_32.lib
         advapi32.lib
         shell32.lib
+        etcd-cpp-api.lib
+        grpc.lib
+        grpc++.lib
+        gpr.lib
+        address_sorting.lib
+        cares.lib
+        libprotobuf.lib
+        re2.lib
+        ssl.lib
+        crypto.lib
+        zlib.lib
     )
 else()
     # Linux/macOS
@@ -118,6 +133,11 @@ else()
         event_core
         event_extra
         hiredis
+        etcd-cpp-api
+        grpc++
+        grpc
+        gpr
+        protobuf
         pthread
     )
 endif()
@@ -156,6 +176,7 @@ set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/message_parser.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/msvc_compat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/server_main_helper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/etcd_manager.cpp
 )
 
 add_executable(game_tests ${TEST_SOURCES})
@@ -170,12 +191,14 @@ target_include_directories(game_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/third_party
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
+    ${ETCD_ROOT}/include
 )
 
 target_link_directories(game_tests PRIVATE
     ${PROTOBUF_ROOT}/lib
     ${LIBEVENT_ROOT}/lib
     ${HIREDIS_ROOT}/lib
+    ${ETCD_ROOT}/lib
 )
 
 if(MSVC)
@@ -198,6 +221,17 @@ if(MSVC)
         ws2_32.lib
         advapi32.lib
         shell32.lib
+        etcd-cpp-api.lib
+        grpc.lib
+        grpc++.lib
+        gpr.lib
+        address_sorting.lib
+        cares.lib
+        libprotobuf.lib
+        re2.lib
+        ssl.lib
+        crypto.lib
+        zlib.lib
     )
 else()
     target_link_libraries(game_tests PRIVATE
@@ -206,6 +240,11 @@ else()
         event_core
         event_extra
         hiredis
+        etcd-cpp-api
+        grpc++
+        grpc
+        gpr
+        protobuf
         pthread
     )
 endif()
