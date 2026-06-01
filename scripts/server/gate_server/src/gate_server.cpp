@@ -304,19 +304,22 @@ void GateServer::handle_disconnect(std::shared_ptr<Session> session) {
     SPDLOG_INFO("[Gate]Connection closed fd={}", fd);
 
     // 通知 Game 玩家离开
-    if (session->state() == SessionState::LOGGED_IN && session->player_id() != 0) {
-        auto it = player_to_server_.find(session->player_id());
-        if (it != player_to_server_.end()) {
-            auto conn = get_game_connection(it->second);
-            if (conn) {
-                farm::PlayerLeave leave;
-                leave.set_player_id(session->player_id());
-                std::string payload;
-                leave.SerializeToString(&payload);
-                conn.value()->send(MSG_ID_PLAYER_LEAVE, payload);
-                SPDLOG_INFO("[Gate]Notified Game {}: player_id={} left", it->second, session->player_id());
+    {
+        std::lock_guard<std::mutex> lock(game_conns_mutex_);
+        if (session->state() == SessionState::LOGGED_IN && session->player_id() != 0) {
+            auto it = player_to_server_.find(session->player_id());
+            if (it != player_to_server_.end()) {
+                auto conn_it = game_conns_.find(it->second);
+                if (conn_it != game_conns_.end() && conn_it->second->is_identified()) {
+                    farm::PlayerLeave leave;
+                    leave.set_player_id(session->player_id());
+                    std::string payload;
+                    leave.SerializeToString(&payload);
+                    conn_it->second->send(MSG_ID_PLAYER_LEAVE, payload);
+                    SPDLOG_INFO("[Gate]Notified Game {}: player_id={} left", it->second, session->player_id());
+                }
+                player_to_server_.erase(it);
             }
-            player_to_server_.erase(it);
         }
     }
 
@@ -480,6 +483,7 @@ void GateServer::handle_game_identify_resp(uint32_t server_id, const std::vector
         return;
     }
 
+    std::lock_guard<std::mutex> lock(game_conns_mutex_);
     if (resp.code() == 0) {
         SPDLOG_INFO("[Gate]Game Server {} identified successfully", server_id);
         // 设置 GameConnection 状态为 IDENTIFIED
@@ -506,6 +510,7 @@ void GateServer::handle_player_join_resp(uint32_t server_id, const std::vector<u
     if (resp.code() == 0) {
         SPDLOG_INFO("[Gate]Player {} joined Game Server {} successfully", resp.player_id(), server_id);
         // 注册玩家路由
+        std::lock_guard<std::mutex> lock(game_conns_mutex_);
         player_to_server_[resp.player_id()] = server_id;
     } else {
         SPDLOG_ERROR("[Gate]Player {} join Game Server {} failed: {}", resp.player_id(), server_id, resp.msg());
@@ -682,10 +687,13 @@ void GateServer::handle_shutdown(const AdminShutdownMsg& msg) {
     forward_msg.timeout_ms = msg.timeout_ms;
     std::string forward_payload = forward_msg.serialize();
 
-    for (auto& [server_id, conn] : game_conns_) {
-        if (conn->is_identified()) {
-            conn->send(MSG_ID_SHUTDOWN, forward_payload);
-            SPDLOG_INFO("[Gate]Forwarded shutdown to Game Server {}", server_id);
+    {
+        std::lock_guard<std::mutex> lock(game_conns_mutex_);
+        for (auto& [server_id, conn] : game_conns_) {
+            if (conn->is_identified()) {
+                conn->send(MSG_ID_SHUTDOWN, forward_payload);
+                SPDLOG_INFO("[Gate]Forwarded shutdown to Game Server {}", server_id);
+            }
         }
     }
 
