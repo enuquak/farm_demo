@@ -12,6 +12,17 @@ cd /d "%PROJECT_DIR%"
 echo Project Directory: %PROJECT_DIR%
 echo.
 
+REM 生成共享常量代码
+echo ========================================
+echo Generating shared constants...
+echo ========================================
+python tools\generate_constants.py
+if errorlevel 1 (
+    echo ERROR: Failed to generate shared constants
+    exit /b 1
+)
+echo.
+
 REM 定义服务列表
 set "SERVICES=dbmgr game_server gate_server"
 
