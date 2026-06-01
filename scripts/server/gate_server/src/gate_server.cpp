@@ -129,6 +129,22 @@ void GateServer::stop() {
     }
 }
 
+void GateServer::dispatch_to_event_loop(std::function<void()> func) {
+    if (!base_) return;
+
+    // 包装为 heap 分配的 std::function，由 libevent 回调释放
+    auto* func_ptr = new std::function<void()>(std::move(func));
+
+    struct timeval tv = {0, 0};  // 立即触发
+    event_base_once(base_, -1, EV_TIMEOUT, on_dispatch_callback, func_ptr, &tv);
+}
+
+void GateServer::on_dispatch_callback(evutil_socket_t fd, short events, void* ctx) {
+    auto* func = static_cast<std::function<void()>*>(ctx);
+    (*func)();
+    delete func;
+}
+
 void GateServer::add_game_server(uint32_t server_id, const std::string& ip, uint16_t port) {
     std::lock_guard<std::mutex> lock(game_conns_mutex_);
 

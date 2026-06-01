@@ -8,6 +8,7 @@
 #include <string>
 #include <cstdint>
 #include <optional>
+#include <functional>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -38,6 +39,9 @@ public:
     // 移除 Game Server 连接（用于 etcd watch 回调）
     void remove_game_server(uint32_t server_id);
 
+    // 将操作分发到事件循环线程（线程安全）
+    void dispatch_to_event_loop(std::function<void()> func);
+
 private:
     // libevent 回调
     static void on_accept(struct evconnlistener* listener, evutil_socket_t fd,
@@ -45,6 +49,7 @@ private:
     static void on_read(struct bufferevent* bev, void* ctx);
     static void on_event(struct bufferevent* bev, short events, void* ctx);
     static void on_heartbeat_timer(evutil_socket_t fd, short events, void* ctx);
+    static void on_dispatch_callback(evutil_socket_t fd, short events, void* ctx);
 
     // 消息处理
     void handle_accept(evutil_socket_t fd, struct sockaddr* addr);

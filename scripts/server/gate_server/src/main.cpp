@@ -107,11 +107,16 @@ int main(int argc, char* argv[]) {
                                      bool is_delete) {
         if (is_delete) {
             SPDLOG_INFO("[Main]Game Server {} removed from etcd", id);
-            server.remove_game_server(inst.server_id);
+            server.dispatch_to_event_loop([&server, server_id = inst.server_id]() {
+                server.remove_game_server(server_id);
+            });
         } else {
             SPDLOG_INFO("[Main]Game Server {} added to etcd: {}:{}",
                         id, inst.ip, inst.port);
-            server.add_game_server(inst.server_id, inst.ip, inst.port);
+            server.dispatch_to_event_loop([&server, server_id = inst.server_id,
+                                            ip = inst.ip, port = inst.port]() {
+                server.add_game_server(server_id, ip, port);
+            });
         }
     });
 
