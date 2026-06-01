@@ -6,6 +6,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <event2/event.h>
+#include "game_constants.h"
+
 namespace farm {
 
 class GateSession;
@@ -106,6 +109,10 @@ public:
     void save_field(const std::string& field); // 单字段存盘：发 SET
     void save_full();                         // 全量存盘：发 SET_ALL
 
+    // 自动存盘定时器
+    void start_save_timer(struct event_base* base);
+    void stop_save_timer();
+
     // 是否有脏数据
     bool has_dirty_fields() const { return !dirty_fields_.empty(); }
     const std::unordered_set<std::string>& dirty_fields() const { return dirty_fields_; }
@@ -122,10 +129,17 @@ private:
     std::unordered_set<std::string> dirty_fields_;
     DBMgrConnectionManager* dbmgr_mgr_ = nullptr;
 
+    // 自动存盘定时器
+    struct event* save_timer_ = nullptr;
+    struct event_base* base_ = nullptr;
+
     void mark_dirty(const std::string& field);
     std::string get_field_json(const std::string& field) const;
     std::string get_all_data_json() const;
     void clear_dirty();
+
+    static void on_save_timer(evutil_socket_t fd, short events, void* ctx);
+    void handle_save_timer();
 };
 
 }  // namespace farm

@@ -4,6 +4,7 @@
 #include "dbmgr_connection_manager.h"
 #include "dbmgr.pb.h"
 #include <nlohmann/json.hpp>
+#include <event2/event.h>
 
 namespace farm {
 
@@ -17,6 +18,7 @@ Player::Player(uint64_t player_id, GateSession* gate_session,
 }
 
 Player::~Player() {
+    stop_save_timer();
 }
 
 void Player::mark_dirty(const std::string& field) {
@@ -268,6 +270,43 @@ void Player::init_default_data() {
                      "scene_id", "inventory", "farm_state", "extra_data"};
 
     SPDLOG_INFO("[Player]Initialized default data for player_id={}", player_id_);
+}
+
+void Player::start_save_timer(struct event_base* base) {
+    if (save_timer_ || !base) return;
+
+    base_ = base;
+    save_timer_ = event_new(base_, -1, EV_PERSIST, on_save_timer, this);
+    if (!save_timer_) {
+        SPDLOG_ERROR("[Player]Failed to create save timer for player_id={}", player_id_);
+        return;
+    }
+
+    struct timeval tv;
+    tv.tv_sec = PLAYER_SAVE_INTERVAL;
+    tv.tv_usec = 0;
+    evtimer_add(save_timer_, &tv);
+
+    SPDLOG_INFO("[Player]Save timer started for player_id={} interval={}s", player_id_, PLAYER_SAVE_INTERVAL);
+}
+
+void Player::stop_save_timer() {
+    if (save_timer_) {
+        event_del(save_timer_);
+        event_free(save_timer_);
+        save_timer_ = nullptr;
+    }
+}
+
+void Player::on_save_timer(evutil_socket_t fd, short events, void* ctx) {
+    auto* player = static_cast<Player*>(ctx);
+    player->handle_save_timer();
+}
+
+void Player::handle_save_timer() {
+    if (!dirty_) return;
+    SPDLOG_INFO("[Player]Auto-save timer fired for player_id={}", player_id_);
+    save_full();
 }
 
 }  // namespace farm
