@@ -190,6 +190,60 @@ struct DBMgrHeartbeatDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 DBMgrHeartbeatDefaultTypeInternal _DBMgrHeartbeat_default_instance_;
+
+inline constexpr AllocPlayerIdResp::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        request_id_{::uint64_t{0u}},
+        start_id_{::uint64_t{0u}},
+        code_{0},
+        count_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR AllocPlayerIdResp::AllocPlayerIdResp(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(AllocPlayerIdResp_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct AllocPlayerIdRespDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR AllocPlayerIdRespDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~AllocPlayerIdRespDefaultTypeInternal() {}
+  union {
+    AllocPlayerIdResp _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AllocPlayerIdRespDefaultTypeInternal _AllocPlayerIdResp_default_instance_;
+
+inline constexpr AllocPlayerIdReq::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        request_id_{::uint64_t{0u}},
+        count_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR AllocPlayerIdReq::AllocPlayerIdReq(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(AllocPlayerIdReq_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct AllocPlayerIdReqDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR AllocPlayerIdReqDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~AllocPlayerIdReqDefaultTypeInternal() {}
+  union {
+    AllocPlayerIdReq _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AllocPlayerIdReqDefaultTypeInternal _AllocPlayerIdReq_default_instance_;
 }  // namespace farm
 namespace farm {
 PROTOBUF_CONSTINIT const uint32_t PlayerDataOp_internal_data_[] = {
@@ -2027,6 +2081,612 @@ void PlayerDataResp::InternalSwap(PlayerDataResp* PROTOBUF_RESTRICT PROTOBUF_NON
       PROTOBUF_FIELD_OFFSET(PlayerDataResp, _impl_.code_)
       + sizeof(PlayerDataResp::_impl_.code_)
       - PROTOBUF_FIELD_OFFSET(PlayerDataResp, _impl_.request_id_)>(
+          reinterpret_cast<char*>(&_impl_.request_id_),
+          reinterpret_cast<char*>(&other->_impl_.request_id_));
+}
+
+// ===================================================================
+
+class AllocPlayerIdReq::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<AllocPlayerIdReq>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(AllocPlayerIdReq, _impl_._has_bits_);
+};
+
+AllocPlayerIdReq::AllocPlayerIdReq(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, AllocPlayerIdReq_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:farm.AllocPlayerIdReq)
+}
+AllocPlayerIdReq::AllocPlayerIdReq(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const AllocPlayerIdReq& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, AllocPlayerIdReq_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<std::string>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE AllocPlayerIdReq::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void AllocPlayerIdReq::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, request_id_),
+           0,
+           offsetof(Impl_, count_) -
+               offsetof(Impl_, request_id_) +
+               sizeof(Impl_::count_));
+}
+AllocPlayerIdReq::~AllocPlayerIdReq() {
+  // @@protoc_insertion_point(destructor:farm.AllocPlayerIdReq)
+  SharedDtor(*this);
+}
+inline void AllocPlayerIdReq::SharedDtor(MessageLite& self) {
+  AllocPlayerIdReq& this_ = static_cast<AllocPlayerIdReq&>(self);
+  this_._internal_metadata_.Delete<std::string>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL AllocPlayerIdReq::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) AllocPlayerIdReq(arena);
+}
+constexpr auto AllocPlayerIdReq::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(AllocPlayerIdReq),
+                                            alignof(AllocPlayerIdReq));
+}
+constexpr auto AllocPlayerIdReq::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataLite<22>{
+      {
+          &_AllocPlayerIdReq_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &AllocPlayerIdReq::MergeImpl,
+          ::google::protobuf::MessageLite::GetNewImpl<AllocPlayerIdReq>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &AllocPlayerIdReq::SharedDtor,
+          ::google::protobuf::MessageLite::GetClearImpl<AllocPlayerIdReq>(), &AllocPlayerIdReq::ByteSizeLong,
+              &AllocPlayerIdReq::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(AllocPlayerIdReq, _impl_._cached_size_),
+          true,
+      },
+      "farm.AllocPlayerIdReq",
+  };
+}
+
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataLite<22> AllocPlayerIdReq_class_data_ =
+    AllocPlayerIdReq::InternalGenerateClassData_();
+
+const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL AllocPlayerIdReq::GetClassData() const {
+  return AllocPlayerIdReq_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
+AllocPlayerIdReq::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(AllocPlayerIdReq, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    AllocPlayerIdReq_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallbackLite,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::farm::AllocPlayerIdReq>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint32 count = 2;
+    {::_pbi::TcParser::FastV32S1,
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(AllocPlayerIdReq, _impl_.count_)}},
+    // uint64 request_id = 1;
+    {::_pbi::TcParser::FastV64S1,
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(AllocPlayerIdReq, _impl_.request_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 request_id = 1;
+    {PROTOBUF_FIELD_OFFSET(AllocPlayerIdReq, _impl_.request_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 count = 2;
+    {PROTOBUF_FIELD_OFFSET(AllocPlayerIdReq, _impl_.count_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void AllocPlayerIdReq::Clear() {
+// @@protoc_insertion_point(message_clear_start:farm.AllocPlayerIdReq)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    ::memset(&_impl_.request_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.count_) -
+        reinterpret_cast<char*>(&_impl_.request_id_)) + sizeof(_impl_.count_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<std::string>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL AllocPlayerIdReq::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const AllocPlayerIdReq& this_ = static_cast<const AllocPlayerIdReq&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL AllocPlayerIdReq::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const AllocPlayerIdReq& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:farm.AllocPlayerIdReq)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 request_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_request_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_request_id(), target);
+    }
+  }
+
+  // uint32 count = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_count() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_count(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target = stream->WriteRaw(
+        this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).data(),
+        static_cast<int>(this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size()), target);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:farm.AllocPlayerIdReq)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t AllocPlayerIdReq::ByteSizeLong(const MessageLite& base) {
+  const AllocPlayerIdReq& this_ = static_cast<const AllocPlayerIdReq&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t AllocPlayerIdReq::ByteSizeLong() const {
+  const AllocPlayerIdReq& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:farm.AllocPlayerIdReq)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    // uint64 request_id = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_request_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_request_id());
+      }
+    }
+    // uint32 count = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_count());
+      }
+    }
+  }
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    total_size += this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size();
+  }
+  this_._impl_._cached_size_.Set(::_pbi::ToCachedSize(total_size));
+  return total_size;
+}
+
+void AllocPlayerIdReq::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<AllocPlayerIdReq*>(&to_msg);
+  auto& from = static_cast<const AllocPlayerIdReq&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:farm.AllocPlayerIdReq)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_request_id() != 0) {
+        _this->_impl_.request_id_ = from._impl_.request_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_count() != 0) {
+        _this->_impl_.count_ = from._impl_.count_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
+}
+
+void AllocPlayerIdReq::CopyFrom(const AllocPlayerIdReq& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:farm.AllocPlayerIdReq)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void AllocPlayerIdReq::InternalSwap(AllocPlayerIdReq* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(AllocPlayerIdReq, _impl_.count_)
+      + sizeof(AllocPlayerIdReq::_impl_.count_)
+      - PROTOBUF_FIELD_OFFSET(AllocPlayerIdReq, _impl_.request_id_)>(
+          reinterpret_cast<char*>(&_impl_.request_id_),
+          reinterpret_cast<char*>(&other->_impl_.request_id_));
+}
+
+// ===================================================================
+
+class AllocPlayerIdResp::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<AllocPlayerIdResp>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_._has_bits_);
+};
+
+AllocPlayerIdResp::AllocPlayerIdResp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, AllocPlayerIdResp_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:farm.AllocPlayerIdResp)
+}
+AllocPlayerIdResp::AllocPlayerIdResp(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const AllocPlayerIdResp& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::MessageLite(arena, AllocPlayerIdResp_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::MessageLite(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<std::string>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE AllocPlayerIdResp::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void AllocPlayerIdResp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, request_id_),
+           0,
+           offsetof(Impl_, count_) -
+               offsetof(Impl_, request_id_) +
+               sizeof(Impl_::count_));
+}
+AllocPlayerIdResp::~AllocPlayerIdResp() {
+  // @@protoc_insertion_point(destructor:farm.AllocPlayerIdResp)
+  SharedDtor(*this);
+}
+inline void AllocPlayerIdResp::SharedDtor(MessageLite& self) {
+  AllocPlayerIdResp& this_ = static_cast<AllocPlayerIdResp&>(self);
+  this_._internal_metadata_.Delete<std::string>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL AllocPlayerIdResp::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) AllocPlayerIdResp(arena);
+}
+constexpr auto AllocPlayerIdResp::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(AllocPlayerIdResp),
+                                            alignof(AllocPlayerIdResp));
+}
+constexpr auto AllocPlayerIdResp::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataLite<23>{
+      {
+          &_AllocPlayerIdResp_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &AllocPlayerIdResp::MergeImpl,
+          ::google::protobuf::MessageLite::GetNewImpl<AllocPlayerIdResp>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &AllocPlayerIdResp::SharedDtor,
+          ::google::protobuf::MessageLite::GetClearImpl<AllocPlayerIdResp>(), &AllocPlayerIdResp::ByteSizeLong,
+              &AllocPlayerIdResp::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_._cached_size_),
+          true,
+      },
+      "farm.AllocPlayerIdResp",
+  };
+}
+
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataLite<23> AllocPlayerIdResp_class_data_ =
+    AllocPlayerIdResp::InternalGenerateClassData_();
+
+const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL AllocPlayerIdResp::GetClassData() const {
+  return AllocPlayerIdResp_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 0, 0, 2>
+AllocPlayerIdResp::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_._has_bits_),
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    AllocPlayerIdResp_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallbackLite,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::farm::AllocPlayerIdResp>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // uint32 count = 4;
+    {::_pbi::TcParser::FastV32S1,
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_.count_)}},
+    // uint64 request_id = 1;
+    {::_pbi::TcParser::FastV64S1,
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_.request_id_)}},
+    // int32 code = 2;
+    {::_pbi::TcParser::FastV32S1,
+     {16, 2, 0, PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_.code_)}},
+    // uint64 start_id = 3;
+    {::_pbi::TcParser::FastV64S1,
+     {24, 1, 0, PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_.start_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 request_id = 1;
+    {PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_.request_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // int32 code = 2;
+    {PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_.code_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // uint64 start_id = 3;
+    {PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_.start_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 count = 4;
+    {PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_.count_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void AllocPlayerIdResp::Clear() {
+// @@protoc_insertion_point(message_clear_start:farm.AllocPlayerIdResp)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000000fu) != 0) {
+    ::memset(&_impl_.request_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.count_) -
+        reinterpret_cast<char*>(&_impl_.request_id_)) + sizeof(_impl_.count_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<std::string>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL AllocPlayerIdResp::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const AllocPlayerIdResp& this_ = static_cast<const AllocPlayerIdResp&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL AllocPlayerIdResp::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const AllocPlayerIdResp& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:farm.AllocPlayerIdResp)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 request_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_request_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_request_id(), target);
+    }
+  }
+
+  // int32 code = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_code() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<2>(
+              stream, this_._internal_code(), target);
+    }
+  }
+
+  // uint64 start_id = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_start_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_start_id(), target);
+    }
+  }
+
+  // uint32 count = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (this_._internal_count() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          4, this_._internal_count(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target = stream->WriteRaw(
+        this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).data(),
+        static_cast<int>(this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size()), target);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:farm.AllocPlayerIdResp)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t AllocPlayerIdResp::ByteSizeLong(const MessageLite& base) {
+  const AllocPlayerIdResp& this_ = static_cast<const AllocPlayerIdResp&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t AllocPlayerIdResp::ByteSizeLong() const {
+  const AllocPlayerIdResp& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:farm.AllocPlayerIdResp)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000000fu) != 0) {
+    // uint64 request_id = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_request_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_request_id());
+      }
+    }
+    // uint64 start_id = 3;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_start_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_start_id());
+      }
+    }
+    // int32 code = 2;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_code() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_code());
+      }
+    }
+    // uint32 count = 4;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_count());
+      }
+    }
+  }
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    total_size += this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).size();
+  }
+  this_._impl_._cached_size_.Set(::_pbi::ToCachedSize(total_size));
+  return total_size;
+}
+
+void AllocPlayerIdResp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<AllocPlayerIdResp*>(&to_msg);
+  auto& from = static_cast<const AllocPlayerIdResp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:farm.AllocPlayerIdResp)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000000fu) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_request_id() != 0) {
+        _this->_impl_.request_id_ = from._impl_.request_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_start_id() != 0) {
+        _this->_impl_.start_id_ = from._impl_.start_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_count() != 0) {
+        _this->_impl_.count_ = from._impl_.count_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
+}
+
+void AllocPlayerIdResp::CopyFrom(const AllocPlayerIdResp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:farm.AllocPlayerIdResp)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void AllocPlayerIdResp::InternalSwap(AllocPlayerIdResp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_.count_)
+      + sizeof(AllocPlayerIdResp::_impl_.count_)
+      - PROTOBUF_FIELD_OFFSET(AllocPlayerIdResp, _impl_.request_id_)>(
           reinterpret_cast<char*>(&_impl_.request_id_),
           reinterpret_cast<char*>(&other->_impl_.request_id_));
 }

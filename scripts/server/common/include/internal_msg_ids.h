@@ -47,6 +47,10 @@ inline constexpr uint32_t MSG_ID_ACCOUNT_DATA_RESP       = 4202;
 inline constexpr uint32_t MSG_ID_ACCOUNT_SET_REQ         = 4203;
 inline constexpr uint32_t MSG_ID_ACCOUNT_SET_RESP        = 4204;
 
+// 玩家 ID 分配 (4205-4206)
+inline constexpr uint32_t MSG_ID_ALLOC_PLAYER_ID_REQ     = 4205;
+inline constexpr uint32_t MSG_ID_ALLOC_PLAYER_ID_RESP    = 4206;
+
 // ===========================================
 // 超时常量（带前缀避免冲突）
 // ===========================================

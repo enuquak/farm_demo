@@ -55,3 +55,17 @@ message PlayerDataResp {
     int32 code = 2;         // 0=成功, 其他=失败
     bytes value = 3;        // 数据值 (GET/GET_ALL 时返回)
 }
+
+// 分配 Player ID 请求 (Game -> DBMgr)
+message AllocPlayerIdReq {
+    uint64 request_id = 1;   // 请求 ID，用于异步匹配
+    uint32 count = 2;        // 请求分配的数量（如 64）
+}
+
+// 分配 Player ID 响应 (DBMgr -> Game)
+message AllocPlayerIdResp {
+    uint64 request_id = 1;   // 对应请求的 ID
+    int32 code = 2;          // 0=成功, 其他=失败
+    uint64 start_id = 3;     // 分配的起始 ID（含）
+    uint32 count = 4;        // 实际分配的数量
+}

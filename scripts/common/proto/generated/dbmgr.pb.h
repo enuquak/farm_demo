@@ -50,6 +50,14 @@ struct TableStruct_dbmgr_2eproto {
 namespace farm {
 enum PlayerDataOp : int;
 extern const uint32_t PlayerDataOp_internal_data_[];
+class AllocPlayerIdReq;
+struct AllocPlayerIdReqDefaultTypeInternal;
+extern AllocPlayerIdReqDefaultTypeInternal _AllocPlayerIdReq_default_instance_;
+extern const ::google::protobuf::internal::ClassDataLite<22> AllocPlayerIdReq_class_data_;
+class AllocPlayerIdResp;
+struct AllocPlayerIdRespDefaultTypeInternal;
+extern AllocPlayerIdRespDefaultTypeInternal _AllocPlayerIdResp_default_instance_;
+extern const ::google::protobuf::internal::ClassDataLite<23> AllocPlayerIdResp_class_data_;
 class DBMgrHeartbeat;
 struct DBMgrHeartbeatDefaultTypeInternal;
 extern DBMgrHeartbeatDefaultTypeInternal _DBMgrHeartbeat_default_instance_;
@@ -1314,6 +1322,412 @@ class DBMgrHeartbeat final : public ::google::protobuf::MessageLite
 };
 
 extern const ::google::protobuf::internal::ClassDataLite<20> DBMgrHeartbeat_class_data_;
+// -------------------------------------------------------------------
+
+class AllocPlayerIdResp final : public ::google::protobuf::MessageLite
+/* @@protoc_insertion_point(class_definition:farm.AllocPlayerIdResp) */ {
+ public:
+  inline AllocPlayerIdResp() : AllocPlayerIdResp(nullptr) {}
+  ~AllocPlayerIdResp() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(AllocPlayerIdResp* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(AllocPlayerIdResp));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR AllocPlayerIdResp(::google::protobuf::internal::ConstantInitialized);
+
+  inline AllocPlayerIdResp(const AllocPlayerIdResp& from) : AllocPlayerIdResp(nullptr, from) {}
+  inline AllocPlayerIdResp(AllocPlayerIdResp&& from) noexcept
+      : AllocPlayerIdResp(nullptr, std::move(from)) {}
+  inline AllocPlayerIdResp& operator=(const AllocPlayerIdResp& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline AllocPlayerIdResp& operator=(AllocPlayerIdResp&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const std::string& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString);
+  }
+  inline std::string* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<std::string>();
+  }
+
+  static const AllocPlayerIdResp& default_instance() {
+    return *reinterpret_cast<const AllocPlayerIdResp*>(
+        &_AllocPlayerIdResp_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 7;
+  friend void swap(AllocPlayerIdResp& a, AllocPlayerIdResp& b) { a.Swap(&b); }
+  inline void Swap(AllocPlayerIdResp* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(AllocPlayerIdResp* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  AllocPlayerIdResp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::MessageLite::DefaultConstruct<AllocPlayerIdResp>(arena);
+  }
+  void CopyFrom(const AllocPlayerIdResp& from);
+  void MergeFrom(const AllocPlayerIdResp& from) { AllocPlayerIdResp::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(AllocPlayerIdResp* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "farm.AllocPlayerIdResp"; }
+
+ protected:
+  explicit AllocPlayerIdResp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  AllocPlayerIdResp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const AllocPlayerIdResp& from);
+  AllocPlayerIdResp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, AllocPlayerIdResp&& from) noexcept
+      : AllocPlayerIdResp(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRequestIdFieldNumber = 1,
+    kStartIdFieldNumber = 3,
+    kCodeFieldNumber = 2,
+    kCountFieldNumber = 4,
+  };
+  // uint64 request_id = 1;
+  void clear_request_id() ;
+  ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
+  // uint64 start_id = 3;
+  void clear_start_id() ;
+  ::uint64_t start_id() const;
+  void set_start_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_start_id() const;
+  void _internal_set_start_id(::uint64_t value);
+
+  public:
+  // int32 code = 2;
+  void clear_code() ;
+  ::int32_t code() const;
+  void set_code(::int32_t value);
+
+  private:
+  ::int32_t _internal_code() const;
+  void _internal_set_code(::int32_t value);
+
+  public:
+  // uint32 count = 4;
+  void clear_count() ;
+  ::uint32_t count() const;
+  void set_count(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_count() const;
+  void _internal_set_count(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:farm.AllocPlayerIdResp)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const AllocPlayerIdResp& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t request_id_;
+    ::uint64_t start_id_;
+    ::int32_t code_;
+    ::uint32_t count_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_dbmgr_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataLite<23> AllocPlayerIdResp_class_data_;
+// -------------------------------------------------------------------
+
+class AllocPlayerIdReq final : public ::google::protobuf::MessageLite
+/* @@protoc_insertion_point(class_definition:farm.AllocPlayerIdReq) */ {
+ public:
+  inline AllocPlayerIdReq() : AllocPlayerIdReq(nullptr) {}
+  ~AllocPlayerIdReq() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(AllocPlayerIdReq* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(AllocPlayerIdReq));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR AllocPlayerIdReq(::google::protobuf::internal::ConstantInitialized);
+
+  inline AllocPlayerIdReq(const AllocPlayerIdReq& from) : AllocPlayerIdReq(nullptr, from) {}
+  inline AllocPlayerIdReq(AllocPlayerIdReq&& from) noexcept
+      : AllocPlayerIdReq(nullptr, std::move(from)) {}
+  inline AllocPlayerIdReq& operator=(const AllocPlayerIdReq& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline AllocPlayerIdReq& operator=(AllocPlayerIdReq&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const std::string& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString);
+  }
+  inline std::string* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<std::string>();
+  }
+
+  static const AllocPlayerIdReq& default_instance() {
+    return *reinterpret_cast<const AllocPlayerIdReq*>(
+        &_AllocPlayerIdReq_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 6;
+  friend void swap(AllocPlayerIdReq& a, AllocPlayerIdReq& b) { a.Swap(&b); }
+  inline void Swap(AllocPlayerIdReq* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(AllocPlayerIdReq* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  AllocPlayerIdReq* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::MessageLite::DefaultConstruct<AllocPlayerIdReq>(arena);
+  }
+  void CopyFrom(const AllocPlayerIdReq& from);
+  void MergeFrom(const AllocPlayerIdReq& from) { AllocPlayerIdReq::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(AllocPlayerIdReq* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "farm.AllocPlayerIdReq"; }
+
+ protected:
+  explicit AllocPlayerIdReq(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  AllocPlayerIdReq(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const AllocPlayerIdReq& from);
+  AllocPlayerIdReq(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, AllocPlayerIdReq&& from) noexcept
+      : AllocPlayerIdReq(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRequestIdFieldNumber = 1,
+    kCountFieldNumber = 2,
+  };
+  // uint64 request_id = 1;
+  void clear_request_id() ;
+  ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
+  // uint32 count = 2;
+  void clear_count() ;
+  ::uint32_t count() const;
+  void set_count(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_count() const;
+  void _internal_set_count(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:farm.AllocPlayerIdReq)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const AllocPlayerIdReq& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t request_id_;
+    ::uint32_t count_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_dbmgr_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataLite<22> AllocPlayerIdReq_class_data_;
 
 // ===================================================================
 
@@ -1890,6 +2304,158 @@ inline void PlayerDataResp::set_allocated_value(std::string* PROTOBUF_NULLABLE v
     _impl_.value_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:farm.PlayerDataResp.value)
+}
+
+// -------------------------------------------------------------------
+
+// AllocPlayerIdReq
+
+// uint64 request_id = 1;
+inline void AllocPlayerIdReq::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::uint64_t AllocPlayerIdReq::request_id() const {
+  // @@protoc_insertion_point(field_get:farm.AllocPlayerIdReq.request_id)
+  return _internal_request_id();
+}
+inline void AllocPlayerIdReq::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:farm.AllocPlayerIdReq.request_id)
+}
+inline ::uint64_t AllocPlayerIdReq::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void AllocPlayerIdReq::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
+}
+
+// uint32 count = 2;
+inline void AllocPlayerIdReq::clear_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.count_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint32_t AllocPlayerIdReq::count() const {
+  // @@protoc_insertion_point(field_get:farm.AllocPlayerIdReq.count)
+  return _internal_count();
+}
+inline void AllocPlayerIdReq::set_count(::uint32_t value) {
+  _internal_set_count(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:farm.AllocPlayerIdReq.count)
+}
+inline ::uint32_t AllocPlayerIdReq::_internal_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.count_;
+}
+inline void AllocPlayerIdReq::_internal_set_count(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.count_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// AllocPlayerIdResp
+
+// uint64 request_id = 1;
+inline void AllocPlayerIdResp::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::uint64_t AllocPlayerIdResp::request_id() const {
+  // @@protoc_insertion_point(field_get:farm.AllocPlayerIdResp.request_id)
+  return _internal_request_id();
+}
+inline void AllocPlayerIdResp::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:farm.AllocPlayerIdResp.request_id)
+}
+inline ::uint64_t AllocPlayerIdResp::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void AllocPlayerIdResp::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
+}
+
+// int32 code = 2;
+inline void AllocPlayerIdResp::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::int32_t AllocPlayerIdResp::code() const {
+  // @@protoc_insertion_point(field_get:farm.AllocPlayerIdResp.code)
+  return _internal_code();
+}
+inline void AllocPlayerIdResp::set_code(::int32_t value) {
+  _internal_set_code(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:farm.AllocPlayerIdResp.code)
+}
+inline ::int32_t AllocPlayerIdResp::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.code_;
+}
+inline void AllocPlayerIdResp::_internal_set_code(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// uint64 start_id = 3;
+inline void AllocPlayerIdResp::clear_start_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.start_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint64_t AllocPlayerIdResp::start_id() const {
+  // @@protoc_insertion_point(field_get:farm.AllocPlayerIdResp.start_id)
+  return _internal_start_id();
+}
+inline void AllocPlayerIdResp::set_start_id(::uint64_t value) {
+  _internal_set_start_id(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:farm.AllocPlayerIdResp.start_id)
+}
+inline ::uint64_t AllocPlayerIdResp::_internal_start_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.start_id_;
+}
+inline void AllocPlayerIdResp::_internal_set_start_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.start_id_ = value;
+}
+
+// uint32 count = 4;
+inline void AllocPlayerIdResp::clear_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.count_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::uint32_t AllocPlayerIdResp::count() const {
+  // @@protoc_insertion_point(field_get:farm.AllocPlayerIdResp.count)
+  return _internal_count();
+}
+inline void AllocPlayerIdResp::set_count(::uint32_t value) {
+  _internal_set_count(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:farm.AllocPlayerIdResp.count)
+}
+inline ::uint32_t AllocPlayerIdResp::_internal_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.count_;
+}
+inline void AllocPlayerIdResp::_internal_set_count(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.count_ = value;
 }
 
 #ifdef __GNUC__
