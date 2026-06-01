@@ -24,11 +24,9 @@ sys.path.insert(0, os.path.abspath(PROTO_GEN_DIR))
 
 import base_pb2
 
-# Constants
-MSG_ID_HEARTBEAT = 1001
-MSG_ID_HEARTBEAT_RESP = 1002
-MSG_ID_LOGIN_REQ = 2001
-MSG_ID_LOGIN_RESP = 2002
+# Import message IDs from generated module
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "client"))
+from message_ids import MSG_ID_HEARTBEAT, MSG_ID_HEARTBEAT_RESP, MSG_ID_LOGIN_REQ, MSG_ID_LOGIN_RESP
 
 SERVER_EXE = os.path.join(os.path.dirname(__file__), "..", "Release", "Release", "gate_server.exe")
 TEST_PORT = 18080

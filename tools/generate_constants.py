@@ -144,7 +144,7 @@ def generate_cpp_code(config_name: str, constants: List[Dict[str, Any]], output_
         desc = item.get('description', '')
         # 对齐到最长名称
         padding = ' ' * max(1, 40 - len(name))
-        lines.append(f'static constexpr uint32_t {name}{padding}= {code};  // {desc}')
+        lines.append(f'inline constexpr uint32_t {name}{padding}= {code};  // {desc}')
 
     lines.extend([
         '',

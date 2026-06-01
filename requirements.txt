@@ -1,0 +1,2 @@
+# Shared constants auto-generation tools
+watchdog>=6.0.0

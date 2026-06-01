@@ -1,5 +1,5 @@
 // 自动生成，请勿手动修改
-// 生成时间：2026-06-01 23:26:12
+// 生成时间：2026-06-01 23:29:41
 // 源文件：shared/message_ids.json
 #pragma once
 
@@ -7,29 +7,29 @@
 
 namespace farm {
 
-static constexpr uint32_t MSG_ID_HEARTBEAT                        = 1;  // 心跳消息
-static constexpr uint32_t MSG_ID_HEARTBEAT_RESP                   = 2;  // 心跳响应
-static constexpr uint32_t MSG_ID_LOGIN_REQ                        = 3;  // 登录请求
-static constexpr uint32_t MSG_ID_LOGIN_RESP                       = 4;  // 登录响应
-static constexpr uint32_t MSG_ID_QUERY_ROLES_REQ                  = 1001;  // 查询角色请求
-static constexpr uint32_t MSG_ID_QUERY_ROLES_RESP                 = 1002;  // 查询角色响应
-static constexpr uint32_t MSG_ID_CREATE_ROLE_REQ                  = 1003;  // 创建角色请求
-static constexpr uint32_t MSG_ID_CREATE_ROLE_RESP                 = 1004;  // 创建角色响应
-static constexpr uint32_t MSG_ID_ENTER_GAME_REQ                   = 1005;  // 进入游戏请求
-static constexpr uint32_t MSG_ID_ENTER_GAME_RESP                  = 1006;  // 进入游戏响应
-static constexpr uint32_t MSG_ID_MAP_DATA_NOTIFY                  = 2001;  // 地图数据通知
-static constexpr uint32_t MSG_ID_POSITION_UPDATE                  = 2101;  // 位置更新
-static constexpr uint32_t MSG_ID_POSITION_CORRECT                 = 2102;  // 位置纠正
-static constexpr uint32_t MSG_ID_SCENE_CHANGE_REQ                 = 2201;  // 场景切换请求
-static constexpr uint32_t MSG_ID_SCENE_CHANGE_RESP                = 2202;  // 场景切换响应
-static constexpr uint32_t MSG_ID_CLOCK_SYNC                       = 2301;  // 时钟同步
-static constexpr uint32_t MSG_ID_FORCE_SLEEP_NOTIFY               = 2302;  // 强制睡觉通知
-static constexpr uint32_t MSG_ID_FORCE_SLEEP_READY                = 2303;  // 强制睡觉就绪
-static constexpr uint32_t MSG_ID_ITEM_USE_REQ                     = 3001;  // 物品使用请求
-static constexpr uint32_t MSG_ID_ITEM_USE_RESP                    = 3002;  // 物品使用响应
-static constexpr uint32_t MSG_ID_FARM_STATE_SYNC                  = 3003;  // 农场状态同步
-static constexpr uint32_t MSG_ID_DROP_ITEM_SYNC                   = 3004;  // 掉落物同步
-static constexpr uint32_t MSG_ID_INVENTORY_SYNC                   = 3100;  // 背包数据同步
-static constexpr uint32_t MSG_ID_ACTIVE_SLOT_CHANGE               = 3101;  // 快捷栏选中格切换
+inline constexpr uint32_t MSG_ID_HEARTBEAT                        = 1;  // 心跳消息
+inline constexpr uint32_t MSG_ID_HEARTBEAT_RESP                   = 2;  // 心跳响应
+inline constexpr uint32_t MSG_ID_LOGIN_REQ                        = 3;  // 登录请求
+inline constexpr uint32_t MSG_ID_LOGIN_RESP                       = 4;  // 登录响应
+inline constexpr uint32_t MSG_ID_QUERY_ROLES_REQ                  = 1001;  // 查询角色请求
+inline constexpr uint32_t MSG_ID_QUERY_ROLES_RESP                 = 1002;  // 查询角色响应
+inline constexpr uint32_t MSG_ID_CREATE_ROLE_REQ                  = 1003;  // 创建角色请求
+inline constexpr uint32_t MSG_ID_CREATE_ROLE_RESP                 = 1004;  // 创建角色响应
+inline constexpr uint32_t MSG_ID_ENTER_GAME_REQ                   = 1005;  // 进入游戏请求
+inline constexpr uint32_t MSG_ID_ENTER_GAME_RESP                  = 1006;  // 进入游戏响应
+inline constexpr uint32_t MSG_ID_MAP_DATA_NOTIFY                  = 2001;  // 地图数据通知
+inline constexpr uint32_t MSG_ID_POSITION_UPDATE                  = 2101;  // 位置更新
+inline constexpr uint32_t MSG_ID_POSITION_CORRECT                 = 2102;  // 位置纠正
+inline constexpr uint32_t MSG_ID_SCENE_CHANGE_REQ                 = 2201;  // 场景切换请求
+inline constexpr uint32_t MSG_ID_SCENE_CHANGE_RESP                = 2202;  // 场景切换响应
+inline constexpr uint32_t MSG_ID_CLOCK_SYNC                       = 2301;  // 时钟同步
+inline constexpr uint32_t MSG_ID_FORCE_SLEEP_NOTIFY               = 2302;  // 强制睡觉通知
+inline constexpr uint32_t MSG_ID_FORCE_SLEEP_READY                = 2303;  // 强制睡觉就绪
+inline constexpr uint32_t MSG_ID_ITEM_USE_REQ                     = 3001;  // 物品使用请求
+inline constexpr uint32_t MSG_ID_ITEM_USE_RESP                    = 3002;  // 物品使用响应
+inline constexpr uint32_t MSG_ID_FARM_STATE_SYNC                  = 3003;  // 农场状态同步
+inline constexpr uint32_t MSG_ID_DROP_ITEM_SYNC                   = 3004;  // 掉落物同步
+inline constexpr uint32_t MSG_ID_INVENTORY_SYNC                   = 3100;  // 背包数据同步
+inline constexpr uint32_t MSG_ID_ACTIVE_SLOT_CHANGE               = 3101;  // 快捷栏选中格切换
 
 }  // namespace farm
