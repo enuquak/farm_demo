@@ -1,5 +1,6 @@
 #include "game_server.h"
 #include "dbmgr_connection_manager.h"
+#include "etcd_manager.h"
 #include "server_main_helper.h"
 #include "log_init.h"
 #include "log_macros.h"
@@ -12,11 +13,15 @@
 #include <vector>
 
 static farm::GameServer* g_server = nullptr;
+static farm::EtcdManager* g_etcd = nullptr;
 
 static void signal_handler(int sig) {
     if (g_server) {
         SPDLOG_INFO("[Main]Received signal {}, shutting down...", sig);
         g_server->stop();
+    }
+    if (g_etcd) {
+        g_etcd->shutdown();
     }
 }
 
@@ -49,22 +54,65 @@ int main(int argc, char* argv[]) {
     uint16_t port = static_cast<uint16_t>(config.value("/server/port"_json_pointer, 9090));
     std::string pid_file = config.value("pid_file", "./runtimeData/game_server.pid");
 
-    // 解析 DBMgr 配置
-    std::vector<farm::DBMgrConfig> dbmgr_configs;
-    if (config.contains("dbmgrs") && config["dbmgrs"].is_array()) {
-        for (const auto& db : config["dbmgrs"]) {
-            farm::DBMgrConfig cfg;
-            cfg.host = db.value("host", "127.0.0.1");
-            cfg.port = static_cast<uint16_t>(db.value("port", 5000));
-            dbmgr_configs.push_back(cfg);
-        }
+    // Parse server ID
+    uint32_t server_id = config.value("/server/id"_json_pointer, 1u);
+
+    // etcd 配置
+    std::string etcd_endpoints = config.value("/etcd/endpoints"_json_pointer, "http://localhost:2379");
+    uint32_t lease_ttl = config.value("/etcd/lease_ttl"_json_pointer, 15u);
+
+    // 初始化 etcd
+    farm::EtcdManager etcd(etcd_endpoints, lease_ttl);
+    if (!etcd.connect()) {
+        SPDLOG_ERROR("[Main]Failed to connect to etcd");
+        return 1;
     }
+    g_etcd = &etcd;
+
+    // 注册服务到 etcd
+    nlohmann::json service_info = {
+        {"ip", ip},
+        {"port", port},
+        {"server_id", server_id}
+    };
+    if (!etcd.register_service("game", std::to_string(server_id), service_info.dump())) {
+        SPDLOG_ERROR("[Main]Failed to register service to etcd");
+        return 1;
+    }
+
+    SPDLOG_INFO("[Main]Registered to etcd as game/{}", server_id);
+
+    // 从 etcd 发现 dbmgr 服务
+    std::vector<farm::DBMgrConfig> dbmgr_configs;
+    auto dbmgrs = etcd.discover_services("dbmgr");
+    for (const auto& dbmgr : dbmgrs) {
+        farm::DBMgrConfig cfg;
+        cfg.host = dbmgr.ip;
+        cfg.port = dbmgr.port;
+        dbmgr_configs.push_back(cfg);
+        SPDLOG_INFO("[Main]Discovered DBMgr from etcd: {}:{}", cfg.host, cfg.port);
+    }
+
+    if (dbmgr_configs.empty()) {
+        SPDLOG_ERROR("[Main]No DBMgr instances found in etcd");
+        return 1;
+    }
+
+    // 监听 dbmgr 服务变更
+    etcd.watch_services("dbmgr", [&](const std::string& instance_id,
+                                      const farm::ServiceInstance& inst,
+                                      bool is_delete) {
+        if (is_delete) {
+            SPDLOG_INFO("[Main]DBMgr {} removed from etcd", instance_id);
+            // TODO: 动态移除 dbmgr 连接（需要 DBMgrConnectionManager 支持动态增减）
+        } else {
+            SPDLOG_INFO("[Main]DBMgr {} added to etcd: {}:{}", instance_id, inst.ip, inst.port);
+            // TODO: 动态添加 dbmgr 连接（需要 DBMgrConnectionManager 支持动态增减）
+        }
+    });
 
     // Parse Redis config
     std::string redis_uri = config.value("/redis/uri"_json_pointer, "");
-
-    // Parse server ID
-    uint32_t server_id = config.value("/server/id"_json_pointer, 1u);
 
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
