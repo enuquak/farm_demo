@@ -143,7 +143,8 @@ bool GameServer::start() {
     }
 
     // Initialize stubs
-    login_stub_ = std::make_unique<LoginStub>(&player_mgr_, &dbmgr_mgr_, &redis_conn_, server_id_, send_to_gate_func);
+    id_pool_ = std::make_unique<PlayerIdPool>(&dbmgr_mgr_);
+    login_stub_ = std::make_unique<LoginStub>(&player_mgr_, &dbmgr_mgr_, &redis_conn_, server_id_, id_pool_.get(), send_to_gate_func);
     login_stub_->set_clock(game_clock_.get());
     online_stub_ = std::make_unique<OnlineStub>(&redis_conn_);
     SPDLOG_INFO("[Game]LoginStub and OnlineStub initialized");

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "game_types.h"
-#include "player_id_generator.h"
+#include "player_id_pool.h"
 
 #include <memory>
 #include <string>
@@ -22,6 +22,7 @@ public:
               DBMgrConnectionManager* dbmgr_mgr,
               RedisConnection* redis_conn,
               uint32_t server_id,
+              PlayerIdPool* id_pool,
               SendToGateFunc send_to_gate);
     ~LoginStub() = default;
 
@@ -62,7 +63,7 @@ private:
     DBMgrConnectionManager* dbmgr_mgr_;
     RedisConnection* redis_conn_;
     uint32_t server_id_;
-    PlayerIdGenerator player_id_gen_;
+    PlayerIdPool* id_pool_;
     SendToGateFunc send_to_gate_;
     GameClock* clock_ = nullptr;
 };

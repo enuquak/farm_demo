@@ -8,6 +8,7 @@
 #include "item_interaction_handler.h"
 #include "login_stub.h"
 #include "online_stub.h"
+#include "player_id_pool.h"
 #include "gm_stub.h"
 #include "gm_http_handler.h"
 #include "redis_connection.h"
@@ -134,6 +135,7 @@ private:
     RedisConnection redis_conn_;
 
     // Stubs
+    std::unique_ptr<PlayerIdPool> id_pool_;
     std::unique_ptr<LoginStub> login_stub_;
     std::unique_ptr<OnlineStub> online_stub_;
 

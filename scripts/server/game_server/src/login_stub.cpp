@@ -20,11 +20,13 @@ LoginStub::LoginStub(PlayerManager* player_mgr,
                      DBMgrConnectionManager* dbmgr_mgr,
                      RedisConnection* redis_conn,
                      uint32_t server_id,
+                     PlayerIdPool* id_pool,
                      SendToGateFunc send_to_gate)
     : player_mgr_(player_mgr)
     , dbmgr_mgr_(dbmgr_mgr)
     , redis_conn_(redis_conn)
     , server_id_(server_id)
+    , id_pool_(id_pool)
     , send_to_gate_(std::move(send_to_gate))
 {
 }
@@ -105,8 +107,8 @@ void LoginStub::handle_create_role(std::shared_ptr<GateSession> session,
     uint32_t server_id = create_req.server_id();
     const std::string& role_name = create_req.role_name();
 
-    // Generate player_id
-    uint64_t player_id = player_id_gen_.generate(server_id);
+    // Acquire player_id from global pool
+    uint64_t player_id = id_pool_->acquire();
 
     dbmgr_mgr_->send_account_set_req(account_id,
         server_id, player_id, role_name,
