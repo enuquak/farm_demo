@@ -26,6 +26,9 @@ using AccountDataCallback = std::function<void(int32_t code, const std::vector<s
 // Callback for async AccountSetResp: (code, msg)
 using AccountSetCallback = std::function<void(int32_t code, const std::string& msg)>;
 
+// Callback for async AllocPlayerIdResp: (code, start_id, count)
+using AllocPlayerIdCallback = std::function<void(int32_t code, uint64_t start_id, uint32_t count)>;
+
 // Config entry for a single DBMgr instance
 struct DBMgrConfig {
     std::string host;
@@ -46,6 +49,14 @@ struct PendingAccountRequest {
     uint32_t dbmgr_index;
     AccountDataCallback data_callback;
     AccountSetCallback set_callback;
+    time_t send_time;
+};
+
+// Pending ID allocation request tracking
+struct PendingAllocIdRequest {
+    uint64_t request_id;
+    uint32_t dbmgr_index;
+    AllocPlayerIdCallback callback;
     time_t send_time;
 };
 
@@ -101,6 +112,14 @@ public:
                                    const std::string& role_name,
                                    AccountSetCallback callback);
 
+    /**
+     * @brief Send an AllocPlayerIdReq to DBMgr.
+     * @param count     Number of IDs to allocate
+     * @param callback  Called when response arrives
+     * @return request_id (>0) on success, 0 on failure
+     */
+    uint64_t send_alloc_player_id_req(uint32_t count, AllocPlayerIdCallback callback);
+
     // Status queries
     bool is_connected(uint32_t dbmgr_index) const;
     size_t dbmgr_count() const { return connections_.size(); }
@@ -135,6 +154,8 @@ private:
                                    const std::vector<uint8_t>& payload);
     void handle_account_set_resp(DBMgrConnection* conn,
                                   const std::vector<uint8_t>& payload);
+    void handle_alloc_player_id_resp(DBMgrConnection* conn,
+                                     const std::vector<uint8_t>& payload);
 
     // Heartbeat and reconnect
     void check_heartbeat();
@@ -168,6 +189,9 @@ private:
 
     // Async account request tracking: request_id -> PendingAccountRequest
     std::unordered_map<uint64_t, PendingAccountRequest> pending_account_requests_;
+
+    // Async ID allocation request tracking: request_id -> PendingAllocIdRequest
+    std::unordered_map<uint64_t, PendingAllocIdRequest> pending_alloc_id_requests_;
 
     // Reverse lookup: bev -> connection index (for fast callback dispatch)
     std::unordered_map<struct bufferevent*, uint32_t> bev_to_index_;

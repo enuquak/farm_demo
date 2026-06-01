@@ -256,6 +256,9 @@ void DBMgrConnectionManager::route_message(DBMgrConnection* conn, uint32_t msg_i
         case MSG_ID_ACCOUNT_SET_RESP:
             handle_account_set_resp(conn, payload);
             break;
+        case MSG_ID_ALLOC_PLAYER_ID_RESP:
+            handle_alloc_player_id_resp(conn, payload);
+            break;
         default:
             SPDLOG_INFO("[DBMgrConnection]Unknown msg_id={} from DBMgr index={}", msg_id, conn->config_index());
             break;
@@ -411,6 +414,29 @@ void DBMgrConnectionManager::handle_account_set_resp(DBMgrConnection* conn,
 
     // Remove from pending
     pending_account_requests_.erase(it);
+}
+
+void DBMgrConnectionManager::handle_alloc_player_id_resp(DBMgrConnection* conn,
+                                                           const std::vector<uint8_t>& payload) {
+    farm::AllocPlayerIdResp resp;
+    if (!payload.empty() && !resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[DBMgrConnMgr]Failed to parse AllocPlayerIdResp");
+        return;
+    }
+
+    uint64_t request_id = resp.request_id();
+
+    auto it = pending_alloc_id_requests_.find(request_id);
+    if (it == pending_alloc_id_requests_.end()) {
+        SPDLOG_INFO("[DBMgrConnection]No pending alloc_id request for request_id={}", request_id);
+        return;
+    }
+
+    if (it->second.callback) {
+        it->second.callback(resp.code(), resp.start_id(), resp.count());
+    }
+
+    pending_alloc_id_requests_.erase(it);
 }
 
 // ===========================================
@@ -620,6 +646,51 @@ uint64_t DBMgrConnectionManager::send_account_set_req(const std::string& account
     // Send
     send_to_dbmgr(conn.get(), MSG_ID_ACCOUNT_SET_REQ, req_data);
 
+    return request_id;
+}
+
+uint64_t DBMgrConnectionManager::send_alloc_player_id_req(uint32_t count,
+                                                            AllocPlayerIdCallback callback) {
+    if (connections_.empty()) {
+        SPDLOG_ERROR("[DBMgrConnection]No DBMgr connections configured");
+        if (callback) callback(-1, 0, 0);
+        return 0;
+    }
+
+    uint32_t dbmgr_index = 0;
+
+    if (dbmgr_index >= connections_.size() || !connections_[dbmgr_index]) {
+        SPDLOG_ERROR("[DBMgrConnection]Invalid dbmgr_index={}", dbmgr_index);
+        if (callback) callback(-1, 0, 0);
+        return 0;
+    }
+
+    auto& conn = connections_[dbmgr_index];
+    if (conn->state() != DBMgrConnectionState::IDENTIFIED) {
+        SPDLOG_ERROR("[DBMgrConnection]DBMgr index={} not connected", dbmgr_index);
+        if (callback) callback(-1, 0, 0);
+        return 0;
+    }
+
+    uint64_t request_id = generate_request_id();
+
+    farm::AllocPlayerIdReq req;
+    req.set_request_id(request_id);
+    req.set_count(count);
+
+    std::string req_data;
+    req.SerializeToString(&req_data);
+
+    PendingAllocIdRequest pending;
+    pending.request_id = request_id;
+    pending.dbmgr_index = dbmgr_index;
+    pending.callback = std::move(callback);
+    pending.send_time = std::time(nullptr);
+    pending_alloc_id_requests_[request_id] = std::move(pending);
+
+    send_to_dbmgr(conn.get(), MSG_ID_ALLOC_PLAYER_ID_REQ, req_data);
+
+    SPDLOG_INFO("[DBMgrConnection]Sent AllocPlayerIdReq request_id={} count={}", request_id, count);
     return request_id;
 }
 
