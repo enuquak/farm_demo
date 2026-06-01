@@ -1,5 +1,6 @@
 #include "dbmgr_server.h"
 #include "connection_manager.h"
+#include "etcd_manager.h"
 #include "server_main_helper.h"
 #include "log_init.h"
 #include "log_macros.h"
@@ -11,11 +12,15 @@
 #include <string>
 
 static farm::DbMgrServer* g_server = nullptr;
+static farm::EtcdManager* g_etcd = nullptr;
 
 static void signal_handler(int sig) {
     if (g_server) {
         SPDLOG_INFO("[Main]Received signal {}, shutting down...", sig);
         g_server->stop();
+    }
+    if (g_etcd) {
+        g_etcd->shutdown();
     }
 }
 
@@ -61,6 +66,31 @@ int main(int argc, char* argv[]) {
     redis_config.max_retry_count = config.value("/database/redis/max_retry_count"_json_pointer, 0);
 
     std::string index_config_dir = config.value("/database/index_config_dir"_json_pointer, "config/mongo");
+
+    // etcd 配置
+    std::string etcd_endpoints = config.value("/etcd/endpoints"_json_pointer, "http://localhost:2379");
+    uint32_t lease_ttl = config.value("/etcd/lease_ttl"_json_pointer, 15u);
+
+    // 初始化 etcd
+    farm::EtcdManager etcd(etcd_endpoints, lease_ttl);
+    if (!etcd.connect()) {
+        SPDLOG_ERROR("[Main]Failed to connect to etcd");
+        return 1;
+    }
+    g_etcd = &etcd;
+
+    // 注册服务到 etcd
+    nlohmann::json service_info = {
+        {"ip", ip},
+        {"port", port},
+        {"index", index}
+    };
+    if (!etcd.register_service("dbmgr", std::to_string(index), service_info.dump())) {
+        SPDLOG_ERROR("[Main]Failed to register service to etcd");
+        return 1;
+    }
+
+    SPDLOG_INFO("[Main]Registered to etcd as dbmgr/{}", index);
 
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
