@@ -11,6 +11,16 @@
     "redis": {
         "uri": "redis://localhost:6379"
     },
+    "dbmgrs": [
+        {
+            "host": "127.0.0.1",
+            "port": 5000
+        }
+    ],
+    "gm_server": {
+        "http_port": 7070,
+        "static_dir": "static"
+    },
     "pid_file": "./runtimeData/game_server.pid",
     "logging": {
         "dir": "./runtimeData/logs/server",

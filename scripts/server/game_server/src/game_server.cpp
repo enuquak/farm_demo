@@ -32,7 +32,9 @@ namespace farm {
 GameServer::GameServer(const std::string& ip, uint16_t port,
                        const std::vector<DBMgrConfig>& dbmgr_configs,
                        const std::string& redis_uri,
-                       uint32_t server_id)
+                       uint32_t server_id,
+                       uint16_t gm_http_port,
+                       const std::string& gm_static_dir)
     : ip_(ip)
     , port_(port)
     , base_(nullptr)
@@ -44,6 +46,8 @@ GameServer::GameServer(const std::string& ip, uint16_t port,
     , redis_uri_(redis_uri)
     , server_id_(server_id)
     , item_handler_()
+    , gm_http_port_(gm_http_port)
+    , gm_static_dir_(gm_static_dir)
 {
 }
 
@@ -156,6 +160,17 @@ bool GameServer::start() {
         [this]() { stop(); }
     );
 
+    // Initialize GM system
+    gm_stub_ = std::make_unique<GMStub>(&player_mgr_, &dbmgr_mgr_);
+    gm_stub_->init();
+
+    gm_http_handler_ = std::make_unique<GmHttpHandler>(gm_stub_.get(), &player_mgr_);
+    if (!gm_http_handler_->start(base_, gm_http_port_, gm_static_dir_)) {
+        SPDLOG_ERROR("[Game]Failed to start GM HTTP server on port {}", gm_http_port_);
+    } else {
+        SPDLOG_INFO("[Game]GM HTTP server started on port {}", gm_http_port_);
+    }
+
     // 注册物品交互消息处理
     msg_handler_.register_handler(MSG_ID_ITEM_USE_REQ,
         [this](uint64_t player_id, const uint8_t* payload, size_t payload_len) {
@@ -193,6 +208,10 @@ bool GameServer::start() {
 
 void GameServer::stop() {
     running_ = false;
+    // Stop GM HTTP server
+    if (gm_http_handler_) {
+        gm_http_handler_->stop();
+    }
     // Disconnect Redis
     redis_conn_.disconnect();
     // Shutdown DBMgr connections first

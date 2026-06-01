@@ -57,6 +57,14 @@ int main(int argc, char* argv[]) {
     // Parse server ID
     uint32_t server_id = config.value("/server/id"_json_pointer, 1u);
 
+    // Parse GM config
+    uint16_t gm_http_port = 7070;
+    std::string gm_static_dir = "static";
+    if (config.contains("gm_server")) {
+        gm_http_port = static_cast<uint16_t>(config["gm_server"].value("http_port", 7070));
+        gm_static_dir = config["gm_server"].value("static_dir", "static");
+    }
+
     // etcd 配置
     std::string etcd_endpoints = config.value("/etcd/endpoints"_json_pointer, "http://localhost:2379");
     uint32_t lease_ttl = config.value("/etcd/lease_ttl"_json_pointer, 15u);
@@ -133,7 +141,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    farm::GameServer server(ip, port, dbmgr_configs, redis_uri, server_id);
+    farm::GameServer server(ip, port, dbmgr_configs, redis_uri, server_id, gm_http_port, gm_static_dir);
     g_server = &server;
 
     if (!server.start()) {

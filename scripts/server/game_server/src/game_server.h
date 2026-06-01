@@ -8,6 +8,8 @@
 #include "item_interaction_handler.h"
 #include "login_stub.h"
 #include "online_stub.h"
+#include "gm_stub.h"
+#include "gm_http_handler.h"
 #include "redis_connection.h"
 
 #include <event2/event.h>
@@ -30,13 +32,17 @@ using PlayerJoinCallback = std::function<void(uint64_t player_id, bool success, 
 class GameSceneManager;
 class GameClock;
 class AdminHandler;
+class GMStub;
+class GmHttpHandler;
 
 class GameServer {
 public:
     GameServer(const std::string& ip, uint16_t port,
                const std::vector<DBMgrConfig>& dbmgr_configs = {},
                const std::string& redis_uri = "",
-               uint32_t server_id = 1);
+               uint32_t server_id = 1,
+               uint16_t gm_http_port = 7070,
+               const std::string& gm_static_dir = "static");
     ~GameServer();
 
     // 启动服务器（阻塞）
@@ -139,6 +145,12 @@ private:
     std::unique_ptr<GameSceneManager> scene_mgr_;
     std::unique_ptr<GameClock> game_clock_;
     std::unique_ptr<AdminHandler> admin_handler_;
+
+    // GM system
+    std::unique_ptr<GMStub> gm_stub_;
+    std::unique_ptr<GmHttpHandler> gm_http_handler_;
+    uint16_t gm_http_port_ = 7070;
+    std::string gm_static_dir_ = "static";
 };
 
 }  // namespace farm

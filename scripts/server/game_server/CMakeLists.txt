@@ -53,6 +53,8 @@ set(SOURCES
     src/login_stub.cpp
     src/online_stub.cpp
     src/admin_handler.cpp
+    src/gm_stub.cpp
+    src/gm_http_handler.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/admin_msg_ids.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp
@@ -170,6 +172,8 @@ set(TEST_SOURCES
     src/login_stub.cpp
     src/online_stub.cpp
     src/admin_handler.cpp
+    src/gm_stub.cpp
+    src/gm_http_handler.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/admin_msg_ids.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp
