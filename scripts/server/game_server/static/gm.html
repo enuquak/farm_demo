@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farm GM Platform</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100vh; display: flex; flex-direction: column; background: #f5f5f5; color: #333; }
+
+/* Top bar */
+.top-bar { height: 48px; background: #1e1e2e; color: #cdd6f4; display: flex; align-items: center; padding: 0 20px; flex-shrink: 0; }
+.top-bar h1 { font-size: 16px; font-weight: 600; }
+.top-bar .port { margin-left: auto; font-size: 13px; color: #888; }
+
+/* Main layout */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Left panel */
+.left-panel { width: 240px; background: #181825; display: flex; flex-direction: column; flex-shrink: 0; }
+.tabs { display: flex; border-bottom: 1px solid #313244; }
+.tabs button { flex: 1; padding: 10px 0; background: none; border: none; color: #888; font-size: 13px; cursor: pointer; transition: all .2s; }
+.tabs button.active { color: #89b4fa; border-bottom: 2px solid #89b4fa; }
+.list-area { flex: 1; overflow-y: auto; padding: 8px 0; }
+.list-item { padding: 10px 16px; cursor: pointer; color: #cdd6f4; font-size: 13px; border-left: 3px solid transparent; transition: all .15s; }
+.list-item:hover { background: #1e1e2e; }
+.list-item.active { background: #1e1e2e; border-left-color: #89b4fa; color: #89b4fa; }
+.list-item .item-label { font-weight: 500; }
+.list-item .item-desc { font-size: 11px; color: #666; margin-top: 2px; }
+
+/* Right panel */
+.right-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Command header */
+.cmd-header { padding: 20px 24px 16px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+.cmd-header h2 { font-size: 18px; font-weight: 600; }
+.cmd-header p { font-size: 13px; color: #666; margin-top: 4px; }
+
+/* Form area */
+.form-area { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.form-row { display: flex; align-items: center; margin-bottom: 14px; }
+.form-row label { width: 120px; font-size: 13px; color: #555; flex-shrink: 0; }
+.form-row input, .form-row select { flex: 1; max-width: 360px; padding: 7px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: #fff; }
+.form-row input:focus, .form-row select:focus { outline: none; border-color: #89b4fa; box-shadow: 0 0 0 2px rgba(137,180,250,.2); }
+.server-select { margin-bottom: 18px; }
+.server-select label { width: 120px; font-size: 13px; color: #555; display: inline-block; }
+.server-select select { padding: 7px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 200px; }
+
+/* Execute button */
+.exec-bar { padding: 12px 24px; background: #fff; border-top: 1px solid #e0e0e0; display: flex; align-items: center; gap: 12px; }
+.btn { padding: 8px 24px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; transition: all .15s; }
+.btn-primary { background: #89b4fa; color: #1e1e2e; font-weight: 600; }
+.btn-primary:hover { background: #74a8f7; }
+.btn-primary:disabled { background: #bbb; cursor: not-allowed; }
+
+/* Output area */
+.output-area { height: 220px; background: #1e1e2e; overflow-y: auto; padding: 12px 16px; font-family: "Cascadia Code", "Fira Code", monospace; font-size: 12px; flex-shrink: 0; }
+.output-line { padding: 2px 0; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
+.output-line.success { color: #a6e3a1; }
+.output-line.error { color: #f38ba8; }
+.output-line.info { color: #89b4fa; }
+.output-line.wait { color: #888; }
+
+/* Placeholder */
+.placeholder { display: flex; align-items: center; justify-content: center; flex: 1; color: #aaa; font-size: 14px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Top bar -->
+  <div class="top-bar">
+    <h1>&#127806; Farm GM Platform</h1>
+    <span class="port">Server: {{ serverPort }}</span>
+  </div>
+
+  <div class="main">
+    <!-- Left panel -->
+    <div class="left-panel">
+      <div class="tabs">
+        <button :class="{ active: currentTab === 'single' }" @click="currentTab = 'single'">&#21333;&#26465;GM</button>
+        <button :class="{ active: currentTab === 'batch' }" @click="currentTab = 'batch'">&#25209;&#37327;GM</button>
+      </div>
+      <div class="list-area">
+        <template v-if="currentTab === 'single'">
+          <div v-for="c in commands" :key="c.name"
+               class="list-item" :class="{ active: selectedCommand && selectedCommand.name === c.name }"
+               @click="selectCommand(c)">
+            <div class="item-label">{{ c.label }}</div>
+            <div class="item-desc">{{ c.description }}</div>
+          </div>
+          <div v-if="commands.length === 0" style="color:#666;padding:16px;font-size:12px;">Loading...</div>
+        </template>
+        <template v-else>
+          <div v-for="t in templates" :key="t.name"
+               class="list-item" :class="{ active: selectedTemplate && selectedTemplate.name === t.name }"
+               @click="selectTemplate(t)">
+            <div class="item-label">{{ t.label }}</div>
+            <div class="item-desc">{{ t.description }}</div>
+          </div>
+          <div v-if="templates.length === 0" style="color:#666;padding:16px;font-size:12px;">Loading...</div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="right-panel">
+      <!-- Single GM -->
+      <template v-if="currentTab === 'single'">
+        <template v-if="selectedCommand">
+          <div class="cmd-header">
+            <h2>{{ selectedCommand.label }}</h2>
+            <p>{{ selectedCommand.description }}</p>
+          </div>
+          <div class="form-area">
+            <div class="server-select">
+              <label>&#26381;&#21153;&#22120;</label>
+              <select v-model="serverId">
+                <option value="">&#35831;&#36873;&#25321;&#26381;&#21153;&#22120;</option>
+                <option v-for="s in servers" :key="s.server_id" :value="s.server_id">
+                  {{ s.name }} ({{ s.online ? '&#22312;&#32447;' : '&#31163;&#32447;' }})
+                </option>
+              </select>
+            </div>
+            <div v-for="p in selectedCommand.params" :key="p.name" class="form-row">
+              <label>{{ p.label }}<span v-if="p.required" style="color:red">*</span></label>
+              <!-- Player param -->
+              <template v-if="p.type === 'player'">
+                <select v-model="paramValues[p.name]" @change="onPlayerSelectChange(p.name)">
+                  <option value="">&#35831;&#36873;&#25321;</option>
+                  <option v-for="pl in onlinePlayers" :key="pl.player_id" :value="pl.player_id">
+                    {{ pl.role_name }} ({{ pl.player_id }})
+                  </option>
+                  <option value="__manual__">&#25163;&#21160;&#36755;&#20837;...</option>
+                </select>
+                <input v-if="paramValues[p.name] === '__manual__'" v-model="manualPlayerId"
+                       style="margin-left:8px;max-width:180px;" placeholder="Player ID">
+              </template>
+              <!-- Item param -->
+              <template v-else-if="p.type === 'item'">
+                <select v-model="paramValues[p.name]">
+                  <option value="">&#35831;&#36873;&#25321;</option>
+                  <option v-for="item in itemList" :key="item.id" :value="item.id">
+                    {{ item.name }} ({{ item.id }})
+                  </option>
+                </select>
+              </template>
+              <!-- Int param -->
+              <template v-else-if="p.type === 'int'">
+                <input type="number" v-model.number="paramValues[p.name]" :placeholder="p.label">
+              </template>
+              <!-- String param (default) -->
+              <template v-else>
+                <input type="text" v-model="paramValues[p.name]" :placeholder="p.label">
+              </template>
+            </div>
+          </div>
+          <div class="exec-bar">
+            <button class="btn btn-primary" :disabled="executing || !serverId" @click="executeSingle">
+              {{ executing ? '&#25191;&#34892;&#20013;...' : '&#25191;&#34892;' }}
+            </button>
+          </div>
+        </template>
+        <div v-else class="placeholder">&#24038;&#36793;&#36873;&#25321;&#19968;&#20010;GM&#21629;&#20196;</div>
+      </template>
+
+      <!-- Batch GM -->
+      <template v-else>
+        <template v-if="selectedTemplate">
+          <div class="cmd-header">
+            <h2>{{ selectedTemplate.label }}</h2>
+            <p>{{ selectedTemplate.description }}</p>
+          </div>
+          <div class="form-area">
+            <div class="server-select">
+              <label>&#26381;&#21153;&#22120;</label>
+              <select v-model="batchServerId">
+                <option value="">&#35831;&#36873;&#25321;&#26381;&#21153;&#22120;</option>
+                <option v-for="s in servers" :key="s.server_id" :value="s.server_id">
+                  {{ s.name }} ({{ s.online ? '&#22312;&#32447;' : '&#31163;&#32447;' }})
+                </option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>&#29609;&#23478;<span style="color:red">*</span></label>
+              <select v-model="batchPlayerId" @change="onBatchPlayerChange">
+                <option value="">&#35831;&#36873;&#25321;</option>
+                <option v-for="pl in onlinePlayers" :key="pl.player_id" :value="pl.player_id">
+                  {{ pl.role_name }} ({{ pl.player_id }})
+                </option>
+                <option value="__manual__">&#25163;&#21160;&#36755;&#20837;...</option>
+              </select>
+              <input v-if="batchPlayerId === '__manual__'" v-model="batchManualPlayerId"
+                     style="margin-left:8px;max-width:180px;" placeholder="Player ID">
+            </div>
+            <div v-if="selectedTemplate.steps" style="margin-top:16px;">
+              <div style="font-size:13px;color:#555;margin-bottom:8px;">&#27493;&#39542;&#39044;&#35272;&#65306;</div>
+              <div v-for="(step, i) in selectedTemplate.steps" :key="i"
+                   style="font-size:12px;color:#888;padding:4px 0;font-family:monospace;">
+                {{ i + 1 }}. {{ step.cmd }} <span v-if="step.args">{{ JSON.stringify(step.args) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="exec-bar">
+            <button class="btn btn-primary" :disabled="executing || !batchServerId || !effectiveBatchPlayerId" @click="executeBatch">
+              {{ executing ? '&#25191;&#34892;&#20013;...' : '&#25191;&#34892;&#20840;&#37096;' }}
+            </button>
+          </div>
+        </template>
+        <div v-else class="placeholder">&#24038;&#36793;&#36873;&#25321;&#19968;&#20010;&#25209;&#37327;&#27169;&#26495;</div>
+      </template>
+
+      <!-- Output -->
+      <div class="output-area" ref="outputEl">
+        <div v-if="outputLog.length === 0" class="output-line wait">&#31561;&#24453;&#21629;&#20196;&#25191;&#34892;...</div>
+        <div v-for="(line, i) in outputLog" :key="i" class="output-line" :class="line.type">{{ line.text }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed, onMounted, nextTick, watch } = Vue;
+
+createApp({
+  setup() {
+    const currentTab = ref('single');
+    const commands = ref([]);
+    const templates = ref([]);
+    const servers = ref([]);
+    const onlinePlayers = ref([]);
+    const selectedCommand = ref(null);
+    const selectedTemplate = ref(null);
+    const paramValues = reactive({});
+    const manualPlayerId = ref('');
+    const batchServerId = ref('');
+    const batchPlayerId = ref('');
+    const batchManualPlayerId = ref('');
+    const executing = ref(false);
+    const outputLog = ref([]);
+    const serverId = ref('');
+    const outputEl = ref(null);
+
+    const itemList = [
+      { id: 1, name: 'wood' },
+      { id: 2, name: 'stone' },
+      { id: 3, name: 'axe' },
+      { id: 4, name: 'hoe' },
+      { id: 5, name: 'seed' },
+      { id: 6, name: 'bread' },
+      { id: 7, name: 'crop' }
+    ];
+
+    const serverPort = computed(() => {
+      return window.location.port || '80';
+    });
+
+    const effectiveBatchPlayerId = computed(() => {
+      if (batchPlayerId.value === '__manual__') return batchManualPlayerId.value;
+      return batchPlayerId.value;
+    });
+
+    function log(type, text) {
+      outputLog.value.push({ type, text });
+      nextTick(() => {
+        if (outputEl.value) outputEl.value.scrollTop = outputEl.value.scrollHeight;
+      });
+    }
+
+    async function fetchData() {
+      try {
+        const [cmdRes, tplRes, srvRes] = await Promise.all([
+          fetch('/api/gm/commands').then(r => r.json()),
+          fetch('/api/gm/templates').then(r => r.json()),
+          fetch('/api/gm/servers').then(r => r.json())
+        ]);
+        commands.value = cmdRes.commands || [];
+        templates.value = tplRes.templates || [];
+        servers.value = srvRes.servers || [];
+      } catch (e) {
+        log('error', 'Failed to load data: ' + e.message);
+      }
+    }
+
+    async function loadOnlinePlayers() {
+      try {
+        const res = await fetch('/api/gm/online_players').then(r => r.json());
+        onlinePlayers.value = res.players || [];
+      } catch (e) {
+        console.error('Failed to load online players', e);
+      }
+    }
+
+    function selectCommand(cmd) {
+      selectedCommand.value = cmd;
+      // Reset param values
+      Object.keys(paramValues).forEach(k => delete paramValues[k]);
+      if (cmd.params) {
+        cmd.params.forEach(p => { paramValues[p.name] = ''; });
+      }
+      manualPlayerId.value = '';
+      loadOnlinePlayers();
+    }
+
+    function selectTemplate(tpl) {
+      selectedTemplate.value = tpl;
+      batchPlayerId.value = '';
+      batchManualPlayerId.value = '';
+      loadOnlinePlayers();
+    }
+
+    function onPlayerSelectChange(paramName) {
+      // nothing extra needed, value is bound
+    }
+
+    function onBatchPlayerChange() {
+      // nothing extra needed
+    }
+
+    function buildArgs() {
+      const args = {};
+      if (!selectedCommand.value || !selectedCommand.value.params) return args;
+      selectedCommand.value.params.forEach(p => {
+        let val = paramValues[p.name];
+        if (p.type === 'player' && val === '__manual__') {
+          val = manualPlayerId.value;
+        }
+        if (p.type === 'int') {
+          val = val != null && val !== '' ? Number(val) : 0;
+        }
+        if (p.type === 'item') {
+          val = val != null && val !== '' ? Number(val) : 0;
+        }
+        args[p.name] = val;
+      });
+      return args;
+    }
+
+    async function executeSingle() {
+      if (!selectedCommand.value || !serverId.value) return;
+      executing.value = true;
+      log('info', `> Executing: ${selectedCommand.value.name}`);
+      try {
+        const body = {
+          server_id: Number(serverId.value),
+          cmd: selectedCommand.value.name,
+          args: buildArgs()
+        };
+        const res = await fetch('/api/gm/exec', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).then(r => r.json());
+        if (res.code === 0 || res.code === 200) {
+          log('success', `[OK] ${res.msg || 'Success'}`);
+          if (res.data !== undefined && res.data !== null) {
+            log('info', '  Data: ' + (typeof res.data === 'string' ? res.data : JSON.stringify(res.data)));
+          }
+        } else {
+          log('error', `[ERR ${res.code}] ${res.msg || 'Unknown error'}`);
+        }
+      } catch (e) {
+        log('error', 'Request failed: ' + e.message);
+      } finally {
+        executing.value = false;
+      }
+    }
+
+    async function executeBatch() {
+      if (!selectedTemplate.value || !batchServerId.value || !effectiveBatchPlayerId.value) return;
+      executing.value = true;
+      const pid = effectiveBatchPlayerId.value;
+      log('info', `> Batch: ${selectedTemplate.value.label} -> Player ${pid}`);
+      try {
+        const body = {
+          server_id: Number(batchServerId.value),
+          template: selectedTemplate.value.name,
+          player_id: pid
+        };
+        const res = await fetch('/api/gm/batch_exec', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).then(r => r.json());
+        if (res.results) {
+          res.results.forEach(r => {
+            if (r.code === 0 || r.code === 200) {
+              log('success', `  [OK] ${r.cmd}: ${r.msg || 'ok'}`);
+            } else {
+              log('error', `  [ERR ${r.code}] ${r.cmd}: ${r.msg || 'error'}`);
+            }
+          });
+        }
+        if (res.code !== 0 && res.code !== 200 && !res.results) {
+          log('error', `[ERR ${res.code}] ${res.msg || 'Batch execution failed'}`);
+        }
+      } catch (e) {
+        log('error', 'Request failed: ' + e.message);
+      } finally {
+        executing.value = false;
+      }
+    }
+
+    onMounted(() => {
+      fetchData();
+      loadOnlinePlayers();
+    });
+
+    return {
+      currentTab, commands, templates, servers, onlinePlayers,
+      selectedCommand, selectedTemplate, paramValues,
+      manualPlayerId, batchServerId, batchPlayerId, batchManualPlayerId,
+      executing, outputLog, serverId, outputEl, itemList,
+      serverPort, effectiveBatchPlayerId,
+      selectCommand, selectTemplate, onPlayerSelectChange, onBatchPlayerChange,
+      executeSingle, executeBatch
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
