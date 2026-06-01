@@ -81,11 +81,11 @@ void Player::save_full() {
 
     std::string value = get_all_data_json();
 
-    auto callback = [this](int32_t code, const uint8_t*, size_t) {
+    auto callback = [pid = player_id_](int32_t code, const uint8_t*, size_t) {
         if (code == 0) {
-            SPDLOG_INFO("[Player]Full save success for player_id={}", player_id_);
+            SPDLOG_INFO("[Player]Full save success for player_id={}", pid);
         } else {
-            SPDLOG_ERROR("[Player]Full save failed for player_id={} code={}", player_id_, code);
+            SPDLOG_ERROR("[Player]Full save failed for player_id={} code={}", pid, code);
         }
     };
 

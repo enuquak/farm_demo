@@ -228,12 +228,9 @@ void PlayerManager::handle_player_data_loaded(uint64_t player_id, int32_t code,
         // 数据加载失败
         SPDLOG_ERROR("[Player]Data load failed for player_id={} code={}", player_id, code);
 
-        player->set_data_state(PlayerBizDataState::FAILED);
-
-        // 使用默认数据作为降级策略
+        // 使用默认数据作为降级策略（不启动自动保存定时器，避免用默认数据覆盖真实数据）
         player->init_default_data();
         player->set_data_state(PlayerBizDataState::LOADED);
-        player->start_save_timer(base_);
     }
 
     // 调用玩家加入回调
@@ -243,14 +240,6 @@ void PlayerManager::handle_player_data_loaded(uint64_t player_id, int32_t code,
             callback_it->second(player_id, true, "Data loaded");
         }
         pending_join_callbacks_.erase(callback_it);
-    }
-}
-
-void PlayerManager::handle_player_data_saved(uint64_t player_id, int32_t code) {
-    if (code == 0) {
-        SPDLOG_INFO("[Player]Data saved successfully for player_id={}", player_id);
-    } else {
-        SPDLOG_ERROR("[Player]Data save failed for player_id={} code={}", player_id, code);
     }
 }
 

@@ -67,9 +67,6 @@ public:
     void handle_player_data_loaded(uint64_t player_id, int32_t code,
                                    const uint8_t* value_data, size_t value_len);
 
-    // 数据保存回调处理
-    void handle_player_data_saved(uint64_t player_id, int32_t code);
-
 private:
     // 保存玩家数据到 DBMgr
     void save_player_data(uint64_t player_id);

@@ -1,0 +1,136 @@
+<h2>GM 平台页面布局</h2>
+<p class="subtitle">网页版 GM 管理面板 — 由 game_server 的 evhttp 直接提供服务</p>
+
+<div class="mockup">
+  <div class="mockup-header">Farm GM Platform — http://localhost:7070</div>
+  <div class="mockup-body" style="padding:0; font-family: sans-serif; font-size: 13px;">
+    <!-- Top nav -->
+    <div style="background:#1a1a2e; color:#fff; padding:10px 20px; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-weight:bold; font-size:16px;">🌾 Farm GM Platform</span>
+      <span style="color:#aaa; font-size:12px;">v0.1 | 内部工具</span>
+    </div>
+
+    <div style="display:flex; min-height:500px;">
+      <!-- Sidebar -->
+      <div style="width:180px; background:#16213e; color:#e0e0e0; padding:15px 0;">
+        <div style="padding:10px 20px; background:#0f3460; border-left:3px solid #4fc3f7; cursor:pointer;">📋 玩家查询</div>
+        <div style="padding:10px 20px; cursor:pointer;">✏️ 修改属性</div>
+        <div style="padding:10px 20px; cursor:pointer;">🎒 背包管理</div>
+        <div style="padding:10px 20px; cursor:pointer;">📊 在线列表</div>
+      </div>
+
+      <!-- Main content -->
+      <div style="flex:1; padding:20px; background:#f5f5f5;">
+        <!-- Search bar -->
+        <div style="margin-bottom:20px;">
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input placeholder="输入玩家ID..." style="padding:8px 12px; border:1px solid #ccc; border-radius:4px; width:250px; font-size:14px;">
+            <button style="padding:8px 20px; background:#1976d2; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:14px;">查询</button>
+          </div>
+        </div>
+
+        <!-- Player info card -->
+        <div style="background:#fff; border-radius:8px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:20px;">
+          <h3 style="margin:0 0 15px 0; color:#333; border-bottom:2px solid #1976d2; padding-bottom:8px;">玩家信息</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px;">
+            <div>
+              <label style="color:#888; font-size:12px; display:block;">玩家ID</label>
+              <span style="font-size:16px; font-weight:bold;">10001</span>
+            </div>
+            <div>
+              <label style="color:#888; font-size:12px; display:block;">角色名</label>
+              <span style="font-size:16px;">小农夫</span>
+            </div>
+            <div>
+              <label style="color:#888; font-size:12px; display:block;">状态</label>
+              <span style="color:#4caf50; font-weight:bold;">● 在线</span>
+            </div>
+            <div>
+              <label style="color:#888; font-size:12px; display:block;">等级</label>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input value="5" style="width:60px; padding:4px 8px; border:1px solid #ccc; border-radius:4px; font-size:14px;">
+                <button style="padding:4px 12px; background:#ff9800; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">修改</button>
+              </div>
+            </div>
+            <div>
+              <label style="color:#888; font-size:12px; display:block;">金币</label>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input value="1500" style="width:80px; padding:4px 8px; border:1px solid #ccc; border-radius:4px; font-size:14px;">
+                <button style="padding:4px 12px; background:#ff9800; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">修改</button>
+              </div>
+            </div>
+            <div>
+              <label style="color:#888; font-size:12px; display:block;">经验值</label>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input value="320" style="width:80px; padding:4px 8px; border:1px solid #ccc; border-radius:4px; font-size:14px;">
+                <button style="padding:4px 12px; background:#ff9800; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">修改</button>
+              </div>
+            </div>
+            <div>
+              <label style="color:#888; font-size:12px; display:block;">体力</label>
+              <span style="font-size:16px;">80 / 100</span>
+            </div>
+            <div>
+              <label style="color:#888; font-size:12px; display:block;">当前场景</label>
+              <span style="font-size:16px;">farm_main</span>
+            </div>
+            <div>
+              <label style="color:#888; font-size:12px; display:block;">位置</label>
+              <span style="font-size:16px;">(120.5, 85.3)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory -->
+        <div style="background:#fff; border-radius:8px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+          <h3 style="margin:0 0 15px 0; color:#333; border-bottom:2px solid #4caf50; padding-bottom:8px;">🎒 背包管理</h3>
+          <div style="display:grid; grid-template-columns:repeat(10, 1fr); gap:6px; margin-bottom:15px;">
+            <div style="aspect-ratio:1; background:#e8f5e9; border:2px solid #4caf50; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px;">
+              <span style="font-size:18px;">🪓</span>
+              <span>斧头</span>
+              <span style="color:#888;">x1</span>
+            </div>
+            <div style="aspect-ratio:1; background:#e8f5e9; border:2px solid #4caf50; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px;">
+              <span style="font-size:18px;">⛏️</span>
+              <span>锄头</span>
+              <span style="color:#888;">x1</span>
+            </div>
+            <div style="aspect-ratio:1; background:#fff3e0; border:2px solid #ff9800; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px;">
+              <span style="font-size:18px;">🌱</span>
+              <span>种子</span>
+              <span style="color:#888;">x12</span>
+            </div>
+            <div style="aspect-ratio:1; background:#fff3e0; border:2px solid #ff9800; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px;">
+              <span style="font-size:18px;">🍞</span>
+              <span>面包</span>
+              <span style="color:#888;">x5</span>
+            </div>
+            <div style="aspect-ratio:1; background:#f5f5f5; border:2px dashed #ccc; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#ccc;">空</div>
+            <div style="aspect-ratio:1; background:#f5f5f5; border:2px dashed #ccc; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#ccc;">空</div>
+            <div style="aspect-ratio:1; background:#f5f5f5; border:2px dashed #ccc; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#ccc;">空</div>
+            <div style="aspect-ratio:1; background:#f5f5f5; border:2px dashed #ccc; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#ccc;">空</div>
+            <div style="aspect-ratio:1; background:#f5f5f5; border:2px dashed #ccc; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#ccc;">空</div>
+            <div style="aspect-ratio:1; background:#f5f5f5; border:2px dashed #ccc; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#ccc;">空</div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; padding-top:10px; border-top:1px solid #eee;">
+            <select style="padding:6px 10px; border:1px solid #ccc; border-radius:4px;">
+              <option>选择物品...</option>
+              <option>🪓 斧头 (id:3)</option>
+              <option>⛏️ 锄头 (id:4)</option>
+              <option>🌱 种子 (id:5)</option>
+              <option>🍞 面包 (id:6)</option>
+              <option>🪨 石头 (id:2)</option>
+              <option>🪵 木材 (id:1)</option>
+              <option>🌾 农作物 (id:7)</option>
+            </select>
+            <input placeholder="数量" value="1" style="width:60px; padding:6px 10px; border:1px solid #ccc; border-radius:4px;">
+            <button style="padding:6px 16px; background:#4caf50; color:#fff; border:none; border-radius:4px; cursor:pointer;">发放物品</button>
+            <button style="padding:6px 16px; background:#f44336; color:#fff; border:none; border-radius:4px; cursor:pointer;">删除物品</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:20px;">这是 GM 平台的主界面布局，包含：左侧导航栏 + 右侧玩家信息/背包管理。你可以在浏览器中查看效果。</p>

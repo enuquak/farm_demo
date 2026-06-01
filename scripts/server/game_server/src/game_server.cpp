@@ -216,7 +216,12 @@ void GameServer::stop() {
     }
     // Disconnect Redis
     redis_conn_.disconnect();
-    // Shutdown DBMgr connections first
+    // Save all players and stop their timers before shutting down connections
+    player_mgr_.save_all_players();
+    for (auto* p : player_mgr_.get_all_players()) {
+        p->stop_save_timer();
+    }
+    // Shutdown DBMgr connections
     dbmgr_mgr_.shutdown();
     if (update_timer_) {
         event_free(update_timer_);
