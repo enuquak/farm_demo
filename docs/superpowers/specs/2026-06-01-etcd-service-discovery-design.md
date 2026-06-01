@@ -72,9 +72,13 @@ public:
     bool connect();                          // 连接 etcd，失败返回 false
     void shutdown();                         // 主动注销 + 关闭连接
 
+    // === 错误回调 ===
+    using ErrorCallback = std::function<void(const std::string& error_msg)>;
+    void set_error_callback(ErrorCallback callback);
+
     // === 服务注册（带 lease）===
     bool register_service(const std::string& service_type,   // "gate"/"game"/"dbmgr"
-                          const std::string& instance_id,    // 唯一标识
+                          const std::string& instance_id,    // 唯一标识（见下方说明）
                           const std::string& value_json);    // 注册信息 JSON
 
     void deregister_service(const std::string& service_type,
@@ -112,8 +116,16 @@ private:
 
     std::unique_ptr<etcd::Watcher> service_watcher_;
     std::unique_ptr<etcd::Watcher> config_watcher_;
+
+    ErrorCallback error_callback_;
 };
 ```
+
+### instance_id 命名规则
+
+- gate_server: 使用本地配置中的 `etcd.instance_id` 字段（如 `"gate-1"`），需在配置文件中显式指定
+- game_server: 使用 `server_id` 的字符串形式（如 `"1"`）
+- dbmgr: 使用 `index` 的字符串形式（如 `"0"`）
 
 ### 关键行为
 
@@ -186,8 +198,29 @@ etcd.register_service("dbmgr", "0", R"({"ip":"0.0.0.0","port":5000,"index":0})")
 {
     "etcd": {
         "endpoints": "http://localhost:2379",
+        "lease_ttl": 15,
+        "instance_id": "gate-1"
+    },
+    "logging": { ... }
+}
+
+// config/game_server.json（改造后）
+{
+    "etcd": {
+        "endpoints": "http://localhost:2379",
         "lease_ttl": 15
     },
+    "server": { "id": 1 },
+    "logging": { ... }
+}
+
+// config/dbmgr.json（改造后）
+{
+    "etcd": {
+        "endpoints": "http://localhost:2379",
+        "lease_ttl": 15
+    },
+    "server": { "index": 0 },
     "logging": { ... }
 }
 ```
@@ -217,7 +250,7 @@ etcd.register_service("dbmgr", "0", R"({"ip":"0.0.0.0","port":5000,"index":0})")
 gate_server 的 `add_game_server` / `remove_game_server` 需要处理：
 - 新增：创建 GameConnection 并发起连接
 - 移除：断开连接，清理该 server_id 的玩家路由
-- 需要加锁保护 `game_conns_` map（watch 回调在后台线程）
+- 需要用 `std::mutex` 保护 `game_conns_` map（watch 回调在 etcd 后台线程，主事件循环在 libevent 线程）
 
 ### 配置变更
 
