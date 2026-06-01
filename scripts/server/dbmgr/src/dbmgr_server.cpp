@@ -307,6 +307,9 @@ void DbMgrServer::route_message(std::shared_ptr<GameSession> session,
         case MSG_ID_ACCOUNT_SET_REQ:
             handle_account_set_req(session, payload);
             break;
+        case MSG_ID_ALLOC_PLAYER_ID_REQ:
+            handle_alloc_player_id_req(session, payload);
+            break;
         default:
             SPDLOG_INFO("[DBMgr]Unknown msg_id={} from fd={}", msg_id, session->fd());
             break;
@@ -498,6 +501,47 @@ void DbMgrServer::handle_account_set_req(std::shared_ptr<GameSession> session,
     send_to_game(session, MSG_ID_ACCOUNT_SET_RESP, resp_data);
 
     SPDLOG_INFO("[DBMgr]AccountSetResp account_id={} code={}", account_id, static_cast<int32_t>(result));
+}
+
+void DbMgrServer::handle_alloc_player_id_req(std::shared_ptr<GameSession> session,
+                                              const std::vector<uint8_t>& payload) {
+    farm::AllocPlayerIdReq req;
+    if (!payload.empty() && !req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[DBMgr]Failed to parse AllocPlayerIdReq");
+        return;
+    }
+
+    uint32_t count = req.count();
+    if (count == 0) count = 64;
+
+    SPDLOG_INFO("[DBMgr]AllocPlayerIdReq request_id={} count={}", req.request_id(), count);
+
+    farm::AllocPlayerIdResp resp;
+    resp.set_request_id(req.request_id());
+
+    if (!is_db_ready()) {
+        resp.set_code(-1);
+        resp.set_start_id(0);
+        resp.set_count(0);
+        SPDLOG_ERROR("[DBMgr]DB not ready for AllocPlayerIdReq");
+    } else {
+        int64_t new_seq = mongo_server_.alloc_player_ids(count);
+        if (new_seq > 0) {
+            int64_t start_id = new_seq - static_cast<int64_t>(count) + 1;
+            resp.set_code(0);
+            resp.set_start_id(start_id);
+            resp.set_count(count);
+        } else {
+            resp.set_code(-1);
+            resp.set_start_id(0);
+            resp.set_count(0);
+            SPDLOG_ERROR("[DBMgr]Failed to allocate player IDs");
+        }
+    }
+
+    std::string resp_data;
+    resp.SerializeToString(&resp_data);
+    send_to_game(session, MSG_ID_ALLOC_PLAYER_ID_RESP, resp_data);
 }
 
 // ===========================================
