@@ -135,6 +135,17 @@ bool GameServer::start() {
     // 初始化提取的子系统
     scene_mgr_ = std::make_unique<GameSceneManager>(&player_mgr_, &dbmgr_mgr_, send_game_msg_func);
     game_clock_ = std::make_unique<GameClock>(&player_mgr_, scene_mgr_.get(), &dbmgr_mgr_, send_game_msg_func);
+
+    // Init quest system
+    quest_config_ = std::make_unique<QuestConfig>();
+    if (quest_config_->load_from_file("config/quest_data.json")) {
+        quest_mgr_ = std::make_unique<QuestManager>(&player_mgr_, quest_config_.get());
+        quest_mgr_->init();
+        SPDLOG_INFO("[Game]Quest system initialized");
+    } else {
+        SPDLOG_WARN("[Game]Quest system disabled: failed to load config");
+    }
+
     // Initialize Redis connection
     if (!redis_uri_.empty()) {
         if (redis_conn_.connect(redis_uri_)) {
@@ -203,6 +214,34 @@ bool GameServer::start() {
             handle_position_update(player_id, payload, payload_len);
         });
     SPDLOG_INFO("[Game]Position update handler registered");
+
+    // Quest message handlers
+    msg_handler_.register_handler(MSG_ID_QUEST_ACCEPT_REQ,
+        [this](uint64_t player_id, const uint8_t* payload, size_t payload_len) {
+            if (!quest_mgr_) return;
+            farm::QuestAcceptReq req;
+            if (req.ParseFromArray(payload, static_cast<int>(payload_len))) {
+                quest_mgr_->handle_quest_accept(player_id, req.quest_id());
+            }
+        });
+
+    msg_handler_.register_handler(MSG_ID_QUEST_SUBMIT_REQ,
+        [this](uint64_t player_id, const uint8_t* payload, size_t payload_len) {
+            if (!quest_mgr_) return;
+            farm::QuestSubmitReq req;
+            if (req.ParseFromArray(payload, static_cast<int>(payload_len))) {
+                quest_mgr_->handle_quest_submit(player_id, req.quest_id());
+            }
+        });
+
+    msg_handler_.register_handler(MSG_ID_QUEST_ABANDON_REQ,
+        [this](uint64_t player_id, const uint8_t* payload, size_t payload_len) {
+            if (!quest_mgr_) return;
+            farm::QuestAbandonReq req;
+            if (req.ParseFromArray(payload, static_cast<int>(payload_len))) {
+                quest_mgr_->handle_quest_abandon(player_id, req.quest_id());
+            }
+        });
 
     // 初始化默认场景（farm）
     scene_mgr_->get_or_create_scene("farm");
@@ -601,6 +640,10 @@ void GameServer::handle_player_leave(std::shared_ptr<GateSession> session,
     uint64_t player_id = req.player_id();
     SPDLOG_INFO("[Game]Player leave: player_id={} from gate_id={}", player_id, session->gate_id());
 
+    if (quest_mgr_) {
+        quest_mgr_->on_player_logout(player_id);
+    }
+
     // 保存数据并移除玩家
     player_mgr_.remove_player_with_save(player_id);
 }
@@ -617,6 +660,10 @@ void GameServer::handle_player_join_callback(std::shared_ptr<GateSession> sessio
         resp.set_code(0);
         resp.set_msg("joined");
         SPDLOG_INFO("[Game]Player {} joined successfully", player_id);
+
+        if (quest_mgr_) {
+            quest_mgr_->on_player_login(player_id);
+        }
     } else {
         resp.set_code(1);
         resp.set_msg(msg);

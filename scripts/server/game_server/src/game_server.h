@@ -12,6 +12,8 @@
 #include "gm_stub.h"
 #include "gm_http_handler.h"
 #include "redis_connection.h"
+#include "quest_manager.h"
+#include "quest_config.h"
 
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -153,6 +155,10 @@ private:
     std::unique_ptr<GameSceneManager> scene_mgr_;
     std::unique_ptr<GameClock> game_clock_;
     std::unique_ptr<AdminHandler> admin_handler_;
+
+    // Quest system
+    std::unique_ptr<QuestConfig> quest_config_;
+    std::unique_ptr<QuestManager> quest_mgr_;
 
     // GM system
     std::unique_ptr<GMStub> gm_stub_;
