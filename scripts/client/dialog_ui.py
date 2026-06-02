@@ -55,18 +55,18 @@ class DialogUI:
             self._name_font = pygame.font.SysFont('microsoftyahei', 22, bold=True)
             self._hint_font = pygame.font.SysFont('microsoftyahei', 14)
 
-    def _get_portrait(self, npc_id: str) -> Optional[pygame.Surface]:
-        if npc_id in self._portraits:
-            return self._portraits[npc_id]
+    def _get_portrait(self, npc_id: str, bubble_color: tuple = (100, 100, 100)) -> Optional[pygame.Surface]:
+        cache_key = f"{npc_id}_{bubble_color}"
+        if cache_key in self._portraits:
+            return self._portraits[cache_key]
         size = DIALOG_PORTRAIT_SIZE
         surface = pygame.Surface((size, size), pygame.SRCALPHA)
-        colors = {'merchant': (70, 130, 180)}
-        color = colors.get(npc_id, (100, 100, 100))
+        color = bubble_color
         pygame.draw.rect(surface, color, (4, 4, size - 8, size - 8), border_radius=8)
         cx, cy = size // 2, size // 3
         pygame.draw.circle(surface, (255, 220, 180), (cx, cy), 12)
         pygame.draw.rect(surface, color, (cx - 10, cy + 12, 20, 20))
-        self._portraits[npc_id] = surface
+        self._portraits[cache_key] = surface
         return surface
 
     def render(self, screen: pygame.Surface, npc_id: str, npc_name: str,
@@ -74,7 +74,7 @@ class DialogUI:
                responses: list, selected_option: int,
                is_choosing: bool, bubble_color: tuple = (70, 130, 180)):
         screen.blit(self._bg_surface, self._box_rect.topleft)
-        portrait = self._get_portrait(npc_id)
+        portrait = self._get_portrait(npc_id, bubble_color)
         if portrait:
             screen.blit(portrait, self._portrait_rect.topleft)
         name_surface = self._name_font.render(npc_name, True, bubble_color)

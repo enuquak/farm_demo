@@ -8,6 +8,15 @@
       "bubble_color": [70, 130, 180],
       "initial_scene": "farm",
       "default_position": {"x": 12, "y": 8}
+    },
+    {
+      "id": "farmer",
+      "name": "农夫老王",
+      "sprite_sheet": "npc_farmer.png",
+      "portrait": "portrait_farmer.png",
+      "bubble_color": [80, 140, 60],
+      "initial_scene": "farm",
+      "default_position": {"x": 6, "y": 10}
     }
   ]
 }

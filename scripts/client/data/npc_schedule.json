@@ -18,5 +18,31 @@
       "position": {"x": 8, "y": 6},
       "facing": "down"
     }
+  ],
+  "farmer": [
+    {
+      "time_range": ["05:00", "12:00"],
+      "scene": "farm",
+      "position": {"x": 6, "y": 10},
+      "facing": "right"
+    },
+    {
+      "time_range": ["12:00", "14:00"],
+      "scene": "house",
+      "position": {"x": 3, "y": 5},
+      "facing": "down"
+    },
+    {
+      "time_range": ["14:00", "20:00"],
+      "scene": "farm",
+      "position": {"x": 10, "y": 12},
+      "facing": "left"
+    },
+    {
+      "time_range": ["20:00", "05:00"],
+      "scene": "house",
+      "position": {"x": 7, "y": 4},
+      "facing": "down"
+    }
   ]
 }

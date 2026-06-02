@@ -1,4 +1,67 @@
 {
+  "farmer": {
+    "greeting": {
+      "condition": {"affection": {"min": 0}},
+      "lines": [
+        {"speaker": "farmer", "text": "嘿！今天庄稼长得不错。"},
+        {"speaker": "farmer", "text": "你那边怎么样？"}
+      ],
+      "responses": [
+        {"text": "还不错", "next": "farm_tips"},
+        {"text": "一般般", "next": "encourage"}
+      ]
+    },
+    "farm_tips": {
+      "lines": [
+        {"speaker": "farmer", "text": "记住，浇水要每天坚持，作物才能长得好。"},
+        {"speaker": "farmer", "text": "有空来我家坐坐。"}
+      ],
+      "effect": {"affection": 1},
+      "next": "farewell"
+    },
+    "encourage": {
+      "lines": [
+        {"speaker": "farmer", "text": "别灰心，种田就是这样，慢慢来。"},
+        {"speaker": "farmer", "text": "需要帮忙随时找我。"}
+      ],
+      "effect": {"affection": 2},
+      "next": "farewell"
+    },
+    "farewell": {
+      "lines": [
+        {"speaker": "farmer", "text": "那我先忙去了，回头见！"}
+      ]
+    },
+    "high_affection": {
+      "condition": {"affection": {"min": 40}},
+      "lines": [
+        {"speaker": "farmer", "text": "老弟！你来了正好，我刚收获了一批好东西。"},
+        {"speaker": "farmer", "text": "送你一些种子，好好种！"}
+      ],
+      "effect": {"affection": 3},
+      "next": "farewell"
+    },
+    "gift_loved": {
+      "lines": [
+        {"speaker": "farmer", "text": "哎呀！这个太珍贵了，谢谢你！"}
+      ]
+    },
+    "gift_liked": {
+      "lines": [
+        {"speaker": "farmer", "text": "不错不错，这个我正好需要。"}
+      ]
+    },
+    "gift_neutral": {
+      "lines": [
+        {"speaker": "farmer", "text": "哦，好的，谢谢。"}
+      ]
+    },
+    "gift_disliked": {
+      "lines": [
+        {"speaker": "farmer", "text": "这个...你自己留着吧。"}
+      ]
+    }
+  },
   "merchant": {
     "greeting": {
       "condition": {"affection": {"min": 0}},
