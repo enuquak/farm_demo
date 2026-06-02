@@ -24,6 +24,9 @@ from .scene import SceneManager
 from .player_controller import PlayerController
 from .network_dispatcher import NetworkMessageDispatcher
 from .game_renderer import GameRenderer
+from .drop_item_renderer import DropItemRenderer
+from .notification import Notification, NotificationType, NotificationPriority
+from .ui.notification_manager import NotificationManager
 
 from .message_ids import MSG_ID_FORCE_SLEEP_READY
 
@@ -114,6 +117,14 @@ class GameScene:
             self.screen, self.WINDOW_WIDTH, self.WINDOW_HEIGHT, player_data
         )
 
+        # 掉落物渲染器
+        self._drop_item_renderer = DropItemRenderer()
+
+        # 通知管理器
+        self._notification_manager = NotificationManager(
+            self.WINDOW_WIDTH, self.WINDOW_HEIGHT
+        )
+
         # 玩家控制器
         self._player_controller = PlayerController(
             connection=connection,
@@ -133,6 +144,7 @@ class GameScene:
             on_scene_change_resp=self._on_scene_change_resp,
             on_clock_sync=self._on_clock_sync,
             on_force_sleep_notify=self._on_force_sleep_notify,
+            on_notify_toast=self._on_notify_toast,
         )
 
         # 强制睡觉状态
@@ -221,6 +233,8 @@ class GameScene:
             self._renderer.render(
                 dt, self._group, self._player_sprite,
                 self._scene_manager, self._map_renderer,
+                self._drop_item_renderer,
+                self._notification_manager,
             )
 
             # 控制帧率
@@ -491,3 +505,16 @@ class GameScene:
 
         # 不在这里切换场景，等待服务器的 SceneChangeResp
         # Iris 展开会在 handle_scene_change_resp 中通过场景管理器处理
+
+    def _on_notify_toast(self, notify):
+        """通知提示回调"""
+        notification = Notification(
+            type=NotificationType(notify.type),
+            priority=NotificationPriority(notify.priority),
+            title=notify.title,
+            content=notify.content,
+            duration=notify.duration_ms / 1000.0,
+            channel="marquee" if notify.is_marquee else "toast",
+        )
+        self._notification_manager.add(notification)
+        logger.info(f"[GameScene]Notification received: {notify.title}")

@@ -76,7 +76,8 @@ class GameRenderer:
         return self._time_hud
 
     def render(self, dt: float, group, player_sprite: PlayerSprite,
-               scene_manager, map_renderer):
+               scene_manager, map_renderer,
+               drop_item_renderer=None, notification_manager=None):
         """
         渲染一帧
 
@@ -112,6 +113,16 @@ class GameRenderer:
 
         # 精疲力尽弹窗渲染（最顶层）
         self._exhaustion_modal.draw(self._screen)
+
+        # 掉落物渲染
+        if drop_item_renderer is not None:
+            camera_x = map_renderer.x
+            camera_y = map_renderer.y
+            drop_item_renderer.render(self._screen, camera_x, camera_y)
+
+        # 通知渲染
+        if notification_manager is not None:
+            notification_manager.render(self._screen, dt)
 
         # 场景过渡 Iris 遮罩（最顶层）
         scene_manager._transition.apply(self._screen)
