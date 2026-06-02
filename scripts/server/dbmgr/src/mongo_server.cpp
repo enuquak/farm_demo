@@ -212,26 +212,67 @@ DataResult MongoServer::get_all(uint64_t player_id, std::vector<uint8_t>& value)
 }
 
 DataResult MongoServer::get(uint64_t player_id, const std::string& key, std::vector<uint8_t>& value) {
-    std::vector<uint8_t> all_data;
-    DataResult result = get_all(player_id, all_data);
-    if (result != DataResult::SUCCESS) return result;
+    mongoc_collection_t* collection = get_collection("players");
+    if (!collection) return DataResult::IO_ERROR;
 
-    // 解析 JSON，提取指定 key
-    try {
-        std::string json_str(all_data.begin(), all_data.end());
-        auto json = nlohmann::json::parse(json_str);
-        if (json.contains(key)) {
-            std::string val = json[key].dump();
-            value.assign(val.begin(), val.end());
-        } else {
-            value.clear();
+    bson_t filter;
+    bson_init(&filter);
+    BSON_APPEND_INT64(&filter, "player_id", static_cast<int64_t>(player_id));
+
+    // 使用 projection 只返回 data.<key> 字段
+    std::string field_path = "data." + key;
+    bson_t opts;
+    bson_init(&opts);
+    bson_t projection;
+    bson_init(&projection);
+    BSON_APPEND_INT32(&projection, field_path.c_str(), 1);
+    BSON_APPEND_DOCUMENT(&opts, "projection", &projection);
+
+    mongoc_cursor_t* cursor = mongoc_collection_find_with_opts(collection, &filter, &opts, nullptr);
+    const bson_t* doc;
+    bool found = false;
+
+    if (mongoc_cursor_next(cursor, &doc)) {
+        // 返回的文档结构: { "data": { "<key>": <value> } }
+        bson_iter_t data_iter;
+        if (bson_iter_init_find(&data_iter, doc, "data") && BSON_ITER_HOLDS_DOCUMENT(&data_iter)) {
+            bson_iter_t key_iter;
+            if (bson_iter_recurse(&data_iter, &key_iter) && bson_iter_next(&key_iter)) {
+                // 构建临时 BSON 文档来序列化该值
+                bson_t temp;
+                bson_init(&temp);
+                bson_append_iter(&temp, key.c_str(), -1, &key_iter);
+
+                size_t json_len = 0;
+                char* json_str = bson_as_relaxed_extended_json(&temp, &json_len);
+                if (json_str) {
+                    // bson_as_relaxed_extended_json 返回 {"key": value} 格式
+                    // 需要提取 value 部分
+                    try {
+                        auto parsed = nlohmann::json::parse(json_str, json_str + json_len);
+                        if (parsed.contains(key)) {
+                            std::string val = parsed[key].dump();
+                            value.assign(val.begin(), val.end());
+                        }
+                    } catch (...) {
+                        // fallback: 返回原始 JSON
+                        value.assign(json_str, json_str + json_len);
+                    }
+                    bson_free(json_str);
+                    found = true;
+                }
+                bson_destroy(&temp);
+            }
         }
-    } catch (const nlohmann::json::exception& e) {
-        SPDLOG_ERROR("[MongoServer]JSON parse error in get: {}", e.what());
-        return DataResult::PARSE_ERROR;
     }
 
-    return DataResult::SUCCESS;
+    mongoc_cursor_destroy(cursor);
+    bson_destroy(&projection);
+    bson_destroy(&opts);
+    bson_destroy(&filter);
+    mongoc_collection_destroy(collection);
+
+    return found ? DataResult::SUCCESS : DataResult::KEY_NOT_FOUND;
 }
 
 DataResult MongoServer::set_all(uint64_t player_id, const std::vector<uint8_t>& value) {
