@@ -74,8 +74,8 @@ int ChannelManager::process_message(uint64_t sender_id, uint32_t channel_type,
         case 0:  // WORLD
             broadcast_to_world(sender_id, sender_name, content, timestamp);
             break;
-        case 1:  // PARTY - placeholder for future
-            SPDLOG_WARN("[Chat]Party channel not implemented yet");
+        case 1:  // PARTY
+            broadcast_to_party(sender_id, sender_name, content, timestamp);
             break;
         case 2:  // WHISPER
             if (target_id == 0) return 3;  // TARGET_OFFLINE
@@ -106,6 +106,47 @@ void ChannelManager::broadcast_to_world(uint64_t sender_id, const std::string& s
     }
 
     SPDLOG_DEBUG("[Chat]World broadcast from {}: {}", sender_name, content);
+}
+
+void ChannelManager::broadcast_to_party(uint64_t sender_id, const std::string& sender_name,
+                                         const std::string& content, uint64_t timestamp) {
+    // 查询队伍成员
+    std::vector<uint64_t> team_members;
+    if (query_team_func_) {
+        team_members = query_team_func_(sender_id);
+    }
+
+    if (team_members.empty()) {
+        // 不在队伍中，发送错误响应
+        ChatSendResp resp;
+        resp.set_code(CHAT_NOT_IN_PARTY);
+        resp.set_msg("Not in a party");
+        std::string resp_payload;
+        resp.SerializeToString(&resp_payload);
+        send_func_(sender_id, MSG_ID_CHAT_SEND_RESP,
+                   reinterpret_cast<const uint8_t*>(resp_payload.data()), resp_payload.size());
+        return;
+    }
+
+    // Build ChatMessage proto
+    ChatMessage msg;
+    msg.set_channel_type(CHANNEL_PARTY);
+    msg.set_sender_id(sender_id);
+    msg.set_sender_name(sender_name);
+    msg.set_content(content);
+    msg.set_timestamp(timestamp);
+
+    std::string payload;
+    msg.SerializeToString(&payload);
+
+    // Broadcast to all team members
+    for (uint64_t member_id : team_members) {
+        send_func_(member_id, MSG_ID_CHAT_MESSAGE,
+                   reinterpret_cast<const uint8_t*>(payload.data()), payload.size());
+    }
+
+    SPDLOG_DEBUG("[Chat]Party broadcast from {}: {} ({} members)",
+                 sender_name, content, team_members.size());
 }
 
 void ChannelManager::send_whisper(uint64_t sender_id, const std::string& sender_name,

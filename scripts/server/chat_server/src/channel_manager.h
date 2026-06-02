@@ -13,6 +13,9 @@ namespace farm {
 using SendToPlayerFunc = std::function<void(uint64_t player_id, uint32_t msg_id,
                                             const uint8_t* payload, size_t len)>;
 
+// Callback to query team members from TeamServer
+using QueryTeamMembersFunc = std::function<std::vector<uint64_t>(uint64_t player_id)>;
+
 // Channel configuration
 struct ChannelConfig {
     uint32_t channel_type;      // 0=world, 1=party, 2=whisper
@@ -24,6 +27,9 @@ class ChannelManager {
 public:
     explicit ChannelManager(SendToPlayerFunc send_func);
     ~ChannelManager() = default;
+
+    // 设置队伍查询回调
+    void set_team_query_func(QueryTeamMembersFunc func) { query_team_func_ = func; }
 
     // Player lifecycle
     void add_player(uint64_t player_id, const std::string& player_name);
@@ -43,10 +49,13 @@ public:
 private:
     void broadcast_to_world(uint64_t sender_id, const std::string& sender_name,
                             const std::string& content, uint64_t timestamp);
+    void broadcast_to_party(uint64_t sender_id, const std::string& sender_name,
+                            const std::string& content, uint64_t timestamp);
     void send_whisper(uint64_t sender_id, const std::string& sender_name,
                       const std::string& content, uint64_t target_id, uint64_t timestamp);
 
     SendToPlayerFunc send_func_;
+    QueryTeamMembersFunc query_team_func_;
 
     // Online players: player_id -> player_name
     std::unordered_map<uint64_t, std::string> players_;
