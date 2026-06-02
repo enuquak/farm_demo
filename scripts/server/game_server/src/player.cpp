@@ -257,8 +257,8 @@ void Player::init_default_data() {
     player_data_.level = 1;
     player_data_.gold = 100;  // 初始金币
     player_data_.experience = 0;
-    player_data_.pos_x = 0.0f;
-    player_data_.pos_y = 0.0f;
+    player_data_.pos_x = DEFAULT_SPAWN_POS_X;
+    player_data_.pos_y = DEFAULT_SPAWN_POS_Y;
     player_data_.pos_z = 0.0f;
     player_data_.scene_id = "farm_main";  // 默认场景
     player_data_.inventory = "{}";  // 空背包
