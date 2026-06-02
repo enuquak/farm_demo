@@ -51,6 +51,16 @@ inline constexpr uint32_t MSG_ID_ACCOUNT_SET_RESP        = 4204;
 inline constexpr uint32_t MSG_ID_ALLOC_PLAYER_ID_REQ     = 4205;
 inline constexpr uint32_t MSG_ID_ALLOC_PLAYER_ID_RESP    = 4206;
 
+// Game <-> FriendService (6000-6199)
+
+// Friend Service 消息 ID 范围: 6000-6199
+inline constexpr uint32_t MSG_ID_FRIEND_SERVICE_IDENTIFY      = 6001;
+inline constexpr uint32_t MSG_ID_FRIEND_SERVICE_IDENTIFY_RESP = 6002;
+inline constexpr uint32_t MSG_ID_FRIEND_SERVICE_HEARTBEAT      = 6003;
+inline constexpr uint32_t MSG_ID_FRIEND_SERVICE_HEARTBEAT_RESP = 6004;
+inline constexpr uint32_t MSG_ID_FRIEND_CLIENT_MSG             = 6011;
+inline constexpr uint32_t MSG_ID_FRIEND_SERVICE_MSG            = 6012;
+
 // ===========================================
 // 超时常量（带前缀避免冲突）
 // ===========================================

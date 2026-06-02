@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package farm;
+
+option optimize_for = LITE_RUNTIME;
+
+// ===========================================
+// 好友系统协议
+// MsgID 范围: 5001-5099 (Client -> Gate -> Game -> FriendService)
+// ===========================================
+
+// 好友错误码
+enum FriendErrorCode {
+    FRIEND_SUCCESS = 0;
+    FRIEND_ALREADY_FRIENDS = 1;
+    FRIEND_LIST_FULL = 2;
+    FRIEND_PLAYER_NOT_FOUND = 3;
+    FRIEND_REQUEST_NOT_FOUND = 4;
+    FRIEND_NOT_FRIENDS = 5;
+    FRIEND_CHAT_MSG_TOO_LONG = 6;
+    FRIEND_GIFT_ITEM_NOT_FOUND = 7;
+    FRIEND_GIFT_COUNT_INVALID = 8;
+    FRIEND_VISIT_NOT_AUTHORIZED = 9;
+    FRIEND_VISIT_ACTION_FAILED = 10;
+    FRIEND_SELF_OPERATION = 11;
+    FRIEND_BLOCKED = 12;
+    FRIEND_COOLDOWN = 13;
+}
+
+// 好友信息
+message FriendInfo {
+    uint64 player_id = 1;
+    string role_name = 2;
+    uint32 level = 3;
+    bool online = 4;
+    string scene_id = 5;
+    uint64 last_login = 6;
+}
+
+// 好友请求信息
+message FriendRequestInfo {
+    uint64 sender_id = 1;
+    string sender_name = 2;
+    uint32 sender_level = 3;
+    uint64 timestamp = 4;
+}
+
+// ===========================================
+// 搜索好友
+// ===========================================
+
+message FriendSearchReq { string keyword = 1; }
+message FriendSearchResp { int32 code = 1; repeated FriendInfo results = 2; }
+
+// ===========================================
+// 添加好友
+// ===========================================
+
+message FriendAddReq { uint64 target_id = 1; }
+message FriendAddResp { int32 code = 1; string msg = 2; }
+message FriendAddNotify { FriendRequestInfo request = 1; }
+
+// ===========================================
+// 接受/拒绝好友请求
+// ===========================================
+
+message FriendAcceptReq { uint64 sender_id = 1; }
+message FriendAcceptResp { int32 code = 1; FriendInfo new_friend = 2; }
+message FriendRejectReq { uint64 sender_id = 1; }
+message FriendRejectResp { int32 code = 1; }
+
+// ===========================================
+// 删除好友
+// ===========================================
+
+message FriendDeleteReq { uint64 target_id = 1; }
+message FriendDeleteResp { int32 code = 1; }
+
+// ===========================================
+// 好友列表
+// ===========================================
+
+message FriendListReq {}
+message FriendListResp { int32 code = 1; repeated FriendInfo friends = 2; repeated FriendRequestInfo pending_requests = 3; }
+
+// ===========================================
+// 好友上下线通知
+// ===========================================
+
+message FriendOnlineNotify { uint64 player_id = 1; string role_name = 2; string scene_id = 3; }
+message FriendOfflineNotify { uint64 player_id = 1; }
+
+// ===========================================
+// 好友私聊
+// ===========================================
+
+message FriendChatReq { uint64 receiver_id = 1; int32 msg_type = 2; string content = 3; }
+message FriendChatResp { int32 code = 1; }
+message FriendChatNotify { uint64 sender_id = 1; string sender_name = 2; int32 msg_type = 3; string content = 4; uint64 timestamp = 5; }
+message FriendChatHistoryReq { uint64 target_id = 1; }
+message FriendChatHistoryMsg { uint64 sender_id = 1; uint64 receiver_id = 2; int32 msg_type = 3; string content = 4; uint64 timestamp = 5; }
+message FriendChatHistoryResp { int32 code = 1; repeated FriendChatHistoryMsg messages = 2; }
+
+// ===========================================
+// 好友送礼
+// ===========================================
+
+message FriendGiftReq { uint64 receiver_id = 1; int32 item_id = 2; int32 count = 3; }
+message FriendGiftResp { int32 code = 1; string msg = 2; }
+message FriendGiftNotify { uint64 sender_id = 1; string sender_name = 2; int32 item_id = 3; int32 count = 4; }
+
+// ===========================================
+// 好友农场访问
+// ===========================================
+
+message FriendVisitReq { uint64 owner_id = 1; }
+message FriendVisitResp { int32 code = 1; string owner_name = 2; string scene_id = 3; }
+message FriendVisitActionReq { uint64 owner_id = 1; int32 action_type = 2; int32 target_x = 3; int32 target_y = 4; }
+message FriendVisitActionResp { int32 code = 1; string msg = 2; }
+
+// ===========================================
+// 推荐好友
+// ===========================================
+
+message FriendRecommendReq {}
+message FriendRecommendResp { int32 code = 1; repeated FriendInfo recommendations = 2; }
+
+// ===========================================
+// 拉黑/取消拉黑
+// ===========================================
+
+message FriendBlockReq { uint64 target_id = 1; }
+message FriendBlockResp { int32 code = 1; }
+message FriendUnblockReq { uint64 target_id = 1; }
+message FriendUnblockResp { int32 code = 1; }
+
+// ===========================================
+// Friend Service 内部消息 (Game <-> FriendService)
+// MsgID 范围: 6001-6099
+// ===========================================
+
+message FriendServiceIdentify { uint32 service_id = 1; string address = 2; }
+message FriendServiceIdentifyResp { int32 code = 1; }
+message FriendServiceHeartbeat { uint64 timestamp = 1; }
+message FriendServiceHeartbeatResp { uint64 timestamp = 1; }
+message FriendClientMessage { uint64 player_id = 1; uint32 msg_id = 2; bytes payload = 3; }
+message FriendServiceMessage { uint64 player_id = 1; uint32 msg_id = 2; bytes payload = 3; }
