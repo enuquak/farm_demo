@@ -36,6 +36,7 @@ from .chat import ChatManager, ChatPanel
 from .team_manager import TeamManager
 from .team_hud import TeamHUD
 from .team_invite_notify import TeamInviteNotifyUI
+from .friend_client import FriendClient
 
 # 战斗系统（可选模块）
 try:
@@ -166,6 +167,11 @@ class GameScene:
         self._team_hud = TeamHUD(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
         self._team_invite_ui = TeamInviteNotifyUI(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
 
+        # 好友系统
+        self._friend_client = FriendClient(
+            connection, player_data.get("player_id", 0), player_data.get("server_id", 1)
+        )
+
         # 战斗系统（可选）
         if _COMBAT_AVAILABLE:
             self._weapon_manager = WeaponManager()
@@ -239,6 +245,26 @@ class GameScene:
             on_team_member_update=self._team_mgr.on_team_member_update,
             on_team_leader_change=self._team_mgr.on_team_leader_change,
             on_team_status_update=self._team_mgr.on_team_status_update,
+            # 好友系统回调
+            on_friend_list_resp=self._on_friend_list_resp,
+            on_friend_add_resp=self._on_friend_add_resp,
+            on_friend_add_notify=self._on_friend_add_notify,
+            on_friend_accept_resp=self._on_friend_accept_resp,
+            on_friend_reject_resp=self._on_friend_reject_resp,
+            on_friend_delete_resp=self._on_friend_delete_resp,
+            on_friend_search_resp=self._on_friend_search_resp,
+            on_friend_online_notify=self._on_friend_online_notify,
+            on_friend_offline_notify=self._on_friend_offline_notify,
+            on_friend_chat_resp=self._on_friend_chat_resp,
+            on_friend_chat_notify=self._on_friend_chat_notify,
+            on_friend_chat_history_resp=self._on_friend_chat_history_resp,
+            on_friend_gift_resp=self._on_friend_gift_resp,
+            on_friend_gift_notify=self._on_friend_gift_notify,
+            on_friend_visit_resp=self._on_friend_visit_resp,
+            on_friend_visit_action_resp=self._on_friend_visit_action_resp,
+            on_friend_recommend_resp=self._on_friend_recommend_resp,
+            on_friend_block_resp=self._on_friend_block_resp,
+            on_friend_unblock_resp=self._on_friend_unblock_resp,
         )
 
         # 强制睡觉状态
@@ -819,3 +845,89 @@ class GameScene:
         """处理玩家死亡"""
         logger.info("[GameScene]Player died!")
         # TODO: 显示死亡UI，传送回农场
+
+    # ========== 好友系统回调 ==========
+
+    def _on_friend_list_resp(self, resp):
+        """好友列表响应回调"""
+        self._friend_client.friends = list(resp.friends)
+        self._friend_client.pending_requests = list(resp.pending_requests)
+        logger.info(f"[GameScene]FriendListResp: {len(self._friend_client.friends)} friends, "
+                    f"{len(self._friend_client.pending_requests)} pending")
+
+    def _on_friend_add_resp(self, resp):
+        """好友请求发送结果"""
+        logger.info(f"[GameScene]FriendAddResp: code={resp.code}, msg={resp.msg}")
+
+    def _on_friend_add_notify(self, notify):
+        """收到好友请求通知"""
+        logger.info(f"[GameScene]FriendAddNotify: from={notify.request.sender_name}")
+
+    def _on_friend_accept_resp(self, resp):
+        """接受好友结果"""
+        logger.info(f"[GameScene]FriendAcceptResp: code={resp.code}")
+
+    def _on_friend_reject_resp(self, resp):
+        """拒绝好友结果"""
+        logger.info(f"[GameScene]FriendRejectResp: code={resp.code}")
+
+    def _on_friend_delete_resp(self, resp):
+        """删除好友结果"""
+        logger.info(f"[GameScene]FriendDeleteResp: code={resp.code}")
+
+    def _on_friend_search_resp(self, resp):
+        """搜索玩家结果"""
+        logger.info(f"[GameScene]FriendSearchResp: code={resp.code}, {len(resp.results)} results")
+
+    def _on_friend_online_notify(self, notify):
+        """好友上线通知"""
+        logger.info(f"[GameScene]FriendOnlineNotify: player_id={notify.player_id}, name={notify.role_name}")
+
+    def _on_friend_offline_notify(self, notify):
+        """好友下线通知"""
+        logger.info(f"[GameScene]FriendOfflineNotify: player_id={notify.player_id}")
+
+    def _on_friend_chat_resp(self, resp):
+        """私聊发送结果"""
+        logger.info(f"[GameScene]FriendChatResp: code={resp.code}")
+
+    def _on_friend_chat_notify(self, notify):
+        """收到私聊消息"""
+        sender_id = notify.sender_id
+        if sender_id not in self._friend_client.chat_history:
+            self._friend_client.chat_history[sender_id] = []
+        self._friend_client.chat_history[sender_id].append(notify)
+        logger.debug(f"[GameScene]FriendChatNotify: from={notify.sender_name}")
+
+    def _on_friend_chat_history_resp(self, resp):
+        """聊天记录数据"""
+        logger.info(f"[GameScene]FriendChatHistoryResp: code={resp.code}, {len(resp.messages)} messages")
+
+    def _on_friend_gift_resp(self, resp):
+        """赠送物品结果"""
+        logger.info(f"[GameScene]FriendGiftResp: code={resp.code}, msg={resp.msg}")
+
+    def _on_friend_gift_notify(self, notify):
+        """收到礼物通知"""
+        logger.info(f"[GameScene]FriendGiftNotify: from={notify.sender_name}, item={notify.item_id}x{notify.count}")
+
+    def _on_friend_visit_resp(self, resp):
+        """访问农场结果"""
+        logger.info(f"[GameScene]FriendVisitResp: code={resp.code}, owner={resp.owner_name}, scene={resp.scene_id}")
+
+    def _on_friend_visit_action_resp(self, resp):
+        """农场操作结果"""
+        logger.info(f"[GameScene]FriendVisitActionResp: code={resp.code}, msg={resp.msg}")
+
+    def _on_friend_recommend_resp(self, resp):
+        """推荐好友列表"""
+        self._friend_client.recommendations = list(resp.recommendations)
+        logger.info(f"[GameScene]FriendRecommendResp: code={resp.code}, {len(resp.recommendations)} recommendations")
+
+    def _on_friend_block_resp(self, resp):
+        """拉黑结果"""
+        logger.info(f"[GameScene]FriendBlockResp: code={resp.code}")
+
+    def _on_friend_unblock_resp(self, resp):
+        """取消拉黑结果"""
+        logger.info(f"[GameScene]FriendUnblockResp: code={resp.code}")
