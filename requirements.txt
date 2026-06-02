@@ -1,2 +1,4 @@
 # Shared constants auto-generation tools
 watchdog>=6.0.0
+# Config editor & table export
+openpyxl>=3.1.0
