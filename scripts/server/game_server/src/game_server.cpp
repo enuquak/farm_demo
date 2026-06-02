@@ -319,6 +319,11 @@ void GameServer::stop() {
     }
     // Shutdown DBMgr connections
     dbmgr_mgr_.shutdown();
+    // Disconnect FriendService before freeing event_base
+    if (friend_conn_) {
+        friend_conn_->disconnect();
+        friend_conn_.reset();
+    }
     if (update_timer_) {
         event_free(update_timer_);
         update_timer_ = nullptr;
