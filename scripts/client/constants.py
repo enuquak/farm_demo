@@ -49,6 +49,10 @@ class ObjectType(IntEnum):
     TV = 13            # 电视
     STOVE = 14         # 炉灶
     NPC = 15           # NPC
+    CAVE_ENTRANCE = 20  # 矿洞入口
+    STAIRS_DOWN = 21    # 向下楼梯
+    STAIRS_UP = 22      # 向上楼梯
+    ANVIL = 23          # 铁砧
 
 
 class Direction:
@@ -150,6 +154,26 @@ OBJECT_PROPERTIES: Dict[ObjectType, Dict[str, Any]] = {
         "walkable": True,
         "interactable": True,
         "interact_type": "dialog",
+    },
+    ObjectType.CAVE_ENTRANCE: {
+        "walkable": True,
+        "interactable": True,
+        "interact_type": "enter_cave",
+    },
+    ObjectType.STAIRS_DOWN: {
+        "walkable": True,
+        "interactable": True,
+        "interact_type": "stairs_down",
+    },
+    ObjectType.STAIRS_UP: {
+        "walkable": True,
+        "interactable": True,
+        "interact_type": "stairs_up",
+    },
+    ObjectType.ANVIL: {
+        "walkable": False,
+        "interactable": True,
+        "interact_type": "craft",
     },
 }
 
@@ -291,3 +315,23 @@ ITEM_ICON_PALETTE: Dict[int, Dict[str, Any]] = {
         ],
     },
 }
+
+# ========== 战斗系统常量 ==========
+MONSTER_SYNC_INTERVAL = 0.2        # 怪物同步间隔（秒）
+MONSTER_HP_BAR_WIDTH = 24          # 怪物HP条宽度（像素）
+MONSTER_HP_BAR_HEIGHT = 3          # 怪物HP条高度（像素）
+MONSTER_HP_BAR_OFFSET_Y = -8       # HP条在怪物头顶偏移
+MONSTER_HIT_FLASH_DURATION = 0.15  # 受击闪白持续时间（秒）
+MONSTER_KNOCKBACK_DURATION = 0.2   # 击退持续时间（秒）
+
+PLAYER_HP_BAR_WIDTH = 120          # 玩家HP条宽度
+PLAYER_HP_BAR_HEIGHT = 12          # 玩家HP条高度
+PLAYER_HP_BAR_MARGIN_TOP = 10      # HP条距屏幕顶部
+PLAYER_INVINCIBLE_DURATION = 0.5   # 受伤无敌帧时长（秒）
+PLAYER_DEATH_DROP_RATIO = 0.3      # 死亡丢失物品比例
+PLAYER_RESPAWN_HP_RATIO = 0.5      # 复活HP恢复比例
+
+DAMAGE_NUMBER_DURATION = 0.8       # 伤害数字显示时长（秒）
+DAMAGE_NUMBER_RISE_SPEED = 40      # 伤害数字上升速度（像素/秒）
+
+ATTACK_COOLDOWN_DEFAULT = 0.4      # 默认攻击冷却（秒）
