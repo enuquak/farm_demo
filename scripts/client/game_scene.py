@@ -40,6 +40,7 @@ from .team_manager import TeamManager
 from .team_hud import TeamHUD
 from .team_invite_notify import TeamInviteNotifyUI
 from .friend_client import FriendClient
+from .ui import FriendListPanel, FriendChatPanel, FriendSearchPanel, FriendVisitPanel
 
 # 战斗系统（可选模块）
 try:
@@ -191,6 +192,12 @@ class GameScene:
         self._friend_client = FriendClient(
             connection, player_data.get("player_id", 0), player_data.get("server_id", 1)
         )
+
+        # 好友 UI 面板
+        self._friend_list_panel = FriendListPanel(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+        self._friend_chat_panel = FriendChatPanel(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+        self._friend_search_panel = FriendSearchPanel(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+        self._friend_visit_panel = FriendVisitPanel(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
 
         # 战斗系统（可选）
         if _COMBAT_AVAILABLE:
@@ -355,6 +362,31 @@ class GameScene:
                         self._quest_panel.toggle()
                         continue
 
+                # 好友面板事件
+                if self._handle_friend_panel_event(event):
+                    continue
+
+                # F 键打开/关闭好友列表
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
+                    self._friend_list_panel.toggle()
+                    if self._friend_list_panel.is_visible():
+                        self._friend_client.request_list()
+                    continue
+
+                # 好友聊天/搜索面板文本输入
+                if event.type == pygame.KEYDOWN:
+                    if self._friend_chat_panel.is_visible() and self._friend_chat_panel._input_active:
+                        result = self._friend_chat_panel.handle_key(event)
+                        if result:
+                            self._friend_client.send_chat(self._friend_chat_panel._target_id, 0, result)
+                        continue
+                    if self._friend_search_panel.is_visible() and self._friend_search_panel._input_active:
+                        if self._friend_search_panel.handle_key(event):
+                            keyword = self._friend_search_panel.get_search_text()
+                            if keyword:
+                                self._friend_client.search(keyword)
+                        continue
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         running = False
@@ -482,11 +514,103 @@ class GameScene:
             self._team_invite_ui.update()
             self._team_invite_ui.render(self.screen)
 
+            # 好友 UI 渲染
+            self._friend_list_panel.render(
+                self.screen, self._friend_client.friends,
+                len(self._friend_client.pending_requests)
+            )
+            self._friend_chat_panel.render(
+                self.screen,
+                self._friend_client.chat_history.get(self._friend_chat_panel._target_id, []),
+                self._friend_client._player_id
+            )
+            self._friend_search_panel.render(self.screen)
+            self._friend_visit_panel.render(self.screen)
+
             # 控制帧率
             self.clock.tick(TARGET_FPS)
 
         logger.info("[GameScene]Game loop ended")
         pygame.quit()
+
+    # ========== 好友面板事件处理 ==========
+
+    def _handle_friend_panel_event(self, event) -> bool:
+        """
+        处理好友面板的鼠标点击事件。
+        返回 True 表示事件已被消费。
+        """
+        if event.type != pygame.MOUSEBUTTONDOWN:
+            return False
+
+        pos = event.pos
+
+        # 好友列表面板
+        if self._friend_list_panel.is_visible():
+            if self._friend_list_panel.is_close_clicked(pos):
+                self._friend_list_panel.toggle()
+                return True
+            idx = self._friend_list_panel.get_clicked_friend_index(pos)
+            if 0 <= idx < len(self._friend_client.friends):
+                friend = self._friend_client.friends[idx]
+                self._friend_chat_panel.open(friend.player_id, friend.role_name)
+                self._friend_client.request_history(friend.player_id)
+                return True
+            if self._friend_list_panel.is_panel_area(pos):
+                return True
+
+        # 私聊面板
+        if self._friend_chat_panel.is_visible():
+            if self._friend_chat_panel.is_close_clicked(pos):
+                self._friend_chat_panel.close()
+                return True
+            if self._friend_chat_panel.is_send_clicked(pos):
+                text = self._friend_chat_panel.get_input_text()
+                if text.strip():
+                    self._friend_client.send_chat(
+                        self._friend_chat_panel._target_id, 0, text
+                    )
+                    self._friend_chat_panel.clear_input()
+                return True
+            if self._friend_chat_panel.is_input_area(pos):
+                self._friend_chat_panel._input_active = True
+                return True
+            if self._friend_chat_panel.is_panel_area(pos):
+                return True
+
+        # 搜索面板
+        if self._friend_search_panel.is_visible():
+            if self._friend_search_panel.is_close_clicked(pos):
+                self._friend_search_panel.toggle()
+                return True
+            if self._friend_search_panel.is_search_clicked(pos):
+                keyword = self._friend_search_panel.get_search_text()
+                if keyword:
+                    self._friend_client.search(keyword)
+                return True
+            if self._friend_search_panel.is_input_area(pos):
+                self._friend_search_panel._input_active = True
+                return True
+
+        # 访问面板
+        if self._friend_visit_panel.is_visible():
+            if self._friend_visit_panel.is_water_clicked(pos):
+                if self._friend_visit_panel.use_action():
+                    self._friend_client.visit_action(
+                        self._friend_visit_panel._owner_id, 0, 0, 0
+                    )
+                return True
+            if self._friend_visit_panel.is_steal_clicked(pos):
+                if self._friend_visit_panel.use_action():
+                    self._friend_client.visit_action(
+                        self._friend_visit_panel._owner_id, 3, 0, 0
+                    )
+                return True
+            if self._friend_visit_panel.is_return_clicked(pos):
+                self._friend_visit_panel.close()
+                return True
+
+        return False
 
     # ========== 鼠标交互（保留在 GameScene 中，因为涉及多模块协调） ==========
 
