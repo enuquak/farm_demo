@@ -31,6 +31,7 @@ set(PROTO_SRCS
     ${PROTO_GENERATED_DIR}/dbmgr.pb.cc
     ${PROTO_GENERATED_DIR}/account.pb.cc
     ${PROTO_GENERATED_DIR}/player.pb.cc
+    ${PROTO_GENERATED_DIR}/friend.pb.cc
 )
 set(PROTO_HDRS
     ${PROTO_GENERATED_DIR}/base.pb.h
@@ -38,6 +39,7 @@ set(PROTO_HDRS
     ${PROTO_GENERATED_DIR}/dbmgr.pb.h
     ${PROTO_GENERATED_DIR}/account.pb.h
     ${PROTO_GENERATED_DIR}/player.pb.h
+    ${PROTO_GENERATED_DIR}/friend.pb.h
 )
 
 # 源文件
@@ -57,6 +59,9 @@ set(SOURCES
     src/crop_system.cpp
     src/scene_state.cpp
     src/game_scene_manager.cpp
+    src/monster_manager.cpp
+    src/combat_handler.cpp
+    src/friend_service_connection.cpp
     src/game_clock.cpp
     src/redis_connection.cpp
     src/login_stub.cpp
@@ -67,6 +72,7 @@ set(SOURCES
     src/event_bus.cpp
     src/quest_types.cpp
     src/quest_config.cpp
+    src/quest_manager.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/admin_msg_ids.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp
@@ -192,11 +198,13 @@ set_target_properties(game_server PROPERTIES
 # 测试源文件（排除 main.cpp）
 set(TEST_SOURCES
     tests/test_game_clock.cpp
+    tests/test_login_stub.cpp
     src/game_clock.cpp
     src/game_scene_manager.cpp
     src/event_bus.cpp
     src/quest_types.cpp
     src/quest_config.cpp
+    src/quest_manager.cpp
     src/gate_session.cpp
     src/player.cpp
     src/player_manager.cpp
@@ -209,6 +217,9 @@ set(TEST_SOURCES
     src/item_interaction_handler.cpp
     src/crop_system.cpp
     src/scene_state.cpp
+    src/monster_manager.cpp
+    src/combat_handler.cpp
+    src/friend_service_connection.cpp
     src/redis_connection.cpp
     src/login_stub.cpp
     src/online_stub.cpp

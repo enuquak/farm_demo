@@ -14,6 +14,9 @@
 #include "redis_connection.h"
 #include "quest_manager.h"
 #include "quest_config.h"
+#include "monster_manager.h"
+#include "combat_handler.h"
+#include "friend_service_connection.h"
 
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -165,6 +168,13 @@ private:
     std::unique_ptr<GmHttpHandler> gm_http_handler_;
     uint16_t gm_http_port_ = 7070;
     std::string gm_static_dir_ = "static";
+
+    // 战斗系统
+    std::unique_ptr<ServerMonsterManager> monster_mgr_;
+    std::unique_ptr<CombatHandler> combat_handler_;
+
+    // Friend Service connection
+    std::unique_ptr<FriendServiceConnection> friend_conn_;
 };
 
 }  // namespace farm

@@ -26,6 +26,7 @@
 #include "account.pb.h"
 #include "player.pb.h"
 #include "dbmgr.pb.h"
+#include "friend.pb.h"
 #include "log_macros.h"
 
 #include <nlohmann/json.hpp>
@@ -187,6 +188,40 @@ bool GameServer::start() {
         SPDLOG_INFO("[Game]GM HTTP server started on port {}", gm_http_port_);
     }
 
+    // 初始化战斗系统
+    monster_mgr_ = std::make_unique<ServerMonsterManager>();
+    monster_mgr_->load_definitions("data/monster_defs.json");
+    combat_handler_ = std::make_unique<CombatHandler>(monster_mgr_.get(), item_handler_.drops());
+    SPDLOG_INFO("[Game]Combat system initialized");
+
+    // Friend Service connection
+    friend_conn_ = std::make_unique<FriendServiceConnection>(base_);
+    friend_conn_->set_on_message([this](uint64_t player_id, uint32_t msg_id, const std::string& payload) {
+        // Forward Friend Service response back to client via Gate
+        send_game_msg(player_id, msg_id,
+                      reinterpret_cast<const uint8_t*>(payload.data()), payload.size());
+    });
+    friend_conn_->connect("127.0.0.1", 9092);  // TODO: read from config
+    SPDLOG_INFO("[Game]FriendService connection initiated");
+
+    // Register friend message forwarding handlers
+    std::vector<uint32_t> friend_msg_ids = {
+        MSG_ID_FRIEND_SEARCH_REQ, MSG_ID_FRIEND_ADD_REQ, MSG_ID_FRIEND_ACCEPT_REQ,
+        MSG_ID_FRIEND_REJECT_REQ, MSG_ID_FRIEND_DELETE_REQ, MSG_ID_FRIEND_LIST_REQ,
+        MSG_ID_FRIEND_BLOCK_REQ, MSG_ID_FRIEND_UNBLOCK_REQ,
+        MSG_ID_FRIEND_CHAT_REQ, MSG_ID_FRIEND_CHAT_HISTORY_REQ,
+        MSG_ID_FRIEND_GIFT_REQ,
+        MSG_ID_FRIEND_VISIT_REQ, MSG_ID_FRIEND_VISIT_ACTION_REQ,
+        MSG_ID_FRIEND_RECOMMEND_REQ,
+    };
+    for (uint32_t mid : friend_msg_ids) {
+        msg_handler_.register_handler(mid, [this, mid](uint64_t player_id, const uint8_t* payload, size_t len) {
+            std::string payload_str(reinterpret_cast<const char*>(payload), len);
+            friend_conn_->send_client_msg(player_id, mid, payload_str);
+        });
+    }
+    SPDLOG_INFO("[Game]Friend message forwarding handlers registered");
+
     // 注册物品交互消息处理
     msg_handler_.register_handler(MSG_ID_ITEM_USE_REQ,
         [this](uint64_t player_id, const uint8_t* payload, size_t payload_len) {
@@ -214,6 +249,18 @@ bool GameServer::start() {
             handle_position_update(player_id, payload, payload_len);
         });
     SPDLOG_INFO("[Game]Position update handler registered");
+
+    // 注册攻击请求消息处理
+    msg_handler_.register_handler(MSG_ID_ATTACK_REQ,
+        [this](uint64_t player_id, const uint8_t* payload, size_t payload_len) {
+            Player* player = player_mgr_.get_player(player_id).value_or(nullptr);
+            if (!player) return;
+            auto send_msg = [this](uint64_t pid, uint32_t msg_id, const uint8_t* p, size_t l) {
+                send_game_msg(pid, msg_id, p, l);
+            };
+            combat_handler_->handle_attack_req(player_id, payload, payload_len, player, send_msg);
+        });
+    SPDLOG_INFO("[Game]Attack handler registered");
 
     // Quest message handlers
     msg_handler_.register_handler(MSG_ID_QUEST_ACCEPT_REQ,
@@ -482,6 +529,19 @@ void GameServer::update_game_logic() {
 
         if (inventory_changed) {
             save_inventory_to_player(player, inv);
+        }
+    }
+
+    // 更新怪物AI
+    if (monster_mgr_) {
+        auto send_msg = [this](uint64_t pid, uint32_t msg_id, const uint8_t* p, size_t l) {
+            send_game_msg(pid, msg_id, p, l);
+        };
+        // 对每个在线玩家，更新其所在场景的怪物
+        for (auto* player : all_players) {
+            if (!player || player->data_state() != PlayerBizDataState::LOADED) continue;
+            monster_mgr_->update(1.0f, player->player_id(),
+                                player->get_pos_x(), player->get_pos_y(), send_msg);
         }
     }
 }
