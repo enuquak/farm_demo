@@ -91,25 +91,25 @@ class NetworkMessageDispatcher:
         on_team_member_update: Callable[[bytes], None] = None,
         on_team_leader_change: Callable[[bytes], None] = None,
         on_team_status_update: Callable[[bytes], None] = None,
-        on_friend_search_resp=None,
-        on_friend_add_resp=None,
-        on_friend_add_notify=None,
-        on_friend_accept_resp=None,
-        on_friend_reject_resp=None,
-        on_friend_delete_resp=None,
-        on_friend_list_resp=None,
-        on_friend_online_notify=None,
-        on_friend_offline_notify=None,
-        on_friend_chat_resp=None,
-        on_friend_chat_notify=None,
-        on_friend_chat_history_resp=None,
-        on_friend_gift_resp=None,
-        on_friend_gift_notify=None,
-        on_friend_visit_resp=None,
-        on_friend_visit_action_resp=None,
-        on_friend_recommend_resp=None,
-        on_friend_block_resp=None,
-        on_friend_unblock_resp=None,
+        on_friend_search_resp: Callable[[Any], None] = None,
+        on_friend_add_resp: Callable[[Any], None] = None,
+        on_friend_add_notify: Callable[[Any], None] = None,
+        on_friend_accept_resp: Callable[[Any], None] = None,
+        on_friend_reject_resp: Callable[[Any], None] = None,
+        on_friend_delete_resp: Callable[[Any], None] = None,
+        on_friend_list_resp: Callable[[Any], None] = None,
+        on_friend_online_notify: Callable[[Any], None] = None,
+        on_friend_offline_notify: Callable[[Any], None] = None,
+        on_friend_chat_resp: Callable[[Any], None] = None,
+        on_friend_chat_notify: Callable[[Any], None] = None,
+        on_friend_chat_history_resp: Callable[[Any], None] = None,
+        on_friend_gift_resp: Callable[[Any], None] = None,
+        on_friend_gift_notify: Callable[[Any], None] = None,
+        on_friend_visit_resp: Callable[[Any], None] = None,
+        on_friend_visit_action_resp: Callable[[Any], None] = None,
+        on_friend_recommend_resp: Callable[[Any], None] = None,
+        on_friend_block_resp: Callable[[Any], None] = None,
+        on_friend_unblock_resp: Callable[[Any], None] = None,
     ):
         """
         初始化消息分发器
@@ -835,7 +835,7 @@ class NetworkMessageDispatcher:
             player_msg.ParseFromString(payload)
             notify = friend_pb2.FriendOnlineNotify()
             notify.ParseFromString(player_msg.payload)
-            logger.info(f"[NetworkDispatcher]FriendOnlineNotify: player_id={notify.player_id}, name={notify.role_name}")
+            logger.debug(f"[NetworkDispatcher]FriendOnlineNotify: player_id={notify.player_id}, name={notify.role_name}")
             if self._callbacks.get("on_friend_online_notify"):
                 self._callbacks["on_friend_online_notify"](notify)
         except Exception as e:
@@ -848,7 +848,7 @@ class NetworkMessageDispatcher:
             player_msg.ParseFromString(payload)
             notify = friend_pb2.FriendOfflineNotify()
             notify.ParseFromString(player_msg.payload)
-            logger.info(f"[NetworkDispatcher]FriendOfflineNotify: player_id={notify.player_id}")
+            logger.debug(f"[NetworkDispatcher]FriendOfflineNotify: player_id={notify.player_id}")
             if self._callbacks.get("on_friend_offline_notify"):
                 self._callbacks["on_friend_offline_notify"](notify)
         except Exception as e:
@@ -874,7 +874,7 @@ class NetworkMessageDispatcher:
             player_msg.ParseFromString(payload)
             notify = friend_pb2.FriendChatNotify()
             notify.ParseFromString(player_msg.payload)
-            logger.info(f"[NetworkDispatcher]FriendChatNotify: from={notify.sender_name}, content={notify.content[:20]}")
+            logger.debug(f"[NetworkDispatcher]FriendChatNotify: from={notify.sender_name}, content={notify.content[:20]}")
             if self._callbacks.get("on_friend_chat_notify"):
                 self._callbacks["on_friend_chat_notify"](notify)
         except Exception as e:
