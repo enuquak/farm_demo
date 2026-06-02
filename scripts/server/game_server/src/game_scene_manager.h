@@ -2,6 +2,7 @@
 
 #include "scene_state.h"
 #include "game_types.h"
+#include "cave_spawner.h"
 
 #include <string>
 #include <string_view>
@@ -34,12 +35,17 @@ public:
     void load_scene_data(const std::string& scene_id);
     static std::string make_scene_data_key(std::string_view scene_id);
 
+    // 矿洞场景
+    CaveSpawner* get_or_create_cave_spawner(int cave_level);
+    void update_cave_spawners(float dt, uint64_t player_id, float player_x, float player_y);
+
 private:
     PlayerManager* player_mgr_;
     DBMgrConnectionManager* dbmgr_mgr_;
     SendGameMsgFunc send_game_msg_;
 
     std::unordered_map<std::string, std::unique_ptr<SceneState>> scenes_;
+    std::unordered_map<int, std::unique_ptr<CaveSpawner>> cave_spawners_;
 };
 
 }  // namespace farm

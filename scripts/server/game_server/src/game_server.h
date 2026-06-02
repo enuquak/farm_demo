@@ -16,6 +16,7 @@
 #include "quest_config.h"
 #include "monster_manager.h"
 #include "combat_handler.h"
+#include "cave_spawner.h"
 #include "friend_service_connection.h"
 
 #include <event2/event.h>
@@ -172,6 +173,7 @@ private:
     // 战斗系统
     std::unique_ptr<ServerMonsterManager> monster_mgr_;
     std::unique_ptr<CombatHandler> combat_handler_;
+    std::unique_ptr<CaveSpawner> cave_spawner_;
 
     // Friend Service connection
     std::unique_ptr<FriendServiceConnection> friend_conn_;

@@ -192,6 +192,7 @@ bool GameServer::start() {
     monster_mgr_ = std::make_unique<ServerMonsterManager>();
     monster_mgr_->load_definitions("data/monster_defs.json");
     combat_handler_ = std::make_unique<CombatHandler>(monster_mgr_.get(), item_handler_.drops());
+    cave_spawner_ = std::make_unique<CaveSpawner>(monster_mgr_.get());
     SPDLOG_INFO("[Game]Combat system initialized");
 
     // Friend Service connection
@@ -547,6 +548,20 @@ void GameServer::update_game_logic() {
             if (!player || player->data_state() != PlayerBizDataState::LOADED) continue;
             monster_mgr_->update(1.0f, player->player_id(),
                                 player->get_pos_x(), player->get_pos_y(), send_msg);
+        }
+    }
+
+    // 更新矿洞怪物刷新
+    if (cave_spawner_ && !cave_spawner_->is_frozen()) {
+        for (auto* player : all_players) {
+            if (!player || player->data_state() != PlayerBizDataState::LOADED) continue;
+            if (player->get_cave_level() > 0) {
+                auto send_msg = [this](uint64_t pid, uint32_t msg_id, const uint8_t* p, size_t l) {
+                    send_game_msg(pid, msg_id, p, l);
+                };
+                cave_spawner_->update(1.0f, player->player_id(),
+                                      player->get_pos_x(), player->get_pos_y(), send_msg);
+            }
         }
     }
 }

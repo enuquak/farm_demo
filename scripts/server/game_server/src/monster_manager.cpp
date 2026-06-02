@@ -149,4 +149,24 @@ bool ServerMonsterManager::is_monster_dead(uint32_t monster_id) const {
     return m && m->hp <= 0;
 }
 
+void ServerMonsterManager::set_scene_monsters(const std::string& scene_id,
+                                              const std::vector<uint32_t>& monster_ids) {
+    scene_monsters_[scene_id] = monster_ids;
+}
+
+std::vector<uint32_t> ServerMonsterManager::get_scene_monster_ids(const std::string& scene_id) const {
+    auto it = scene_monsters_.find(scene_id);
+    return it != scene_monsters_.end() ? it->second : std::vector<uint32_t>{};
+}
+
+void ServerMonsterManager::clear_scene_monsters(const std::string& scene_id) {
+    auto it = scene_monsters_.find(scene_id);
+    if (it != scene_monsters_.end()) {
+        for (uint32_t id : it->second) {
+            remove_monster(id);
+        }
+        scene_monsters_.erase(it);
+    }
+}
+
 }  // namespace farm

@@ -73,11 +73,18 @@ public:
     // 获取怪物数量
     size_t monster_count() const { return monsters_.size(); }
 
+    // 多场景怪物管理
+    void set_scene_monsters(const std::string& scene_id,
+                           const std::vector<uint32_t>& monster_ids);
+    std::vector<uint32_t> get_scene_monster_ids(const std::string& scene_id) const;
+    void clear_scene_monsters(const std::string& scene_id);
+
 private:
     std::unordered_map<std::string, MonsterDef> monster_defs_;
     std::unordered_map<uint32_t, ServerMonster> monsters_;
     uint32_t next_monster_id_ = 1;
     std::mt19937 rng_{std::random_device{}()};
+    std::unordered_map<std::string, std::vector<uint32_t>> scene_monsters_;
 };
 
 }  // namespace farm

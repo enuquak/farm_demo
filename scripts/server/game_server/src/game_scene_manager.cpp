@@ -44,6 +44,18 @@ SceneState* GameSceneManager::get_or_create_scene(const std::string& scene_id) {
     if (scene_id == "house") {
         width = 10;
         height = 8;
+    } else if (scene_id == "cave_1") {
+        width = 20;
+        height = 20;
+    } else if (scene_id == "cave_2") {
+        width = 25;
+        height = 25;
+    } else if (scene_id == "cave_3") {
+        width = 30;
+        height = 30;
+    } else if (scene_id == "cave_boss") {
+        width = 20;
+        height = 20;
     }
 
     auto scene = std::make_unique<SceneState>(scene_id, width, height);
@@ -85,7 +97,9 @@ void GameSceneManager::handle_scene_change_req(uint64_t player_id,
     const std::string& current_scene_id = player->get_scene_id();
 
     // Validate target scene exists in our scene definitions
-    if (target_scene != "farm" && target_scene != "house") {
+    if (target_scene != "farm" && target_scene != "house" &&
+        target_scene != "cave_1" && target_scene != "cave_2" &&
+        target_scene != "cave_3" && target_scene != "cave_boss") {
         SPDLOG_ERROR("[Game]SceneChangeReq: invalid target_scene={}", target_scene);
 
         // Send failure response
@@ -130,6 +144,18 @@ void GameSceneManager::handle_scene_change_req(uint64_t player_id,
         // House spawn inside
         spawn_x = 5;
         spawn_y = 6;
+    } else if (target_scene == "cave_1") {
+        spawn_x = 10;
+        spawn_y = 18;
+    } else if (target_scene == "cave_2") {
+        spawn_x = 12;
+        spawn_y = 23;
+    } else if (target_scene == "cave_3") {
+        spawn_x = 15;
+        spawn_y = 28;
+    } else if (target_scene == "cave_boss") {
+        spawn_x = 10;
+        spawn_y = 18;
     }
 
     // Update player data
@@ -264,6 +290,19 @@ void GameSceneManager::load_scene_data(const std::string& scene_id) {
         static_cast<int32_t>(farm::PlayerDataOp::GET),
         key, "",
         std::move(callback));
+}
+
+CaveSpawner* GameSceneManager::get_or_create_cave_spawner(int cave_level) {
+    auto it = cave_spawners_.find(cave_level);
+    if (it != cave_spawners_.end()) {
+        return it->second.get();
+    }
+    return nullptr;
+}
+
+void GameSceneManager::update_cave_spawners(float dt, uint64_t player_id,
+                                             float player_x, float player_y) {
+    // Called by GameServer
 }
 
 }  // namespace farm
