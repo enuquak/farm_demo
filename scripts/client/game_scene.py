@@ -454,6 +454,8 @@ class GameScene:
                 player_max_hp=self._player_max_hp,
                 chat_panel=self._chat_panel,
                 chat_manager=self._chat_manager,
+                quest_tracker=self._quest_tracker,
+                quest_panel=self._quest_panel,
             )
 
             # 组队 UI 渲染

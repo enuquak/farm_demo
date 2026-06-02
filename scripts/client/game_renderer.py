@@ -90,7 +90,8 @@ class GameRenderer:
                dialog_engine=None, affection_system=None,
                monster_manager=None, battle_ui=None,
                player_hp=100, player_max_hp=100,
-               chat_panel=None, chat_manager=None):
+               chat_panel=None, chat_manager=None,
+               quest_tracker=None, quest_panel=None):
         """
         渲染一帧
 
@@ -149,6 +150,10 @@ class GameRenderer:
         if chat_panel is not None and chat_manager is not None:
             chat_panel.render(self._screen, chat_manager)
 
+        # 任务追踪条渲染（右侧）
+        if quest_tracker is not None:
+            quest_tracker.draw(self._screen)
+
         # 对话框渲染
         if dialog_engine and dialog_engine.is_active:
             npc_id = dialog_engine.current_npc_id
@@ -183,6 +188,10 @@ class GameRenderer:
         # 通知渲染
         if notification_manager is not None:
             notification_manager.render(self._screen, dt)
+
+        # 任务面板渲染（modal 级别）
+        if quest_panel is not None:
+            quest_panel.draw(self._screen)
 
         # 场景过渡 Iris 遮罩（最顶层）
         scene_manager._transition.apply(self._screen)
