@@ -127,7 +127,7 @@ def main():
         result = export_all(tables_dir, project_root)
         print(f"导出完成: 成功 {result['success_count']}, 失败 {result['fail_count']}")
         for r in result["results"]:
-            status = "✓" if r["success"] else "✗"
+            status = "[OK]" if r["success"] else "[FAIL]"
             print(f"  {status} {r['table_name']}")
             if r["errors"]:
                 for err in r["errors"]:
