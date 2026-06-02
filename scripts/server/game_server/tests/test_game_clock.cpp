@@ -1,6 +1,7 @@
 // GameClock integration test
 // Tests clock advancement logic using real dependencies
 
+#include "test_login_stub.h"
 #include "game_clock.h"
 #include "game_scene_manager.h"
 #include "player_manager.h"
@@ -138,6 +139,9 @@ int main() {
     std::cout << std::endl << "=== GameSceneManager Tests ===" << std::endl;
     test_scene_manager_create();
     test_scene_manager_get_nonexistent();
+
+    // Run LoginStub tests
+    failed += run_login_stub_tests();
 
     std::cout << std::endl;
     std::cout << "Results: " << passed << " passed, " << failed << " failed" << std::endl;
