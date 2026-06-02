@@ -4,9 +4,9 @@ from unittest.mock import MagicMock
 
 import sys
 import os
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from team_manager import TeamManager, TeamMember, TeamInviteNotify
+from scripts.client.team_manager import TeamManager, TeamMember, TeamInviteNotify
 
 
 class MockConnection:
