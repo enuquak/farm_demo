@@ -63,6 +63,14 @@ public:
     void freeze();
     void thaw();
 
+    // Cave scene
+    bool is_cave() const { return is_cave_; }
+    void set_cave(bool is_cave, int level = 0);
+
+    int cave_level() const { return cave_level_; }
+    bool boss_defeated() const { return boss_defeated_; }
+    void set_boss_defeated(bool defeated);
+
     // Generate default map data for this scene
     void generate_default();
 
@@ -79,6 +87,11 @@ private:
     DropItemManager drop_manager_;
     int player_count_ = 0;
     time_t frozen_at_ = 0;
+
+    // Cave scene data
+    bool is_cave_ = false;
+    int cave_level_ = 0;
+    bool boss_defeated_ = false;
 };
 
 }  // namespace farm

@@ -117,6 +117,15 @@ void SceneState::generate_default() {
     SPDLOG_INFO("[SceneState]Generated default map for scene {} ({}x{})", scene_id_, width_, height_);
 }
 
+void SceneState::set_cave(bool is_cave, int level) {
+    is_cave_ = is_cave;
+    cave_level_ = level;
+}
+
+void SceneState::set_boss_defeated(bool defeated) {
+    boss_defeated_ = defeated;
+}
+
 std::string SceneState::serialize() const {
     nlohmann::json j;
     j["scene_id"] = scene_id_;
