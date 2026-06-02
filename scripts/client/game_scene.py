@@ -51,6 +51,13 @@ try:
 except ImportError:
     _COMBAT_AVAILABLE = False
 
+# 矿洞系统（可选模块）
+try:
+    from .cave_manager import CaveManager
+    _CAVE_AVAILABLE = True
+except ImportError:
+    _CAVE_AVAILABLE = False
+
 from .message_ids import MSG_ID_FORCE_SLEEP_READY
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'common', 'proto', 'generated'))
@@ -202,6 +209,11 @@ class GameScene:
             self._player_hp = 100
             self._player_max_hp = 100
 
+        # 矿洞系统
+        self._cave_manager = None
+        if _CAVE_AVAILABLE:
+            self._cave_manager = CaveManager(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+
         # 玩家控制器
         self._player_controller = PlayerController(
             connection=connection,
@@ -278,6 +290,8 @@ class GameScene:
             on_friend_recommend_resp=self._on_friend_recommend_resp,
             on_friend_block_resp=self._on_friend_block_resp,
             on_friend_unblock_resp=self._on_friend_unblock_resp,
+            # 矿洞系统回调
+            on_scene_change_clear_monsters=lambda: self._monster_manager.clear() if self._monster_manager else None,
         )
 
         # 强制睡觉状态
@@ -373,6 +387,10 @@ class GameScene:
             if _COMBAT_AVAILABLE and self._battle_ui:
                 self._battle_ui.update(dt)
 
+            # 矿洞系统更新
+            if self._cave_manager:
+                self._cave_manager.update(dt)
+
             # 攻击检测
             if (_COMBAT_AVAILABLE and self._combat_system
                     and self._input_manager.is_attack_pressed() and self._combat_system.can_attack()):
@@ -456,6 +474,7 @@ class GameScene:
                 chat_manager=self._chat_manager,
                 quest_tracker=self._quest_tracker,
                 quest_panel=self._quest_panel,
+                cave_manager=self._cave_manager,
             )
 
             # 组队 UI 渲染
@@ -760,6 +779,18 @@ class GameScene:
 
             # 更新玩家数据中的场景 ID
             self._player_data['scene_id'] = resp.target_scene
+
+            # 矿洞场景检测
+            if self._cave_manager:
+                cave_level = self._cave_manager.get_level_for_scene(resp.target_scene)
+                if cave_level is not None:
+                    self._cave_manager.enter_cave(cave_level)
+                    if self._monster_manager:
+                        self._monster_manager.clear()
+                elif self._cave_manager.in_cave:
+                    self._cave_manager.exit_cave()
+                    if self._monster_manager:
+                        self._monster_manager.clear()
 
             logger.info(f"[GameScene]Scene changed to {resp.target_scene}, "
                        f"player at ({spawn_x}, {spawn_y})")

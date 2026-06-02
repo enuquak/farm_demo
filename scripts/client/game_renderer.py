@@ -91,7 +91,8 @@ class GameRenderer:
                monster_manager=None, battle_ui=None,
                player_hp=100, player_max_hp=100,
                chat_panel=None, chat_manager=None,
-               quest_tracker=None, quest_panel=None):
+               quest_tracker=None, quest_panel=None,
+               cave_manager=None):
         """
         渲染一帧
 
@@ -120,6 +121,14 @@ class GameRenderer:
             camera_y = map_renderer.y
             for monster in monster_manager.get_all_monsters().values():
                 monster.render(self._screen, camera_x, camera_y)
+
+        # 矿洞光照渲染
+        if cave_manager and cave_manager.in_cave:
+            cave_manager.render_lighting(
+                self._screen,
+                map_renderer.x, map_renderer.y,
+                player_sprite.world_x, player_sprite.world_y
+            )
 
         # 头顶气泡渲染
         if bubble_ui and npc_manager:

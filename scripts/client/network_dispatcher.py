@@ -110,6 +110,7 @@ class NetworkMessageDispatcher:
         on_friend_recommend_resp: Callable[[Any], None] = None,
         on_friend_block_resp: Callable[[Any], None] = None,
         on_friend_unblock_resp: Callable[[Any], None] = None,
+        on_scene_change_clear_monsters: Callable[[], None] = None,
     ):
         """
         初始化消息分发器
@@ -190,6 +191,7 @@ class NetworkMessageDispatcher:
             "on_friend_recommend_resp": on_friend_recommend_resp,
             "on_friend_block_resp": on_friend_block_resp,
             "on_friend_unblock_resp": on_friend_unblock_resp,
+            "on_scene_change_clear_monsters": on_scene_change_clear_monsters,
         }
 
         # 分发表: msg_id -> handler 方法
@@ -320,6 +322,10 @@ class NetworkMessageDispatcher:
 
             logger.info(f"[NetworkDispatcher]SceneChangeResp received: code={resp.code}, "
                        f"target={resp.target_scene}, spawn=({resp.spawn_x},{resp.spawn_y})")
+
+            # 清空怪物（场景切换时）
+            if self._callbacks.get("on_scene_change_clear_monsters"):
+                self._callbacks["on_scene_change_clear_monsters"]()
 
             self._callbacks["on_scene_change_resp"](resp)
 
