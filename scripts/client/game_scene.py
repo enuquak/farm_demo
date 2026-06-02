@@ -861,10 +861,13 @@ class GameScene:
 
     def _on_friend_add_notify(self, notify):
         """收到好友请求通知"""
+        self._friend_client.pending_requests.append(notify.request)
         logger.info(f"[GameScene]FriendAddNotify: from={notify.request.sender_name}")
 
     def _on_friend_accept_resp(self, resp):
         """接受好友结果"""
+        if resp.code == 0 and resp.HasField("new_friend"):
+            self._friend_client.friends.append(resp.new_friend)
         logger.info(f"[GameScene]FriendAcceptResp: code={resp.code}")
 
     def _on_friend_reject_resp(self, resp):
@@ -877,14 +880,23 @@ class GameScene:
 
     def _on_friend_search_resp(self, resp):
         """搜索玩家结果"""
+        self._friend_client.search_results = list(resp.results)
         logger.info(f"[GameScene]FriendSearchResp: code={resp.code}, {len(resp.results)} results")
 
     def _on_friend_online_notify(self, notify):
         """好友上线通知"""
+        for friend in self._friend_client.friends:
+            if friend.player_id == notify.player_id:
+                friend.online = True
+                break
         logger.info(f"[GameScene]FriendOnlineNotify: player_id={notify.player_id}, name={notify.role_name}")
 
     def _on_friend_offline_notify(self, notify):
         """好友下线通知"""
+        for friend in self._friend_client.friends:
+            if friend.player_id == notify.player_id:
+                friend.online = False
+                break
         logger.info(f"[GameScene]FriendOfflineNotify: player_id={notify.player_id}")
 
     def _on_friend_chat_resp(self, resp):
@@ -901,7 +913,9 @@ class GameScene:
 
     def _on_friend_chat_history_resp(self, resp):
         """聊天记录数据"""
-        logger.info(f"[GameScene]FriendChatHistoryResp: code={resp.code}, {len(resp.messages)} messages")
+        target_id = resp.target_id
+        self._friend_client.chat_history[target_id] = list(resp.messages)
+        logger.info(f"[GameScene]FriendChatHistoryResp: code={resp.code}, {len(resp.messages)} messages for target_id={target_id}")
 
     def _on_friend_gift_resp(self, resp):
         """赠送物品结果"""

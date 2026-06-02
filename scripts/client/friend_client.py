@@ -38,6 +38,7 @@ class FriendClient:
         self.pending_requests: List[Any] = []
         self.chat_history: dict = {}  # target_id -> [messages]
         self.recommendations: List[Any] = []
+        self.search_results: List[Any] = []
 
     def _send(self, msg_id: int, inner_msg):
         """发送消息到服务器"""
