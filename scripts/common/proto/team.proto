@@ -1,0 +1,172 @@
+syntax = "proto3";
+
+package farm;
+
+option optimize_for = LITE_RUNTIME;
+
+// ===========================================
+// 组队消息协议
+// MsgID 范围: 7001-7099 (Client -> Gate -> TeamServer)
+// ===========================================
+
+// 队伍错误码
+enum TeamErrorCode {
+    TEAM_SUCCESS = 0;
+    TEAM_ALREADY_IN_TEAM = 1;       // 已在队伍中
+    TEAM_FULL = 2;                  // 队伍已满（4人）
+    TEAM_NOT_IN_TEAM = 3;           // 不在任何队伍中
+    TEAM_NOT_LEADER = 4;            // 不是队长，无权限
+    TEAM_TARGET_NOT_FOUND = 5;      // 目标玩家不存在
+    TEAM_TARGET_ALREADY_IN_TEAM = 6;// 目标已有队伍
+    TEAM_TARGET_OFFLINE = 7;        // 目标不在线
+    TEAM_INVITE_NOT_FOUND = 8;      // 邀请不存在/已过期
+    TEAM_INVITE_EXPIRED = 9;        // 邀请已过期
+    TEAM_CANNOT_KICK_SELF = 10;     // 不能踢自己
+    TEAM_IN_CAVE = 11;              // 队伍在矿洞中，不能解散
+    TEAM_SELF_OPERATION = 12;       // 不能邀请自己
+    TEAM_PLAYER_BLOCKED = 13;       // 被对方拉黑
+}
+
+// 成员更新类型
+enum TeamUpdateType {
+    TEAM_UPDATE_JOIN = 0;       // 加入
+    TEAM_UPDATE_LEAVE = 1;      // 离开
+    TEAM_UPDATE_KICK = 2;       // 踢出
+    TEAM_UPDATE_ONLINE = 3;     // 上线
+    TEAM_UPDATE_OFFLINE = 4;    // 下线
+}
+
+// 队伍成员信息
+message TeamMember {
+    uint64 player_id = 1;
+    string role_name = 2;
+    uint32 level = 3;
+    bool online = 4;
+    bool is_leader = 5;
+    int32 current_hp = 6;
+    int32 max_hp = 7;
+}
+
+// 创建队伍
+message TeamCreateReq {}
+
+message TeamCreateResp {
+    TeamErrorCode code = 1;
+    uint64 team_id = 2;
+}
+
+// 解散队伍
+message TeamDisbandReq {}
+
+message TeamDisbandResp {
+    TeamErrorCode code = 1;
+}
+
+// 邀请玩家
+message TeamInviteReq {
+    uint64 target_id = 1;
+}
+
+message TeamInviteResp {
+    TeamErrorCode code = 1;
+    string msg = 2;
+}
+
+// 收到邀请通知
+message TeamInviteNotify {
+    uint64 team_id = 1;
+    uint64 inviter_id = 2;
+    string inviter_name = 3;
+    uint32 inviter_level = 4;
+}
+
+// 接受邀请
+message TeamAcceptReq {
+    uint64 team_id = 1;
+}
+
+message TeamAcceptResp {
+    TeamErrorCode code = 1;
+    repeated TeamMember members = 2;
+}
+
+// 拒绝邀请
+message TeamRejectReq {
+    uint64 team_id = 1;
+}
+
+message TeamRejectResp {
+    TeamErrorCode code = 1;
+}
+
+// 离开队伍
+message TeamLeaveReq {}
+
+message TeamLeaveResp {
+    TeamErrorCode code = 1;
+}
+
+// 踢出成员
+message TeamKickReq {
+    uint64 target_id = 1;
+}
+
+message TeamKickResp {
+    TeamErrorCode code = 1;
+}
+
+// 队伍信息查询
+message TeamInfoReq {}
+
+message TeamInfoResp {
+    TeamErrorCode code = 1;
+    uint64 team_id = 2;
+    uint64 leader_id = 3;
+    repeated TeamMember members = 4;
+    uint32 status = 5;          // 0=idle, 1=in_cave
+    int32 cave_level = 6;
+}
+
+// 成员变更通知
+message TeamMemberUpdate {
+    TeamUpdateType update_type = 1;
+    TeamMember member = 2;
+    repeated TeamMember all_members = 3;
+}
+
+// 队长变更通知
+message TeamLeaderChange {
+    uint64 new_leader_id = 1;
+    string new_leader_name = 2;
+}
+
+// 队伍状态变更
+message TeamStatusUpdate {
+    uint32 status = 1;
+    int32 cave_level = 2;
+}
+
+// ===========================================
+// 内部消息 (TeamServer <-> GameServer/ChatServer)
+// MsgID 范围: 9000-9199
+// ===========================================
+
+// 查询队伍成员请求 (GameServer/ChatServer -> TeamServer)
+message TeamQueryMembersReq {
+    uint64 player_id = 1;   // 查询该玩家所在队伍的成员
+}
+
+// 查询队伍成员响应 (TeamServer -> GameServer/ChatServer)
+message TeamQueryMembersResp {
+    int32 code = 1;
+    uint64 team_id = 2;
+    repeated uint64 member_ids = 3;
+    repeated string member_names = 4;
+    repeated int32 member_levels = 5;
+}
+
+// 队伍成员变更通知 (TeamServer -> ChatServer)
+message TeamMembersChangedNotify {
+    uint64 team_id = 1;
+    repeated uint64 member_ids = 2;
+}
