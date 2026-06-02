@@ -1,6 +1,6 @@
 ---
 name: cpp-ai-coding-conventions
-description: C++ 通用 AI 编码规范：格式、命名、错误处理、日志、内存管理、代码组织等最佳实践。不涉及具体项目业务逻辑。
+description: C++ 通用 AI 编码规范 + 项目设计模式：格式、命名、错误处理、日志、内存管理、Stub 模式、回调注入、ConnectionManager 等。
 license: MIT
 metadata:
   author: common
@@ -443,3 +443,117 @@ cmd /c "D:\mb_workspace\farm_demo\tool\build_cpp14.bat" "D:\mb_workspace\farm_de
 - [ ] 关键函数有注释说明参数和返回值
 - [ ] 无编译警告（`-Wall -Wextra`）
 - [ ] 资源获取使用 RAII
+
+---
+
+## 十三、项目通用设计模式
+
+> 以下模式是本项目的核心架构约定，所有 C++ 开发都必须遵循。
+
+### 13.1 Stub 模式
+
+Stub 是 Game Server 内部的单点业务组件，每个 Stub 持有自己的依赖，通过回调注入与其他模块通信。
+
+**已有 Stub：**
+- `LoginStub` — 登录流程管理，依赖 RedisConnection、DBMgrConnectionManager
+- `OnlineStub` — 在线状态查询，依赖 RedisConnection
+- `GMStub` — GM 命令处理，依赖 DBMgrConnectionManager
+
+**创建新 Stub 的模板：**
+```cpp
+// my_stub.h
+class MyStub {
+public:
+    MyStub(RedisConnection* redis, DBMgrConnectionManager* dbmgr);
+    void init();
+
+private:
+    RedisConnection* m_redis;
+    DBMgrConnectionManager* m_dbmgr;
+};
+
+// game_server.cpp 构造函数中
+m_my_stub = std::make_unique<MyStub>(m_redis.get(), m_dbmgr_conn_mgr.get());
+```
+
+### 13.2 回调注入
+
+模块间通信使用 `std::function` 回调，不直接引用其他模块。
+
+**典型签名：**
+```cpp
+using SendToGateFunc = std::function<void(uint32_t player_id, const std::string& data)>;
+using AllocPlayerIdCallback = std::function<void(uint64_t player_id)>;
+using OnlineQueryCallback = std::function<void(bool is_online)>;
+```
+
+**注入方式：** 构造函数或 setter 方法注入，运行时通过回调调用。
+
+### 13.3 ConnectionManager 状态机
+
+统一的数据库连接管理模式：
+
+```
+DISCONNECTED → CONNECTING → CONNECTED
+                          → FAILED → FAILED_PERMANENT
+```
+
+- 后台重试线程在 FAILED 状态自动重连
+- ready 回调通知上层连接就绪
+- 应用于 MongoDB 和 Redis 连接
+
+### 13.4 异步请求-响应
+
+DBMgr 通信使用 request_id 匹配：
+
+```cpp
+// 发送时
+uint64_t request_id = generate_request_id();
+m_pending_requests[request_id] = callback;
+send_to_dbmgr(request_id, data);
+
+// 响应回来时
+auto it = m_pending_requests.find(response.request_id());
+if (it != m_pending_requests.end()) {
+    it->second(response);
+    m_pending_requests.erase(it);
+}
+```
+
+单线程事件循环中不阻塞等待。
+
+### 13.5 脏字段追踪
+
+Player 实体使用双重标记：
+
+```cpp
+bool dirty_ = false;
+std::unordered_set<std::string> dirty_fields_;
+
+void set_gold(int gold) {
+    m_gold = gold;
+    dirty_ = true;
+    dirty_fields_.insert("gold");
+}
+```
+
+三种保存路径：
+- `save_full()` — SET_ALL，定时器/断线时使用
+- `save()` — 逐字段 SET，业务刷新时使用
+- `save_field("gold")` — 单字段 SET，精确保存
+
+脏标记在保存失败时不清除，下次定时器重试。
+
+### 13.6 实体自治
+
+Player 持有 `DBMgrConnectionManager*` 直接引用，自主管理保存定时器（libevent timer，5 分钟间隔），不依赖 PlayerManager 代为保存。
+
+### 13.7 数据路由
+
+```cpp
+// 玩家数据路由
+int target_dbmgr = player_id % dbmgr_count;
+
+// 账户数据路由
+int target_dbmgr = std::hash<std::string>{}(account_id) % dbmgr_count;
+```
