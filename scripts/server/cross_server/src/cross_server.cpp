@@ -129,30 +129,40 @@ void CrossServer::add_game_server(uint32_t server_id, const std::string& host, u
             auto* server = conn_ctx->server;
             uint32_t sid = conn_ctx->server_id;
 
-            // Read data
-            uint8_t buf[4096];
-            size_t n;
-            while ((n = bufferevent_read(bev, buf, sizeof(buf))) > 0) {
+            // FIX (Issue 3): Read data and parse messages under lock, collect
+            // parsed messages, release lock, then process them outside lock.
+            // This prevents deadlock when on_connection_message re-acquires
+            // connections_mutex_.
+            std::vector<ParsedMessage> messages;
+            {
                 std::lock_guard<std::mutex> lock(server->connections_mutex_);
                 auto it = server->connections_.find(sid);
-                if (it != server->connections_.end()) {
-                    it->second->append_read_data(buf, n);
+                if (it == server->connections_.end()) {
+                    return;
                 }
-            }
-
-            // Parse messages
-            std::lock_guard<std::mutex> lock(server->connections_mutex_);
-            auto it = server->connections_.find(sid);
-            if (it != server->connections_.end()) {
                 auto& conn = it->second;
+
+                // Read data
+                uint8_t buf[4096];
+                size_t n;
+                while ((n = bufferevent_read(bev, buf, sizeof(buf))) > 0) {
+                    conn->append_read_data(buf, n);
+                }
+
+                // Parse messages and collect them
                 ParsedMessage msg;
                 size_t consumed;
                 while (MessageParser::try_parse(conn->read_buffer().data(),
                                                  conn->read_buffer().size(),
                                                  msg, consumed)) {
-                    server->on_connection_message(sid, msg.msg_id, msg.payload);
+                    messages.push_back(std::move(msg));
                     conn->consume_read_data(consumed);
                 }
+            }
+
+            // Process messages outside the lock to avoid deadlock
+            for (auto& msg : messages) {
+                server->on_connection_message(sid, msg.msg_id, msg.payload);
             }
         },
         nullptr,
@@ -161,12 +171,19 @@ void CrossServer::add_game_server(uint32_t server_id, const std::string& host, u
             auto* server = conn_ctx->server;
             uint32_t sid = conn_ctx->server_id;
 
+            // FIX (Issue 4): Release lock before calling handlers to prevent
+            // deadlock if those handlers re-acquire connections_mutex_.
             if (events & BEV_EVENT_CONNECTED) {
-                std::lock_guard<std::mutex> lock(server->connections_mutex_);
-                auto it = server->connections_.find(sid);
-                if (it != server->connections_.end()) {
-                    it->second->set_state(ConnectionState::CONNECTED);
-                    // Send identify
+                bool should_identify = false;
+                {
+                    std::lock_guard<std::mutex> lock(server->connections_mutex_);
+                    auto it = server->connections_.find(sid);
+                    if (it != server->connections_.end()) {
+                        it->second->set_state(ConnectionState::CONNECTED);
+                        should_identify = true;
+                    }
+                }
+                if (should_identify) {
                     CrossIdentify identify;
                     identify.set_server_id(0);  // CrossServer's server_id is 0
                     identify.set_address("cross_server");
@@ -177,12 +194,14 @@ void CrossServer::add_game_server(uint32_t server_id, const std::string& host, u
                 }
             }
             if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR)) {
-                std::lock_guard<std::mutex> lock(server->connections_mutex_);
-                auto it = server->connections_.find(sid);
-                if (it != server->connections_.end()) {
-                    it->second->set_state(ConnectionState::DISCONNECTED);
-                    server->on_connection_disconnect(sid);
+                {
+                    std::lock_guard<std::mutex> lock(server->connections_mutex_);
+                    auto it = server->connections_.find(sid);
+                    if (it != server->connections_.end()) {
+                        it->second->set_state(ConnectionState::DISCONNECTED);
+                    }
                 }
+                server->on_connection_disconnect(sid);
             }
         },
         ctx
@@ -241,25 +260,44 @@ void CrossServer::on_accept(struct evconnlistener* listener, evutil_socket_t fd,
     server->handle_accept(fd, addr);
 }
 
+// FIX (Issue 1): Copy session shared_ptr under lock, release lock, then call
+// handle_read. Previously the lock was held across handle_read, which calls
+// route_message -> handle_cross_identify -> acquires sessions_mutex_ again,
+// causing a deadlock since sessions_mutex_ is a non-recursive std::mutex.
 void CrossServer::on_read(struct bufferevent* bev, void* ctx) {
     auto* server = static_cast<CrossServer*>(ctx);
     evutil_socket_t fd = bufferevent_getfd(bev);
-    std::lock_guard<std::mutex> lock(server->sessions_mutex_);
-    auto it = server->sessions_.find(fd);
-    if (it != server->sessions_.end()) {
-        server->handle_read(it->second);
+    std::shared_ptr<GameSession> session;
+    {
+        std::lock_guard<std::mutex> lock(server->sessions_mutex_);
+        auto it = server->sessions_.find(fd);
+        if (it != server->sessions_.end()) {
+            session = it->second;
+        }
+    }
+    if (session) {
+        server->handle_read(session);
     }
 }
 
+// FIX (Issue 2): Copy session under lock, release, then call handle_disconnect.
+// This prevents deadlock if handle_disconnect or any method it calls tries to
+// acquire sessions_mutex_.
 void CrossServer::on_event(struct bufferevent* bev, short events, void* ctx) {
     auto* server = static_cast<CrossServer*>(ctx);
     evutil_socket_t fd = bufferevent_getfd(bev);
 
     if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR)) {
-        std::lock_guard<std::mutex> lock(server->sessions_mutex_);
-        auto it = server->sessions_.find(fd);
-        if (it != server->sessions_.end()) {
-            server->handle_disconnect(it->second);
+        std::shared_ptr<GameSession> session;
+        {
+            std::lock_guard<std::mutex> lock(server->sessions_mutex_);
+            auto it = server->sessions_.find(fd);
+            if (it != server->sessions_.end()) {
+                session = it->second;
+            }
+        }
+        if (session) {
+            server->handle_disconnect(session);
         }
     }
 }
@@ -312,23 +350,31 @@ void CrossServer::handle_read(std::shared_ptr<GameSession> session) {
     }
 }
 
+// handle_disconnect now acquires sessions_mutex_ internally so it can safely
+// be called both from unlocked contexts (on_event, check_heartbeat) and from
+// code that does not hold the lock.
 void CrossServer::handle_disconnect(std::shared_ptr<GameSession> session) {
     SPDLOG_INFO("[Cross]Game server {} disconnected (fd={})",
                 session->server_id(), session->fd());
 
-    // Remove from server_sessions_
+    // Clear route cache for this server (no lock needed, thread-safe cache)
     if (session->server_id() != 0) {
-        server_sessions_.erase(session->server_id());
-        // Clear route cache for this server
         route_cache_.clear_server(session->server_id());
     }
 
-    sessions_.erase(session->fd());
+    // Remove from session maps under lock
+    {
+        std::lock_guard<std::mutex> lock(sessions_mutex_);
+        if (session->server_id() != 0) {
+            server_sessions_.erase(session->server_id());
+        }
+        sessions_.erase(session->fd());
+    }
 }
 
 void CrossServer::check_heartbeat() {
     time_t now = std::time(nullptr);
-    std::vector<evutil_socket_t> to_remove;
+    std::vector<std::shared_ptr<GameSession>> to_remove;
 
     {
         std::lock_guard<std::mutex> lock(sessions_mutex_);
@@ -336,23 +382,21 @@ void CrossServer::check_heartbeat() {
             if (session->state() == GameSessionState::IDENTIFIED) {
                 if (now - session->last_heartbeat() > CROSS_HEARTBEAT_TIMEOUT) {
                     SPDLOG_WARN("[Cross]Heartbeat timeout for server {}", session->server_id());
-                    to_remove.push_back(fd);
+                    to_remove.push_back(session);
                 }
             } else if (session->state() == GameSessionState::CONNECTED) {
                 if (now - session->connect_time() > CROSS_IDENTIFY_TIMEOUT) {
                     SPDLOG_WARN("[Cross]Identify timeout for fd {}", fd);
-                    to_remove.push_back(fd);
+                    to_remove.push_back(session);
                 }
             }
         }
     }
 
-    for (auto fd : to_remove) {
-        std::lock_guard<std::mutex> lock(sessions_mutex_);
-        auto it = sessions_.find(fd);
-        if (it != sessions_.end()) {
-            handle_disconnect(it->second);
-        }
+    // Call handle_disconnect outside the lock -- it acquires sessions_mutex_
+    // internally, so holding it here would deadlock.
+    for (auto& session : to_remove) {
+        handle_disconnect(session);
     }
 
     // Check active connection timeouts
@@ -584,30 +628,11 @@ void CrossServer::on_connection_message(uint32_t server_id, uint32_t msg_id,
             }
             break;
         }
-        case MSG_ID_CROSS_FORWARD_REQ: {
-            // Forward request from active connection (target server's response)
-            CrossForwardReq req;
-            if (req.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
-                // Update route cache
-                route_cache_.update(req.target_player_id(), server_id);
-
-                // Find requester session
-                std::shared_ptr<GameSession> source_session;
-                {
-                    std::lock_guard<std::mutex> lock(sessions_mutex_);
-                    auto it = server_sessions_.find(req.source_server_id());
-                    if (it != server_sessions_.end()) {
-                        source_session = it->second;
-                    }
-                }
-
-                if (source_session) {
-                    // Forward to requester
-                    send_to_session(source_session, MSG_ID_CROSS_FORWARD_REQ, payload);
-                }
-            }
-            break;
-        }
+        // FIX (Issue 5): Removed MSG_ID_CROSS_FORWARD_REQ case.
+        // CROSS_FORWARD_REQ flows FROM CrossServer TO Game Servers, not the
+        // other way around. Handling it here and forwarding it back would
+        // create a forwarding loop. Game servers respond with
+        // CROSS_FORWARD_RESP, which is handled below.
         case MSG_ID_CROSS_FORWARD_RESP: {
             // Forward response from active connection
             CrossForwardResp resp;
