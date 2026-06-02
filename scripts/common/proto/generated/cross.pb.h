@@ -546,14 +546,14 @@ class CrossQueryReq final : public ::google::protobuf::MessageLite
   void _internal_set_target_player_id(::uint64_t value);
 
   public:
-  // uint32 query_type = 3;
+  // .farm.CrossQueryType query_type = 3;
   void clear_query_type() ;
-  ::uint32_t query_type() const;
-  void set_query_type(::uint32_t value);
+  ::farm::CrossQueryType query_type() const;
+  void set_query_type(::farm::CrossQueryType value);
 
   private:
-  ::uint32_t _internal_query_type() const;
-  void _internal_set_query_type(::uint32_t value);
+  ::farm::CrossQueryType _internal_query_type() const;
+  void _internal_set_query_type(::farm::CrossQueryType value);
 
   public:
   // @@protoc_insertion_point(class_scope:farm.CrossQueryReq)
@@ -585,7 +585,7 @@ class CrossQueryReq final : public ::google::protobuf::MessageLite
     ::google::protobuf::internal::ArenaStringPtr request_data_;
     ::uint64_t request_id_;
     ::uint64_t target_player_id_;
-    ::uint32_t query_type_;
+    int query_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1736,14 +1736,14 @@ class CrossForwardReq final : public ::google::protobuf::MessageLite
   void _internal_set_source_server_id(::uint32_t value);
 
   public:
-  // uint32 query_type = 5;
+  // .farm.CrossQueryType query_type = 5;
   void clear_query_type() ;
-  ::uint32_t query_type() const;
-  void set_query_type(::uint32_t value);
+  ::farm::CrossQueryType query_type() const;
+  void set_query_type(::farm::CrossQueryType value);
 
   private:
-  ::uint32_t _internal_query_type() const;
-  void _internal_set_query_type(::uint32_t value);
+  ::farm::CrossQueryType _internal_query_type() const;
+  void _internal_set_query_type(::farm::CrossQueryType value);
 
   public:
   // uint64 target_player_id = 4;
@@ -1786,7 +1786,7 @@ class CrossForwardReq final : public ::google::protobuf::MessageLite
     ::uint64_t request_id_;
     ::uint64_t source_player_id_;
     ::uint32_t source_server_id_;
-    ::uint32_t query_type_;
+    int query_type_;
     ::uint64_t target_player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2102,26 +2102,26 @@ inline void CrossQueryReq::_internal_set_target_player_id(::uint64_t value) {
   _impl_.target_player_id_ = value;
 }
 
-// uint32 query_type = 3;
+// .farm.CrossQueryType query_type = 3;
 inline void CrossQueryReq::clear_query_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.query_type_ = 0u;
+  _impl_.query_type_ = 0;
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
-inline ::uint32_t CrossQueryReq::query_type() const {
+inline ::farm::CrossQueryType CrossQueryReq::query_type() const {
   // @@protoc_insertion_point(field_get:farm.CrossQueryReq.query_type)
   return _internal_query_type();
 }
-inline void CrossQueryReq::set_query_type(::uint32_t value) {
+inline void CrossQueryReq::set_query_type(::farm::CrossQueryType value) {
   _internal_set_query_type(value);
   _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:farm.CrossQueryReq.query_type)
 }
-inline ::uint32_t CrossQueryReq::_internal_query_type() const {
+inline ::farm::CrossQueryType CrossQueryReq::_internal_query_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.query_type_;
+  return static_cast<::farm::CrossQueryType>(_impl_.query_type_);
 }
-inline void CrossQueryReq::_internal_set_query_type(::uint32_t value) {
+inline void CrossQueryReq::_internal_set_query_type(::farm::CrossQueryType value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.query_type_ = value;
 }
@@ -2408,26 +2408,26 @@ inline void CrossForwardReq::_internal_set_target_player_id(::uint64_t value) {
   _impl_.target_player_id_ = value;
 }
 
-// uint32 query_type = 5;
+// .farm.CrossQueryType query_type = 5;
 inline void CrossForwardReq::clear_query_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.query_type_ = 0u;
+  _impl_.query_type_ = 0;
   _impl_._has_bits_[0] &= ~0x00000010u;
 }
-inline ::uint32_t CrossForwardReq::query_type() const {
+inline ::farm::CrossQueryType CrossForwardReq::query_type() const {
   // @@protoc_insertion_point(field_get:farm.CrossForwardReq.query_type)
   return _internal_query_type();
 }
-inline void CrossForwardReq::set_query_type(::uint32_t value) {
+inline void CrossForwardReq::set_query_type(::farm::CrossQueryType value) {
   _internal_set_query_type(value);
   _impl_._has_bits_[0] |= 0x00000010u;
   // @@protoc_insertion_point(field_set:farm.CrossForwardReq.query_type)
 }
-inline ::uint32_t CrossForwardReq::_internal_query_type() const {
+inline ::farm::CrossQueryType CrossForwardReq::_internal_query_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.query_type_;
+  return static_cast<::farm::CrossQueryType>(_impl_.query_type_);
 }
-inline void CrossForwardReq::_internal_set_query_type(::uint32_t value) {
+inline void CrossForwardReq::_internal_set_query_type(::farm::CrossQueryType value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.query_type_ = value;
 }

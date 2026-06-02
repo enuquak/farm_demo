@@ -55,7 +55,7 @@ message CrossHeartbeatResp {
 message CrossQueryReq {
     uint64 request_id = 1;        // 请求 ID，用于匹配响应
     uint64 target_player_id = 2;  // 目标玩家
-    uint32 query_type = 3;        // 查询类型 (CrossQueryType)
+    CrossQueryType query_type = 3;  // 查询类型 (CrossQueryType)
     bytes request_data = 4;       // 业务数据（透传）
 }
 
@@ -72,7 +72,7 @@ message CrossForwardReq {
     uint32 source_server_id = 2;  // 来源 Server ID
     uint64 source_player_id = 3;  // 来源玩家 ID（请求者）
     uint64 target_player_id = 4;  // 目标玩家 ID
-    uint32 query_type = 5;        // 查询类型
+    CrossQueryType query_type = 5;  // 查询类型
     bytes request_data = 6;       // 业务数据（透传）
 }
 

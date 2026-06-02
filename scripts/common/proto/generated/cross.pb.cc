@@ -60,7 +60,7 @@ inline constexpr CrossQueryReq::Impl_::Impl_(
             ::_pbi::ConstantInitialized()),
         request_id_{::uint64_t{0u}},
         target_player_id_{::uint64_t{0u}},
-        query_type_{0u} {}
+        query_type_{static_cast< ::farm::CrossQueryType >(0)} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR CrossQueryReq::CrossQueryReq(::_pbi::ConstantInitialized)
@@ -226,7 +226,7 @@ inline constexpr CrossForwardReq::Impl_::Impl_(
         request_id_{::uint64_t{0u}},
         source_player_id_{::uint64_t{0u}},
         source_server_id_{0u},
-        query_type_{0u},
+        query_type_{static_cast< ::farm::CrossQueryType >(0)},
         target_player_id_{::uint64_t{0u}} {}
 
 template <typename>
@@ -1546,7 +1546,7 @@ CrossQueryReq::_table_ = {
     // uint64 target_player_id = 2;
     {::_pbi::TcParser::FastV64S1,
      {16, 2, 0, PROTOBUF_FIELD_OFFSET(CrossQueryReq, _impl_.target_player_id_)}},
-    // uint32 query_type = 3;
+    // .farm.CrossQueryType query_type = 3;
     {::_pbi::TcParser::FastV32S1,
      {24, 3, 0, PROTOBUF_FIELD_OFFSET(CrossQueryReq, _impl_.query_type_)}},
   }}, {{
@@ -1558,9 +1558,9 @@ CrossQueryReq::_table_ = {
     // uint64 target_player_id = 2;
     {PROTOBUF_FIELD_OFFSET(CrossQueryReq, _impl_.target_player_id_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint32 query_type = 3;
+    // .farm.CrossQueryType query_type = 3;
     {PROTOBUF_FIELD_OFFSET(CrossQueryReq, _impl_.query_type_), _Internal::kHasBitsOffset + 3, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     // bytes request_data = 4;
     {PROTOBUF_FIELD_OFFSET(CrossQueryReq, _impl_.request_data_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
@@ -1622,11 +1622,11 @@ PROTOBUF_NOINLINE void CrossQueryReq::Clear() {
     }
   }
 
-  // uint32 query_type = 3;
+  // .farm.CrossQueryType query_type = 3;
   if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
     if (this_._internal_query_type() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
           3, this_._internal_query_type(), target);
     }
   }
@@ -1686,11 +1686,11 @@ PROTOBUF_NOINLINE void CrossQueryReq::Clear() {
             this_._internal_target_player_id());
       }
     }
-    // uint32 query_type = 3;
+    // .farm.CrossQueryType query_type = 3;
     if ((cached_has_bits & 0x00000008u) != 0) {
       if (this_._internal_query_type() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_query_type());
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_query_type());
       }
     }
   }
@@ -2246,7 +2246,7 @@ CrossForwardReq::_table_ = {
     // uint64 target_player_id = 4;
     {::_pbi::TcParser::FastV64S1,
      {32, 5, 0, PROTOBUF_FIELD_OFFSET(CrossForwardReq, _impl_.target_player_id_)}},
-    // uint32 query_type = 5;
+    // .farm.CrossQueryType query_type = 5;
     {::_pbi::TcParser::FastV32S1,
      {40, 4, 0, PROTOBUF_FIELD_OFFSET(CrossForwardReq, _impl_.query_type_)}},
     // bytes request_data = 6;
@@ -2268,9 +2268,9 @@ CrossForwardReq::_table_ = {
     // uint64 target_player_id = 4;
     {PROTOBUF_FIELD_OFFSET(CrossForwardReq, _impl_.target_player_id_), _Internal::kHasBitsOffset + 5, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint32 query_type = 5;
+    // .farm.CrossQueryType query_type = 5;
     {PROTOBUF_FIELD_OFFSET(CrossForwardReq, _impl_.query_type_), _Internal::kHasBitsOffset + 4, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     // bytes request_data = 6;
     {PROTOBUF_FIELD_OFFSET(CrossForwardReq, _impl_.request_data_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
@@ -2350,11 +2350,11 @@ PROTOBUF_NOINLINE void CrossForwardReq::Clear() {
     }
   }
 
-  // uint32 query_type = 5;
+  // .farm.CrossQueryType query_type = 5;
   if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
     if (this_._internal_query_type() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
           5, this_._internal_query_type(), target);
     }
   }
@@ -2421,11 +2421,11 @@ PROTOBUF_NOINLINE void CrossForwardReq::Clear() {
             this_._internal_source_server_id());
       }
     }
-    // uint32 query_type = 5;
+    // .farm.CrossQueryType query_type = 5;
     if ((cached_has_bits & 0x00000010u) != 0) {
       if (this_._internal_query_type() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_query_type());
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_query_type());
       }
     }
     // uint64 target_player_id = 4;
