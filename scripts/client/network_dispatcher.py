@@ -10,6 +10,7 @@ from .message_ids import (
     MSG_ID_MAP_DATA_NOTIFY, MSG_ID_POSITION_CORRECT,
     MSG_ID_ITEM_USE_RESP, MSG_ID_SCENE_CHANGE_RESP,
     MSG_ID_CLOCK_SYNC, MSG_ID_FORCE_SLEEP_NOTIFY, MSG_ID_FORCE_SLEEP_READY,
+    MSG_ID_DROP_ITEM_SYNC, MSG_ID_INVENTORY_SYNC,
 )
 
 import sys
@@ -36,6 +37,8 @@ class NetworkMessageDispatcher:
         on_scene_change_resp: Callable[[Any], None],
         on_clock_sync: Callable[[int, int], None],
         on_force_sleep_notify: Callable[[int], None],
+        on_drop_item_sync: Callable[[Any], None] = None,
+        on_inventory_sync: Callable[[str], None] = None,
     ):
         """
         初始化消息分发器
@@ -48,6 +51,8 @@ class NetworkMessageDispatcher:
             on_scene_change_resp: 场景切换响应回调 (resp)
             on_clock_sync: 时钟同步回调 (day, time_slot)
             on_force_sleep_notify: 强制睡觉通知回调 (day)
+            on_drop_item_sync: 掉落物同步回调 (drop_sync)
+            on_inventory_sync: 背包同步回调 (inventory_json)
         """
         self._connection = connection
         self._callbacks = {
@@ -57,6 +62,8 @@ class NetworkMessageDispatcher:
             "on_scene_change_resp": on_scene_change_resp,
             "on_clock_sync": on_clock_sync,
             "on_force_sleep_notify": on_force_sleep_notify,
+            "on_drop_item_sync": on_drop_item_sync,
+            "on_inventory_sync": on_inventory_sync,
         }
 
         # 分发表: msg_id -> handler 方法
@@ -67,6 +74,8 @@ class NetworkMessageDispatcher:
             MSG_ID_SCENE_CHANGE_RESP: self._handle_scene_change_resp,
             MSG_ID_CLOCK_SYNC: self._handle_clock_sync,
             MSG_ID_FORCE_SLEEP_NOTIFY: self._handle_force_sleep_notify,
+            MSG_ID_DROP_ITEM_SYNC: self._handle_drop_item_sync,
+            MSG_ID_INVENTORY_SYNC: self._handle_inventory_sync,
         }
 
     def dispatch_pending(self, connection=None):
@@ -102,9 +111,9 @@ class NetworkMessageDispatcher:
             pos_correct = player_pb2.PositionCorrect()
             pos_correct.ParseFromString(player_msg.payload)
 
-            self._callbacks["on_position_correct"](pos_correct.x, pos_correct.y)
+            self._callbacks["on_position_correct"](pos_correct.pos_x, pos_correct.pos_y)
 
-            logger.info(f"[NetworkDispatcher]PositionCorrect received: ({pos_correct.x:.1f}, {pos_correct.y:.1f})")
+            logger.info(f"[NetworkDispatcher]PositionCorrect received: ({pos_correct.pos_x:.1f}, {pos_correct.pos_y:.1f})")
 
         except Exception as e:
             logger.error(f"[NetworkDispatcher]Failed to parse PositionCorrect: {e}")
@@ -174,3 +183,38 @@ class NetworkMessageDispatcher:
 
         except Exception as e:
             logger.error(f"[NetworkDispatcher]Failed to parse ForceSleepNotify: {e}")
+
+    def _handle_drop_item_sync(self, payload: bytes):
+        """处理掉落物同步消息"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            drop_sync = player_pb2.DropItemSync()
+            drop_sync.ParseFromString(player_msg.payload)
+
+            logger.debug(f"[NetworkDispatcher]DropItemSync received: drop_id={drop_sync.drop_id}, "
+                        f"item_id={drop_sync.item_id}, action={drop_sync.action}")
+
+            if self._callbacks["on_drop_item_sync"]:
+                self._callbacks["on_drop_item_sync"](drop_sync)
+
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse DropItemSync: {e}")
+
+    def _handle_inventory_sync(self, payload: bytes):
+        """处理背包同步消息"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            inv_sync = player_pb2.InventorySync()
+            inv_sync.ParseFromString(player_msg.payload)
+
+            logger.info(f"[NetworkDispatcher]InventorySync received, json_len={len(inv_sync.inventory_json)}")
+
+            if self._callbacks["on_inventory_sync"]:
+                self._callbacks["on_inventory_sync"](inv_sync.inventory_json)
+
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse InventorySync: {e}")

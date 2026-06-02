@@ -277,9 +277,9 @@ class PlayerController:
         """发送 PositionUpdate 消息到服务器"""
         try:
             pos_update = player_pb2.PositionUpdate()
-            pos_update.x = self._player_sprite.world_x
-            pos_update.y = self._player_sprite.world_y
-            pos_update.direction = self._facing_direction
+            pos_update.pos_x = self._player_sprite.world_x
+            pos_update.pos_y = self._player_sprite.world_y
+            pos_update.pos_z = 0.0
             pos_update.timestamp = int(time.time() * 1000)
 
             payload = pos_update.SerializeToString()
