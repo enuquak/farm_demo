@@ -49,6 +49,7 @@ void FriendServiceConnection::disconnect() {
     }
     state_ = FriendServiceState::DISCONNECTED;
     stop_heartbeat();
+    stop_reconnect();
 }
 
 void FriendServiceConnection::send_client_msg(uint64_t player_id, uint32_t msg_id, const std::string& payload) {
@@ -155,6 +156,14 @@ void FriendServiceConnection::stop_heartbeat() {
         event_del(heartbeat_timer_);
         event_free(heartbeat_timer_);
         heartbeat_timer_ = nullptr;
+    }
+}
+
+void FriendServiceConnection::stop_reconnect() {
+    if (reconnect_timer_) {
+        event_del(reconnect_timer_);
+        event_free(reconnect_timer_);
+        reconnect_timer_ = nullptr;
     }
 }
 

@@ -41,6 +41,7 @@ private:
     void send_identify();
     void start_heartbeat();
     void stop_heartbeat();
+    void stop_reconnect();
     static void on_heartbeat_timer(evutil_socket_t fd, short events, void* ctx);
     void schedule_reconnect();
     static void on_reconnect_timer(evutil_socket_t fd, short events, void* ctx);
