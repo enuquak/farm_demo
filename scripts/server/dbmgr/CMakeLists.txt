@@ -46,6 +46,10 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/msvc_compat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/server_main_helper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/etcd_manager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/redis_pool.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/redis_async.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/redis_cluster.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/mongo_replica_set.cpp
 )
 
 add_executable(dbmgr ${SOURCES})
