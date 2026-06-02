@@ -9,7 +9,8 @@ option optimize_for = LITE_RUNTIME;
 // MsgID 范围: 2000-2999 (客户端<->Gate<->Game)
 // ===========================================
 
-// 玩家数据
+// 玩家数据（用于客户端-服务器通信，如 EnterGameResp）
+// NOTE: PlayerData 不用于持久化 — 玩家数据以 JSON 格式存储在 MongoDB 中
 message PlayerData {
     uint64 player_id = 1;       // 玩家 ID
     uint32 server_id = 2;       // 服务器 ID
@@ -22,6 +23,13 @@ message PlayerData {
     float pos_z = 9;            // 位置 Z
     string scene_id = 10;       // 场景 ID
     int32 energy = 11;          // 能量值
+    // Phase 2: 新增字段（与 PlayerBizData 对齐）
+    int64 gold = 12;            // 金币
+    int32 max_hp = 13;          // 最大生命值
+    int32 current_hp = 14;      // 当前生命值
+    int32 attack_power = 15;    // 额外攻击力
+    int32 defense_power = 16;   // 额外防御力
+    int32 combat_level = 17;    // 战斗等级
 }
 
 // 进入游戏请求 (Client -> Gate -> Game)

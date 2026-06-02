@@ -301,7 +301,13 @@ inline constexpr PlayerData::Impl_::Impl_(
         pos_y_{0},
         created_at_{::uint64_t{0u}},
         pos_z_{0},
-        energy_{0} {}
+        energy_{0},
+        gold_{::int64_t{0}},
+        max_hp_{0},
+        current_hp_{0},
+        attack_power_{0},
+        defense_power_{0},
+        combat_level_{0} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR PlayerData::PlayerData(::_pbi::ConstantInitialized)
@@ -1422,9 +1428,9 @@ PlayerData::PlayerData(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, energy_) -
+           offsetof(Impl_, combat_level_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::energy_));
+               sizeof(Impl_::combat_level_));
 
   // @@protoc_insertion_point(copy_constructor:farm.PlayerData)
 }
@@ -1440,9 +1446,9 @@ inline void PlayerData::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, energy_) -
+           offsetof(Impl_, combat_level_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::energy_));
+               sizeof(Impl_::combat_level_));
 }
 PlayerData::~PlayerData() {
   // @@protoc_insertion_point(destructor:farm.PlayerData)
@@ -1496,16 +1502,16 @@ const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL PlayerData::GetC
   return PlayerData_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 11, 0, 49, 2>
+const ::_pbi::TcParseTable<5, 17, 0, 57, 2>
 PlayerData::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(PlayerData, _impl_._has_bits_),
     0, // no _extensions_
-    11, 120,  // max_field_number, fast_idx_mask
+    17, 248,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294965248,  // skipmap
+    4294836224,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    11,  // num_field_entries
+    17,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     PlayerData_class_data_.base(),
@@ -1549,6 +1555,34 @@ PlayerData::_table_ = {
     // int32 energy = 11;
     {::_pbi::TcParser::FastV32S1,
      {88, 10, 0, PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.energy_)}},
+    // int64 gold = 12;
+    {::_pbi::TcParser::FastV64S1,
+     {96, 11, 0, PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.gold_)}},
+    // int32 max_hp = 13;
+    {::_pbi::TcParser::FastV32S1,
+     {104, 12, 0, PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.max_hp_)}},
+    // int32 current_hp = 14;
+    {::_pbi::TcParser::FastV32S1,
+     {112, 13, 0, PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.current_hp_)}},
+    // int32 attack_power = 15;
+    {::_pbi::TcParser::FastV32S1,
+     {120, 14, 0, PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.attack_power_)}},
+    // int32 defense_power = 16;
+    {::_pbi::TcParser::FastV32S2,
+     {384, 15, 0, PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.defense_power_)}},
+    // int32 combat_level = 17;
+    {::_pbi::TcParser::FastV32S2,
+     {392, 16, 0, PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.combat_level_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -1589,10 +1623,28 @@ PlayerData::_table_ = {
     // int32 energy = 11;
     {PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.energy_), _Internal::kHasBitsOffset + 10, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int64 gold = 12;
+    {PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.gold_), _Internal::kHasBitsOffset + 11, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    // int32 max_hp = 13;
+    {PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.max_hp_), _Internal::kHasBitsOffset + 12, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int32 current_hp = 14;
+    {PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.current_hp_), _Internal::kHasBitsOffset + 13, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int32 attack_power = 15;
+    {PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.attack_power_), _Internal::kHasBitsOffset + 14, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int32 defense_power = 16;
+    {PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.defense_power_), _Internal::kHasBitsOffset + 15, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int32 combat_level = 17;
+    {PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.combat_level_), _Internal::kHasBitsOffset + 16, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
   }},
   // no aux_entries
   {{
-    "\17\0\0\11\0\0\0\0\0\0\10\0\0\0\0\0"
+    "\17\0\0\11\0\0\0\0\0\0\10\0\0\0\0\0\0\0\0\0\0\0\0\0"
     "farm.PlayerData"
     "role_name"
     "scene_id"
@@ -1619,11 +1671,12 @@ PROTOBUF_NOINLINE void PlayerData::Clear() {
         reinterpret_cast<char*>(&_impl_.pos_y_) -
         reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.pos_y_));
   }
-  if ((cached_has_bits & 0x00000700u) != 0) {
+  if ((cached_has_bits & 0x0000ff00u) != 0) {
     ::memset(&_impl_.created_at_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.energy_) -
-        reinterpret_cast<char*>(&_impl_.created_at_)) + sizeof(_impl_.energy_));
+        reinterpret_cast<char*>(&_impl_.defense_power_) -
+        reinterpret_cast<char*>(&_impl_.created_at_)) + sizeof(_impl_.defense_power_));
   }
+  _impl_.combat_level_ = 0;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<std::string>();
 }
@@ -1744,6 +1797,60 @@ PROTOBUF_NOINLINE void PlayerData::Clear() {
     }
   }
 
+  // int64 gold = 12;
+  if ((this_._impl_._has_bits_[0] & 0x00000800u) != 0) {
+    if (this_._internal_gold() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<12>(
+              stream, this_._internal_gold(), target);
+    }
+  }
+
+  // int32 max_hp = 13;
+  if ((this_._impl_._has_bits_[0] & 0x00001000u) != 0) {
+    if (this_._internal_max_hp() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<13>(
+              stream, this_._internal_max_hp(), target);
+    }
+  }
+
+  // int32 current_hp = 14;
+  if ((this_._impl_._has_bits_[0] & 0x00002000u) != 0) {
+    if (this_._internal_current_hp() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<14>(
+              stream, this_._internal_current_hp(), target);
+    }
+  }
+
+  // int32 attack_power = 15;
+  if ((this_._impl_._has_bits_[0] & 0x00004000u) != 0) {
+    if (this_._internal_attack_power() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<15>(
+              stream, this_._internal_attack_power(), target);
+    }
+  }
+
+  // int32 defense_power = 16;
+  if ((this_._impl_._has_bits_[0] & 0x00008000u) != 0) {
+    if (this_._internal_defense_power() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteInt32ToArray(
+          16, this_._internal_defense_power(), target);
+    }
+  }
+
+  // int32 combat_level = 17;
+  if ((this_._impl_._has_bits_[0] & 0x00010000u) != 0) {
+    if (this_._internal_combat_level() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteInt32ToArray(
+          17, this_._internal_combat_level(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target = stream->WriteRaw(
         this_._internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString).data(),
@@ -1825,7 +1932,7 @@ PROTOBUF_NOINLINE void PlayerData::Clear() {
       }
     }
   }
-  if ((cached_has_bits & 0x00000700u) != 0) {
+  if ((cached_has_bits & 0x0000ff00u) != 0) {
     // uint64 created_at = 8;
     if ((cached_has_bits & 0x00000100u) != 0) {
       if (this_._internal_created_at() != 0) {
@@ -1844,6 +1951,50 @@ PROTOBUF_NOINLINE void PlayerData::Clear() {
       if (this_._internal_energy() != 0) {
         total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
             this_._internal_energy());
+      }
+    }
+    // int64 gold = 12;
+    if ((cached_has_bits & 0x00000800u) != 0) {
+      if (this_._internal_gold() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_gold());
+      }
+    }
+    // int32 max_hp = 13;
+    if ((cached_has_bits & 0x00001000u) != 0) {
+      if (this_._internal_max_hp() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_max_hp());
+      }
+    }
+    // int32 current_hp = 14;
+    if ((cached_has_bits & 0x00002000u) != 0) {
+      if (this_._internal_current_hp() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_current_hp());
+      }
+    }
+    // int32 attack_power = 15;
+    if ((cached_has_bits & 0x00004000u) != 0) {
+      if (this_._internal_attack_power() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_attack_power());
+      }
+    }
+    // int32 defense_power = 16;
+    if ((cached_has_bits & 0x00008000u) != 0) {
+      if (this_._internal_defense_power() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::Int32Size(
+                                        this_._internal_defense_power());
+      }
+    }
+  }
+   {
+    // int32 combat_level = 17;
+    if ((cached_has_bits & 0x00010000u) != 0) {
+      if (this_._internal_combat_level() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::Int32Size(
+                                        this_._internal_combat_level());
       }
     }
   }
@@ -1913,7 +2064,7 @@ void PlayerData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
       }
     }
   }
-  if ((cached_has_bits & 0x00000700u) != 0) {
+  if ((cached_has_bits & 0x0000ff00u) != 0) {
     if ((cached_has_bits & 0x00000100u) != 0) {
       if (from._internal_created_at() != 0) {
         _this->_impl_.created_at_ = from._impl_.created_at_;
@@ -1928,6 +2079,36 @@ void PlayerData::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
       if (from._internal_energy() != 0) {
         _this->_impl_.energy_ = from._impl_.energy_;
       }
+    }
+    if ((cached_has_bits & 0x00000800u) != 0) {
+      if (from._internal_gold() != 0) {
+        _this->_impl_.gold_ = from._impl_.gold_;
+      }
+    }
+    if ((cached_has_bits & 0x00001000u) != 0) {
+      if (from._internal_max_hp() != 0) {
+        _this->_impl_.max_hp_ = from._impl_.max_hp_;
+      }
+    }
+    if ((cached_has_bits & 0x00002000u) != 0) {
+      if (from._internal_current_hp() != 0) {
+        _this->_impl_.current_hp_ = from._impl_.current_hp_;
+      }
+    }
+    if ((cached_has_bits & 0x00004000u) != 0) {
+      if (from._internal_attack_power() != 0) {
+        _this->_impl_.attack_power_ = from._impl_.attack_power_;
+      }
+    }
+    if ((cached_has_bits & 0x00008000u) != 0) {
+      if (from._internal_defense_power() != 0) {
+        _this->_impl_.defense_power_ = from._impl_.defense_power_;
+      }
+    }
+  }
+  if ((cached_has_bits & 0x00010000u) != 0) {
+    if (from._internal_combat_level() != 0) {
+      _this->_impl_.combat_level_ = from._impl_.combat_level_;
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -1951,8 +2132,8 @@ void PlayerData::InternalSwap(PlayerData* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.role_name_, &other->_impl_.role_name_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.scene_id_, &other->_impl_.scene_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.energy_)
-      + sizeof(PlayerData::_impl_.energy_)
+      PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.combat_level_)
+      + sizeof(PlayerData::_impl_.combat_level_)
       - PROTOBUF_FIELD_OFFSET(PlayerData, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));

@@ -2311,6 +2311,12 @@ class PlayerData final : public ::google::protobuf::MessageLite
     kCreatedAtFieldNumber = 8,
     kPosZFieldNumber = 9,
     kEnergyFieldNumber = 11,
+    kGoldFieldNumber = 12,
+    kMaxHpFieldNumber = 13,
+    kCurrentHpFieldNumber = 14,
+    kAttackPowerFieldNumber = 15,
+    kDefensePowerFieldNumber = 16,
+    kCombatLevelFieldNumber = 17,
   };
   // string role_name = 3;
   void clear_role_name() ;
@@ -2432,12 +2438,72 @@ class PlayerData final : public ::google::protobuf::MessageLite
   void _internal_set_energy(::int32_t value);
 
   public:
+  // int64 gold = 12;
+  void clear_gold() ;
+  ::int64_t gold() const;
+  void set_gold(::int64_t value);
+
+  private:
+  ::int64_t _internal_gold() const;
+  void _internal_set_gold(::int64_t value);
+
+  public:
+  // int32 max_hp = 13;
+  void clear_max_hp() ;
+  ::int32_t max_hp() const;
+  void set_max_hp(::int32_t value);
+
+  private:
+  ::int32_t _internal_max_hp() const;
+  void _internal_set_max_hp(::int32_t value);
+
+  public:
+  // int32 current_hp = 14;
+  void clear_current_hp() ;
+  ::int32_t current_hp() const;
+  void set_current_hp(::int32_t value);
+
+  private:
+  ::int32_t _internal_current_hp() const;
+  void _internal_set_current_hp(::int32_t value);
+
+  public:
+  // int32 attack_power = 15;
+  void clear_attack_power() ;
+  ::int32_t attack_power() const;
+  void set_attack_power(::int32_t value);
+
+  private:
+  ::int32_t _internal_attack_power() const;
+  void _internal_set_attack_power(::int32_t value);
+
+  public:
+  // int32 defense_power = 16;
+  void clear_defense_power() ;
+  ::int32_t defense_power() const;
+  void set_defense_power(::int32_t value);
+
+  private:
+  ::int32_t _internal_defense_power() const;
+  void _internal_set_defense_power(::int32_t value);
+
+  public:
+  // int32 combat_level = 17;
+  void clear_combat_level() ;
+  ::int32_t combat_level() const;
+  void set_combat_level(::int32_t value);
+
+  private:
+  ::int32_t _internal_combat_level() const;
+  void _internal_set_combat_level(::int32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:farm.PlayerData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<4, 11,
-                                   0, 49,
+  static const ::google::protobuf::internal::TcParseTable<5, 17,
+                                   0, 57,
                                    2>
       _table_;
 
@@ -2469,6 +2535,12 @@ class PlayerData final : public ::google::protobuf::MessageLite
     ::uint64_t created_at_;
     float pos_z_;
     ::int32_t energy_;
+    ::int64_t gold_;
+    ::int32_t max_hp_;
+    ::int32_t current_hp_;
+    ::int32_t attack_power_;
+    ::int32_t defense_power_;
+    ::int32_t combat_level_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -9832,6 +9904,150 @@ inline ::int32_t PlayerData::_internal_energy() const {
 inline void PlayerData::_internal_set_energy(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.energy_ = value;
+}
+
+// int64 gold = 12;
+inline void PlayerData::clear_gold() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gold_ = ::int64_t{0};
+  _impl_._has_bits_[0] &= ~0x00000800u;
+}
+inline ::int64_t PlayerData::gold() const {
+  // @@protoc_insertion_point(field_get:farm.PlayerData.gold)
+  return _internal_gold();
+}
+inline void PlayerData::set_gold(::int64_t value) {
+  _internal_set_gold(value);
+  _impl_._has_bits_[0] |= 0x00000800u;
+  // @@protoc_insertion_point(field_set:farm.PlayerData.gold)
+}
+inline ::int64_t PlayerData::_internal_gold() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.gold_;
+}
+inline void PlayerData::_internal_set_gold(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gold_ = value;
+}
+
+// int32 max_hp = 13;
+inline void PlayerData::clear_max_hp() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.max_hp_ = 0;
+  _impl_._has_bits_[0] &= ~0x00001000u;
+}
+inline ::int32_t PlayerData::max_hp() const {
+  // @@protoc_insertion_point(field_get:farm.PlayerData.max_hp)
+  return _internal_max_hp();
+}
+inline void PlayerData::set_max_hp(::int32_t value) {
+  _internal_set_max_hp(value);
+  _impl_._has_bits_[0] |= 0x00001000u;
+  // @@protoc_insertion_point(field_set:farm.PlayerData.max_hp)
+}
+inline ::int32_t PlayerData::_internal_max_hp() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.max_hp_;
+}
+inline void PlayerData::_internal_set_max_hp(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.max_hp_ = value;
+}
+
+// int32 current_hp = 14;
+inline void PlayerData::clear_current_hp() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.current_hp_ = 0;
+  _impl_._has_bits_[0] &= ~0x00002000u;
+}
+inline ::int32_t PlayerData::current_hp() const {
+  // @@protoc_insertion_point(field_get:farm.PlayerData.current_hp)
+  return _internal_current_hp();
+}
+inline void PlayerData::set_current_hp(::int32_t value) {
+  _internal_set_current_hp(value);
+  _impl_._has_bits_[0] |= 0x00002000u;
+  // @@protoc_insertion_point(field_set:farm.PlayerData.current_hp)
+}
+inline ::int32_t PlayerData::_internal_current_hp() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.current_hp_;
+}
+inline void PlayerData::_internal_set_current_hp(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.current_hp_ = value;
+}
+
+// int32 attack_power = 15;
+inline void PlayerData::clear_attack_power() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.attack_power_ = 0;
+  _impl_._has_bits_[0] &= ~0x00004000u;
+}
+inline ::int32_t PlayerData::attack_power() const {
+  // @@protoc_insertion_point(field_get:farm.PlayerData.attack_power)
+  return _internal_attack_power();
+}
+inline void PlayerData::set_attack_power(::int32_t value) {
+  _internal_set_attack_power(value);
+  _impl_._has_bits_[0] |= 0x00004000u;
+  // @@protoc_insertion_point(field_set:farm.PlayerData.attack_power)
+}
+inline ::int32_t PlayerData::_internal_attack_power() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.attack_power_;
+}
+inline void PlayerData::_internal_set_attack_power(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.attack_power_ = value;
+}
+
+// int32 defense_power = 16;
+inline void PlayerData::clear_defense_power() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.defense_power_ = 0;
+  _impl_._has_bits_[0] &= ~0x00008000u;
+}
+inline ::int32_t PlayerData::defense_power() const {
+  // @@protoc_insertion_point(field_get:farm.PlayerData.defense_power)
+  return _internal_defense_power();
+}
+inline void PlayerData::set_defense_power(::int32_t value) {
+  _internal_set_defense_power(value);
+  _impl_._has_bits_[0] |= 0x00008000u;
+  // @@protoc_insertion_point(field_set:farm.PlayerData.defense_power)
+}
+inline ::int32_t PlayerData::_internal_defense_power() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.defense_power_;
+}
+inline void PlayerData::_internal_set_defense_power(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.defense_power_ = value;
+}
+
+// int32 combat_level = 17;
+inline void PlayerData::clear_combat_level() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.combat_level_ = 0;
+  _impl_._has_bits_[0] &= ~0x00010000u;
+}
+inline ::int32_t PlayerData::combat_level() const {
+  // @@protoc_insertion_point(field_get:farm.PlayerData.combat_level)
+  return _internal_combat_level();
+}
+inline void PlayerData::set_combat_level(::int32_t value) {
+  _internal_set_combat_level(value);
+  _impl_._has_bits_[0] |= 0x00010000u;
+  // @@protoc_insertion_point(field_set:farm.PlayerData.combat_level)
+}
+inline ::int32_t PlayerData::_internal_combat_level() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.combat_level_;
+}
+inline void PlayerData::_internal_set_combat_level(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.combat_level_ = value;
 }
 
 // -------------------------------------------------------------------
