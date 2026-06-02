@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package farm;
+
+option optimize_for = LITE_RUNTIME;
+
+// ===========================================
+// CrossServer 消息协议
+// MsgID 范围: 7000-7199
+// ===========================================
+
+// 跨服查询类型
+enum CrossQueryType {
+    CROSS_QUERY_UNSPECIFIED   = 0;   // 未指定
+    CROSS_QUERY_BASIC_INFO    = 1;   // 基础信息（名字、等级、头像）
+    CROSS_QUERY_ONLINE_STATUS = 2;   // 在线状态
+    CROSS_QUERY_DYNAMIC_INFO  = 3;   // 动态信息（位置、当前状态）
+    CROSS_QUERY_EXTENDED_INFO = 4;   // 扩展信息（成就、称号）
+    CROSS_QUERY_CUSTOM        = 99;  // 自定义查询（透传业务数据）
+}
+
+// 跨服错误码
+enum CrossErrorCode {
+    CROSS_SUCCESS                = 0;
+    CROSS_PLAYER_NOT_FOUND       = 1;  // 路由表中找不到目标玩家
+    CROSS_TARGET_SERVER_OFFLINE  = 2;  // 目标 Game Server 不在线
+    CROSS_TARGET_SERVER_TIMEOUT  = 3;  // 目标 Server 响应超时
+    CROSS_INVALID_QUERY_TYPE     = 4;  // 无效的查询类型
+    CROSS_FORWARD_FAILED         = 5;  // 转发失败
+}
+
+// CrossServer 身份识别 (Game -> Cross)
+message CrossIdentify {
+    uint32 server_id = 1;     // Game Server ID
+    string address = 2;       // Game Server 地址
+}
+
+// CrossServer 身份识别响应 (Cross -> Game)
+message CrossIdentifyResp {
+    int32 code = 1;           // 0=成功, 其他=失败
+    string msg = 2;
+}
+
+// 心跳 (Game <-> Cross)
+message CrossHeartbeat {
+    uint64 timestamp = 1;
+}
+
+// 心跳响应 (Game <-> Cross)
+message CrossHeartbeatResp {
+    uint64 timestamp = 1;
+}
+
+// 跨服查询请求 (Game -> Cross)
+message CrossQueryReq {
+    uint64 request_id = 1;        // 请求 ID，用于匹配响应
+    uint64 target_player_id = 2;  // 目标玩家
+    uint32 query_type = 3;        // 查询类型 (CrossQueryType)
+    bytes request_data = 4;       // 业务数据（透传）
+}
+
+// 跨服查询响应 (Cross -> Game)
+message CrossQueryResp {
+    uint64 request_id = 1;        // 请求 ID
+    int32 code = 2;               // 错误码 (CrossErrorCode)
+    bytes response_data = 3;      // 业务数据（透传）
+}
+
+// 转发请求 (Cross -> 目标 Game Server)
+message CrossForwardReq {
+    uint64 request_id = 1;        // 请求 ID
+    uint32 source_server_id = 2;  // 来源 Server ID
+    uint64 source_player_id = 3;  // 来源玩家 ID（请求者）
+    uint64 target_player_id = 4;  // 目标玩家 ID
+    uint32 query_type = 5;        // 查询类型
+    bytes request_data = 6;       // 业务数据（透传）
+}
+
+// 转发响应 (目标 Game Server -> Cross)
+message CrossForwardResp {
+    uint64 request_id = 1;        // 请求 ID
+    int32 code = 2;               // 错误码
+    bytes response_data = 3;      // 业务数据（透传）
+}

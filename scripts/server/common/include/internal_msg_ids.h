@@ -61,6 +61,20 @@ inline constexpr uint32_t MSG_ID_FRIEND_SERVICE_HEARTBEAT_RESP = 6004;
 inline constexpr uint32_t MSG_ID_FRIEND_CLIENT_MSG             = 6011;
 inline constexpr uint32_t MSG_ID_FRIEND_SERVICE_MSG            = 6012;
 
+// Game <-> CrossServer (7000-7199)
+
+// 连接管理 (7000-7099)
+inline constexpr uint32_t MSG_ID_CROSS_IDENTIFY          = 7001;
+inline constexpr uint32_t MSG_ID_CROSS_IDENTIFY_RESP     = 7002;
+inline constexpr uint32_t MSG_ID_CROSS_HEARTBEAT         = 7003;
+inline constexpr uint32_t MSG_ID_CROSS_HEARTBEAT_RESP    = 7004;
+
+// 跨服查询 (7100-7199)
+inline constexpr uint32_t MSG_ID_CROSS_QUERY_REQ         = 7101;
+inline constexpr uint32_t MSG_ID_CROSS_QUERY_RESP        = 7102;
+inline constexpr uint32_t MSG_ID_CROSS_FORWARD_REQ       = 7103;
+inline constexpr uint32_t MSG_ID_CROSS_FORWARD_RESP      = 7104;
+
 // ===========================================
 // 超时常量（带前缀避免冲突）
 // ===========================================
@@ -73,5 +87,11 @@ inline constexpr int GATE_HEARTBEAT_TIMEOUT = 15;  // 心跳超时（秒）
 inline constexpr int DBMGR_IDENTIFY_TIMEOUT = 10;  // 身份识别超时（秒）
 inline constexpr int DBMGR_HEARTBEAT_INTERVAL = 5; // 心跳发送间隔（秒）
 inline constexpr int DBMGR_HEARTBEAT_TIMEOUT = 15; // 心跳超时（秒）
+
+// Game <-> CrossServer
+inline constexpr int CROSS_IDENTIFY_TIMEOUT = 10;   // 身份识别超时（秒）
+inline constexpr int CROSS_HEARTBEAT_INTERVAL = 5;  // 心跳发送间隔（秒）
+inline constexpr int CROSS_HEARTBEAT_TIMEOUT = 15;  // 心跳超时（秒）
+inline constexpr int CROSS_QUERY_TIMEOUT = 5;       // 查询超时（秒）
 
 }  // namespace farm
