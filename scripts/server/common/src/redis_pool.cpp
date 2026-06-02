@@ -1,6 +1,11 @@
 #include "redis_pool.h"
 #include "log_macros.h"
 
+// Windows: timeval 在 winsock2.h 中定义，hiredis 需要它
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+
 #include <hiredis/hiredis.h>
 
 #include <algorithm>
