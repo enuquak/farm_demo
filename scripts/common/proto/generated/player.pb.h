@@ -47,10 +47,18 @@ struct TableStruct_player_2eproto {
   static const ::uint32_t offsets[];
 };
 namespace farm {
+class ActiveSlotChange;
+struct ActiveSlotChangeDefaultTypeInternal;
+extern ActiveSlotChangeDefaultTypeInternal _ActiveSlotChange_default_instance_;
+extern const ::google::protobuf::internal::ClassDataLite<22> ActiveSlotChange_class_data_;
 class ClockSync;
 struct ClockSyncDefaultTypeInternal;
 extern ClockSyncDefaultTypeInternal _ClockSync_default_instance_;
 extern const ::google::protobuf::internal::ClassDataLite<15> ClockSync_class_data_;
+class DropItemSync;
+struct DropItemSyncDefaultTypeInternal;
+extern DropItemSyncDefaultTypeInternal _DropItemSync_default_instance_;
+extern const ::google::protobuf::internal::ClassDataLite<18> DropItemSync_class_data_;
 class EnergySync;
 struct EnergySyncDefaultTypeInternal;
 extern EnergySyncDefaultTypeInternal _EnergySync_default_instance_;
@@ -79,6 +87,10 @@ class InventoryData;
 struct InventoryDataDefaultTypeInternal;
 extern InventoryDataDefaultTypeInternal _InventoryData_default_instance_;
 extern const ::google::protobuf::internal::ClassDataLite<19> InventoryData_class_data_;
+class InventorySync;
+struct InventorySyncDefaultTypeInternal;
+extern InventorySyncDefaultTypeInternal _InventorySync_default_instance_;
+extern const ::google::protobuf::internal::ClassDataLite<19> InventorySync_class_data_;
 class ItemUseReq;
 struct ItemUseReqDefaultTypeInternal;
 extern ItemUseReqDefaultTypeInternal _ItemUseReq_default_instance_;
@@ -91,6 +103,14 @@ class PlayerData;
 struct PlayerDataDefaultTypeInternal;
 extern PlayerDataDefaultTypeInternal _PlayerData_default_instance_;
 extern const ::google::protobuf::internal::ClassDataLite<16> PlayerData_class_data_;
+class PositionCorrect;
+struct PositionCorrectDefaultTypeInternal;
+extern PositionCorrectDefaultTypeInternal _PositionCorrect_default_instance_;
+extern const ::google::protobuf::internal::ClassDataLite<21> PositionCorrect_class_data_;
+class PositionUpdate;
+struct PositionUpdateDefaultTypeInternal;
+extern PositionUpdateDefaultTypeInternal _PositionUpdate_default_instance_;
+extern const ::google::protobuf::internal::ClassDataLite<20> PositionUpdate_class_data_;
 class SceneChangeReq;
 struct SceneChangeReqDefaultTypeInternal;
 extern SceneChangeReqDefaultTypeInternal _SceneChangeReq_default_instance_;
@@ -565,6 +585,436 @@ class SceneChangeReq final : public ::google::protobuf::MessageLite
 };
 
 extern const ::google::protobuf::internal::ClassDataLite<20> SceneChangeReq_class_data_;
+// -------------------------------------------------------------------
+
+class PositionUpdate final : public ::google::protobuf::MessageLite
+/* @@protoc_insertion_point(class_definition:farm.PositionUpdate) */ {
+ public:
+  inline PositionUpdate() : PositionUpdate(nullptr) {}
+  ~PositionUpdate() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(PositionUpdate* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PositionUpdate));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR PositionUpdate(::google::protobuf::internal::ConstantInitialized);
+
+  inline PositionUpdate(const PositionUpdate& from) : PositionUpdate(nullptr, from) {}
+  inline PositionUpdate(PositionUpdate&& from) noexcept
+      : PositionUpdate(nullptr, std::move(from)) {}
+  inline PositionUpdate& operator=(const PositionUpdate& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PositionUpdate& operator=(PositionUpdate&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const std::string& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString);
+  }
+  inline std::string* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<std::string>();
+  }
+
+  static const PositionUpdate& default_instance() {
+    return *reinterpret_cast<const PositionUpdate*>(
+        &_PositionUpdate_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 16;
+  friend void swap(PositionUpdate& a, PositionUpdate& b) { a.Swap(&b); }
+  inline void Swap(PositionUpdate* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PositionUpdate* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  PositionUpdate* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::MessageLite::DefaultConstruct<PositionUpdate>(arena);
+  }
+  void CopyFrom(const PositionUpdate& from);
+  void MergeFrom(const PositionUpdate& from) { PositionUpdate::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(PositionUpdate* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "farm.PositionUpdate"; }
+
+ protected:
+  explicit PositionUpdate(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PositionUpdate(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PositionUpdate& from);
+  PositionUpdate(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PositionUpdate&& from) noexcept
+      : PositionUpdate(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPosXFieldNumber = 1,
+    kPosYFieldNumber = 2,
+    kTimestampFieldNumber = 4,
+    kPosZFieldNumber = 3,
+  };
+  // float pos_x = 1;
+  void clear_pos_x() ;
+  float pos_x() const;
+  void set_pos_x(float value);
+
+  private:
+  float _internal_pos_x() const;
+  void _internal_set_pos_x(float value);
+
+  public:
+  // float pos_y = 2;
+  void clear_pos_y() ;
+  float pos_y() const;
+  void set_pos_y(float value);
+
+  private:
+  float _internal_pos_y() const;
+  void _internal_set_pos_y(float value);
+
+  public:
+  // uint64 timestamp = 4;
+  void clear_timestamp() ;
+  ::uint64_t timestamp() const;
+  void set_timestamp(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_timestamp() const;
+  void _internal_set_timestamp(::uint64_t value);
+
+  public:
+  // float pos_z = 3;
+  void clear_pos_z() ;
+  float pos_z() const;
+  void set_pos_z(float value);
+
+  private:
+  float _internal_pos_z() const;
+  void _internal_set_pos_z(float value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:farm.PositionUpdate)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const PositionUpdate& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    float pos_x_;
+    float pos_y_;
+    ::uint64_t timestamp_;
+    float pos_z_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_player_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataLite<20> PositionUpdate_class_data_;
+// -------------------------------------------------------------------
+
+class PositionCorrect final : public ::google::protobuf::MessageLite
+/* @@protoc_insertion_point(class_definition:farm.PositionCorrect) */ {
+ public:
+  inline PositionCorrect() : PositionCorrect(nullptr) {}
+  ~PositionCorrect() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(PositionCorrect* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PositionCorrect));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR PositionCorrect(::google::protobuf::internal::ConstantInitialized);
+
+  inline PositionCorrect(const PositionCorrect& from) : PositionCorrect(nullptr, from) {}
+  inline PositionCorrect(PositionCorrect&& from) noexcept
+      : PositionCorrect(nullptr, std::move(from)) {}
+  inline PositionCorrect& operator=(const PositionCorrect& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PositionCorrect& operator=(PositionCorrect&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const std::string& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString);
+  }
+  inline std::string* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<std::string>();
+  }
+
+  static const PositionCorrect& default_instance() {
+    return *reinterpret_cast<const PositionCorrect*>(
+        &_PositionCorrect_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 17;
+  friend void swap(PositionCorrect& a, PositionCorrect& b) { a.Swap(&b); }
+  inline void Swap(PositionCorrect* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PositionCorrect* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  PositionCorrect* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::MessageLite::DefaultConstruct<PositionCorrect>(arena);
+  }
+  void CopyFrom(const PositionCorrect& from);
+  void MergeFrom(const PositionCorrect& from) { PositionCorrect::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(PositionCorrect* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "farm.PositionCorrect"; }
+
+ protected:
+  explicit PositionCorrect(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PositionCorrect(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PositionCorrect& from);
+  PositionCorrect(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PositionCorrect&& from) noexcept
+      : PositionCorrect(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPosXFieldNumber = 1,
+    kPosYFieldNumber = 2,
+    kTimestampFieldNumber = 4,
+    kPosZFieldNumber = 3,
+  };
+  // float pos_x = 1;
+  void clear_pos_x() ;
+  float pos_x() const;
+  void set_pos_x(float value);
+
+  private:
+  float _internal_pos_x() const;
+  void _internal_set_pos_x(float value);
+
+  public:
+  // float pos_y = 2;
+  void clear_pos_y() ;
+  float pos_y() const;
+  void set_pos_y(float value);
+
+  private:
+  float _internal_pos_y() const;
+  void _internal_set_pos_y(float value);
+
+  public:
+  // uint64 timestamp = 4;
+  void clear_timestamp() ;
+  ::uint64_t timestamp() const;
+  void set_timestamp(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_timestamp() const;
+  void _internal_set_timestamp(::uint64_t value);
+
+  public:
+  // float pos_z = 3;
+  void clear_pos_z() ;
+  float pos_z() const;
+  void set_pos_z(float value);
+
+  private:
+  float _internal_pos_z() const;
+  void _internal_set_pos_z(float value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:farm.PositionCorrect)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const PositionCorrect& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    float pos_x_;
+    float pos_y_;
+    ::uint64_t timestamp_;
+    float pos_z_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_player_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataLite<21> PositionCorrect_class_data_;
 // -------------------------------------------------------------------
 
 class PlayerData final : public ::google::protobuf::MessageLite
@@ -1094,6 +1544,190 @@ class ItemUseReq final : public ::google::protobuf::MessageLite
 };
 
 extern const ::google::protobuf::internal::ClassDataLite<16> ItemUseReq_class_data_;
+// -------------------------------------------------------------------
+
+class InventorySync final : public ::google::protobuf::MessageLite
+/* @@protoc_insertion_point(class_definition:farm.InventorySync) */ {
+ public:
+  inline InventorySync() : InventorySync(nullptr) {}
+  ~InventorySync() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(InventorySync* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(InventorySync));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR InventorySync(::google::protobuf::internal::ConstantInitialized);
+
+  inline InventorySync(const InventorySync& from) : InventorySync(nullptr, from) {}
+  inline InventorySync(InventorySync&& from) noexcept
+      : InventorySync(nullptr, std::move(from)) {}
+  inline InventorySync& operator=(const InventorySync& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline InventorySync& operator=(InventorySync&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const std::string& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString);
+  }
+  inline std::string* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<std::string>();
+  }
+
+  static const InventorySync& default_instance() {
+    return *reinterpret_cast<const InventorySync*>(
+        &_InventorySync_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 14;
+  friend void swap(InventorySync& a, InventorySync& b) { a.Swap(&b); }
+  inline void Swap(InventorySync* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(InventorySync* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  InventorySync* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::MessageLite::DefaultConstruct<InventorySync>(arena);
+  }
+  void CopyFrom(const InventorySync& from);
+  void MergeFrom(const InventorySync& from) { InventorySync::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(InventorySync* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "farm.InventorySync"; }
+
+ protected:
+  explicit InventorySync(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  InventorySync(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const InventorySync& from);
+  InventorySync(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, InventorySync&& from) noexcept
+      : InventorySync(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kInventoryJsonFieldNumber = 1,
+  };
+  // string inventory_json = 1;
+  void clear_inventory_json() ;
+  const std::string& inventory_json() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_inventory_json(Arg_&& arg, Args_... args);
+  std::string* PROTOBUF_NONNULL mutable_inventory_json();
+  [[nodiscard]] std::string* PROTOBUF_NULLABLE release_inventory_json();
+  void set_allocated_inventory_json(std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const std::string& _internal_inventory_json() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_inventory_json(const std::string& value);
+  std::string* PROTOBUF_NONNULL _internal_mutable_inventory_json();
+
+  public:
+  // @@protoc_insertion_point(class_scope:farm.InventorySync)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 41,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const InventorySync& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr inventory_json_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_player_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataLite<19> InventorySync_class_data_;
 // -------------------------------------------------------------------
 
 class InventoryData final : public ::google::protobuf::MessageLite
@@ -2221,6 +2855,245 @@ class EnergySync final : public ::google::protobuf::MessageLite
 extern const ::google::protobuf::internal::ClassDataLite<16> EnergySync_class_data_;
 // -------------------------------------------------------------------
 
+class DropItemSync final : public ::google::protobuf::MessageLite
+/* @@protoc_insertion_point(class_definition:farm.DropItemSync) */ {
+ public:
+  inline DropItemSync() : DropItemSync(nullptr) {}
+  ~DropItemSync() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(DropItemSync* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(DropItemSync));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR DropItemSync(::google::protobuf::internal::ConstantInitialized);
+
+  inline DropItemSync(const DropItemSync& from) : DropItemSync(nullptr, from) {}
+  inline DropItemSync(DropItemSync&& from) noexcept
+      : DropItemSync(nullptr, std::move(from)) {}
+  inline DropItemSync& operator=(const DropItemSync& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline DropItemSync& operator=(DropItemSync&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const std::string& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString);
+  }
+  inline std::string* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<std::string>();
+  }
+
+  static const DropItemSync& default_instance() {
+    return *reinterpret_cast<const DropItemSync*>(
+        &_DropItemSync_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 13;
+  friend void swap(DropItemSync& a, DropItemSync& b) { a.Swap(&b); }
+  inline void Swap(DropItemSync* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(DropItemSync* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  DropItemSync* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::MessageLite::DefaultConstruct<DropItemSync>(arena);
+  }
+  void CopyFrom(const DropItemSync& from);
+  void MergeFrom(const DropItemSync& from) { DropItemSync::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(DropItemSync* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "farm.DropItemSync"; }
+
+ protected:
+  explicit DropItemSync(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  DropItemSync(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const DropItemSync& from);
+  DropItemSync(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, DropItemSync&& from) noexcept
+      : DropItemSync(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kDropIdFieldNumber = 1,
+    kItemIdFieldNumber = 2,
+    kCountFieldNumber = 3,
+    kXFieldNumber = 4,
+    kYFieldNumber = 5,
+    kActionFieldNumber = 6,
+  };
+  // uint32 drop_id = 1;
+  void clear_drop_id() ;
+  ::uint32_t drop_id() const;
+  void set_drop_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_drop_id() const;
+  void _internal_set_drop_id(::uint32_t value);
+
+  public:
+  // int32 item_id = 2;
+  void clear_item_id() ;
+  ::int32_t item_id() const;
+  void set_item_id(::int32_t value);
+
+  private:
+  ::int32_t _internal_item_id() const;
+  void _internal_set_item_id(::int32_t value);
+
+  public:
+  // int32 count = 3;
+  void clear_count() ;
+  ::int32_t count() const;
+  void set_count(::int32_t value);
+
+  private:
+  ::int32_t _internal_count() const;
+  void _internal_set_count(::int32_t value);
+
+  public:
+  // float x = 4;
+  void clear_x() ;
+  float x() const;
+  void set_x(float value);
+
+  private:
+  float _internal_x() const;
+  void _internal_set_x(float value);
+
+  public:
+  // float y = 5;
+  void clear_y() ;
+  float y() const;
+  void set_y(float value);
+
+  private:
+  float _internal_y() const;
+  void _internal_set_y(float value);
+
+  public:
+  // int32 action = 6;
+  void clear_action() ;
+  ::int32_t action() const;
+  void set_action(::int32_t value);
+
+  private:
+  ::int32_t _internal_action() const;
+  void _internal_set_action(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:farm.DropItemSync)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 6,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const DropItemSync& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint32_t drop_id_;
+    ::int32_t item_id_;
+    ::int32_t count_;
+    float x_;
+    float y_;
+    ::int32_t action_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_player_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataLite<18> DropItemSync_class_data_;
+// -------------------------------------------------------------------
+
 class ClockSync final : public ::google::protobuf::MessageLite
 /* @@protoc_insertion_point(class_definition:farm.ClockSync) */ {
  public:
@@ -2422,6 +3295,185 @@ class ClockSync final : public ::google::protobuf::MessageLite
 };
 
 extern const ::google::protobuf::internal::ClassDataLite<15> ClockSync_class_data_;
+// -------------------------------------------------------------------
+
+class ActiveSlotChange final : public ::google::protobuf::MessageLite
+/* @@protoc_insertion_point(class_definition:farm.ActiveSlotChange) */ {
+ public:
+  inline ActiveSlotChange() : ActiveSlotChange(nullptr) {}
+  ~ActiveSlotChange() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(ActiveSlotChange* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ActiveSlotChange));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ActiveSlotChange(::google::protobuf::internal::ConstantInitialized);
+
+  inline ActiveSlotChange(const ActiveSlotChange& from) : ActiveSlotChange(nullptr, from) {}
+  inline ActiveSlotChange(ActiveSlotChange&& from) noexcept
+      : ActiveSlotChange(nullptr, std::move(from)) {}
+  inline ActiveSlotChange& operator=(const ActiveSlotChange& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ActiveSlotChange& operator=(ActiveSlotChange&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const std::string& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<std::string>(::google::protobuf::internal::GetEmptyString);
+  }
+  inline std::string* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<std::string>();
+  }
+
+  static const ActiveSlotChange& default_instance() {
+    return *reinterpret_cast<const ActiveSlotChange*>(
+        &_ActiveSlotChange_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 15;
+  friend void swap(ActiveSlotChange& a, ActiveSlotChange& b) { a.Swap(&b); }
+  inline void Swap(ActiveSlotChange* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ActiveSlotChange* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ActiveSlotChange* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::MessageLite::DefaultConstruct<ActiveSlotChange>(arena);
+  }
+  void CopyFrom(const ActiveSlotChange& from);
+  void MergeFrom(const ActiveSlotChange& from) { ActiveSlotChange::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(ActiveSlotChange* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "farm.ActiveSlotChange"; }
+
+ protected:
+  explicit ActiveSlotChange(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ActiveSlotChange(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ActiveSlotChange& from);
+  ActiveSlotChange(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ActiveSlotChange&& from) noexcept
+      : ActiveSlotChange(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kActiveSlotFieldNumber = 1,
+  };
+  // int32 active_slot = 1;
+  void clear_active_slot() ;
+  ::int32_t active_slot() const;
+  void set_active_slot(::int32_t value);
+
+  private:
+  ::int32_t _internal_active_slot() const;
+  void _internal_set_active_slot(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:farm.ActiveSlotChange)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const ActiveSlotChange& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::int32_t active_slot_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_player_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataLite<22> ActiveSlotChange_class_data_;
 // -------------------------------------------------------------------
 
 class ItemUseResp final : public ::google::protobuf::MessageLite
@@ -4806,6 +5858,451 @@ inline ::int32_t ForceSleepReady::_internal_day() const {
 inline void ForceSleepReady::_internal_set_day(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.day_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// DropItemSync
+
+// uint32 drop_id = 1;
+inline void DropItemSync::clear_drop_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.drop_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::uint32_t DropItemSync::drop_id() const {
+  // @@protoc_insertion_point(field_get:farm.DropItemSync.drop_id)
+  return _internal_drop_id();
+}
+inline void DropItemSync::set_drop_id(::uint32_t value) {
+  _internal_set_drop_id(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:farm.DropItemSync.drop_id)
+}
+inline ::uint32_t DropItemSync::_internal_drop_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.drop_id_;
+}
+inline void DropItemSync::_internal_set_drop_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.drop_id_ = value;
+}
+
+// int32 item_id = 2;
+inline void DropItemSync::clear_item_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.item_id_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::int32_t DropItemSync::item_id() const {
+  // @@protoc_insertion_point(field_get:farm.DropItemSync.item_id)
+  return _internal_item_id();
+}
+inline void DropItemSync::set_item_id(::int32_t value) {
+  _internal_set_item_id(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:farm.DropItemSync.item_id)
+}
+inline ::int32_t DropItemSync::_internal_item_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.item_id_;
+}
+inline void DropItemSync::_internal_set_item_id(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.item_id_ = value;
+}
+
+// int32 count = 3;
+inline void DropItemSync::clear_count() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.count_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::int32_t DropItemSync::count() const {
+  // @@protoc_insertion_point(field_get:farm.DropItemSync.count)
+  return _internal_count();
+}
+inline void DropItemSync::set_count(::int32_t value) {
+  _internal_set_count(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:farm.DropItemSync.count)
+}
+inline ::int32_t DropItemSync::_internal_count() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.count_;
+}
+inline void DropItemSync::_internal_set_count(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.count_ = value;
+}
+
+// float x = 4;
+inline void DropItemSync::clear_x() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.x_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline float DropItemSync::x() const {
+  // @@protoc_insertion_point(field_get:farm.DropItemSync.x)
+  return _internal_x();
+}
+inline void DropItemSync::set_x(float value) {
+  _internal_set_x(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:farm.DropItemSync.x)
+}
+inline float DropItemSync::_internal_x() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.x_;
+}
+inline void DropItemSync::_internal_set_x(float value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.x_ = value;
+}
+
+// float y = 5;
+inline void DropItemSync::clear_y() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.y_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline float DropItemSync::y() const {
+  // @@protoc_insertion_point(field_get:farm.DropItemSync.y)
+  return _internal_y();
+}
+inline void DropItemSync::set_y(float value) {
+  _internal_set_y(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:farm.DropItemSync.y)
+}
+inline float DropItemSync::_internal_y() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.y_;
+}
+inline void DropItemSync::_internal_set_y(float value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.y_ = value;
+}
+
+// int32 action = 6;
+inline void DropItemSync::clear_action() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.action_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000020u;
+}
+inline ::int32_t DropItemSync::action() const {
+  // @@protoc_insertion_point(field_get:farm.DropItemSync.action)
+  return _internal_action();
+}
+inline void DropItemSync::set_action(::int32_t value) {
+  _internal_set_action(value);
+  _impl_._has_bits_[0] |= 0x00000020u;
+  // @@protoc_insertion_point(field_set:farm.DropItemSync.action)
+}
+inline ::int32_t DropItemSync::_internal_action() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.action_;
+}
+inline void DropItemSync::_internal_set_action(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.action_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// InventorySync
+
+// string inventory_json = 1;
+inline void InventorySync::clear_inventory_json() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.inventory_json_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const std::string& InventorySync::inventory_json() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:farm.InventorySync.inventory_json)
+  return _internal_inventory_json();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void InventorySync::set_inventory_json(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.inventory_json_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:farm.InventorySync.inventory_json)
+}
+inline std::string* PROTOBUF_NONNULL InventorySync::mutable_inventory_json()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_inventory_json();
+  // @@protoc_insertion_point(field_mutable:farm.InventorySync.inventory_json)
+  return _s;
+}
+inline const std::string& InventorySync::_internal_inventory_json() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.inventory_json_.Get();
+}
+inline void InventorySync::_internal_set_inventory_json(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.inventory_json_.Set(value, GetArena());
+}
+inline std::string* PROTOBUF_NONNULL InventorySync::_internal_mutable_inventory_json() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  return _impl_.inventory_json_.Mutable( GetArena());
+}
+inline std::string* PROTOBUF_NULLABLE InventorySync::release_inventory_json() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:farm.InventorySync.inventory_json)
+  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  auto* released = _impl_.inventory_json_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.inventory_json_.Set("", GetArena());
+  }
+  return released;
+}
+inline void InventorySync::set_allocated_inventory_json(std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.inventory_json_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.inventory_json_.IsDefault()) {
+    _impl_.inventory_json_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:farm.InventorySync.inventory_json)
+}
+
+// -------------------------------------------------------------------
+
+// ActiveSlotChange
+
+// int32 active_slot = 1;
+inline void ActiveSlotChange::clear_active_slot() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.active_slot_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::int32_t ActiveSlotChange::active_slot() const {
+  // @@protoc_insertion_point(field_get:farm.ActiveSlotChange.active_slot)
+  return _internal_active_slot();
+}
+inline void ActiveSlotChange::set_active_slot(::int32_t value) {
+  _internal_set_active_slot(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:farm.ActiveSlotChange.active_slot)
+}
+inline ::int32_t ActiveSlotChange::_internal_active_slot() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.active_slot_;
+}
+inline void ActiveSlotChange::_internal_set_active_slot(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.active_slot_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// PositionUpdate
+
+// float pos_x = 1;
+inline void PositionUpdate::clear_pos_x() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_x_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline float PositionUpdate::pos_x() const {
+  // @@protoc_insertion_point(field_get:farm.PositionUpdate.pos_x)
+  return _internal_pos_x();
+}
+inline void PositionUpdate::set_pos_x(float value) {
+  _internal_set_pos_x(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:farm.PositionUpdate.pos_x)
+}
+inline float PositionUpdate::_internal_pos_x() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.pos_x_;
+}
+inline void PositionUpdate::_internal_set_pos_x(float value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_x_ = value;
+}
+
+// float pos_y = 2;
+inline void PositionUpdate::clear_pos_y() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_y_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline float PositionUpdate::pos_y() const {
+  // @@protoc_insertion_point(field_get:farm.PositionUpdate.pos_y)
+  return _internal_pos_y();
+}
+inline void PositionUpdate::set_pos_y(float value) {
+  _internal_set_pos_y(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:farm.PositionUpdate.pos_y)
+}
+inline float PositionUpdate::_internal_pos_y() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.pos_y_;
+}
+inline void PositionUpdate::_internal_set_pos_y(float value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_y_ = value;
+}
+
+// float pos_z = 3;
+inline void PositionUpdate::clear_pos_z() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_z_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline float PositionUpdate::pos_z() const {
+  // @@protoc_insertion_point(field_get:farm.PositionUpdate.pos_z)
+  return _internal_pos_z();
+}
+inline void PositionUpdate::set_pos_z(float value) {
+  _internal_set_pos_z(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:farm.PositionUpdate.pos_z)
+}
+inline float PositionUpdate::_internal_pos_z() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.pos_z_;
+}
+inline void PositionUpdate::_internal_set_pos_z(float value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_z_ = value;
+}
+
+// uint64 timestamp = 4;
+inline void PositionUpdate::clear_timestamp() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.timestamp_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::uint64_t PositionUpdate::timestamp() const {
+  // @@protoc_insertion_point(field_get:farm.PositionUpdate.timestamp)
+  return _internal_timestamp();
+}
+inline void PositionUpdate::set_timestamp(::uint64_t value) {
+  _internal_set_timestamp(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:farm.PositionUpdate.timestamp)
+}
+inline ::uint64_t PositionUpdate::_internal_timestamp() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.timestamp_;
+}
+inline void PositionUpdate::_internal_set_timestamp(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.timestamp_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// PositionCorrect
+
+// float pos_x = 1;
+inline void PositionCorrect::clear_pos_x() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_x_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline float PositionCorrect::pos_x() const {
+  // @@protoc_insertion_point(field_get:farm.PositionCorrect.pos_x)
+  return _internal_pos_x();
+}
+inline void PositionCorrect::set_pos_x(float value) {
+  _internal_set_pos_x(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:farm.PositionCorrect.pos_x)
+}
+inline float PositionCorrect::_internal_pos_x() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.pos_x_;
+}
+inline void PositionCorrect::_internal_set_pos_x(float value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_x_ = value;
+}
+
+// float pos_y = 2;
+inline void PositionCorrect::clear_pos_y() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_y_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline float PositionCorrect::pos_y() const {
+  // @@protoc_insertion_point(field_get:farm.PositionCorrect.pos_y)
+  return _internal_pos_y();
+}
+inline void PositionCorrect::set_pos_y(float value) {
+  _internal_set_pos_y(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:farm.PositionCorrect.pos_y)
+}
+inline float PositionCorrect::_internal_pos_y() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.pos_y_;
+}
+inline void PositionCorrect::_internal_set_pos_y(float value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_y_ = value;
+}
+
+// float pos_z = 3;
+inline void PositionCorrect::clear_pos_z() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_z_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline float PositionCorrect::pos_z() const {
+  // @@protoc_insertion_point(field_get:farm.PositionCorrect.pos_z)
+  return _internal_pos_z();
+}
+inline void PositionCorrect::set_pos_z(float value) {
+  _internal_set_pos_z(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:farm.PositionCorrect.pos_z)
+}
+inline float PositionCorrect::_internal_pos_z() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.pos_z_;
+}
+inline void PositionCorrect::_internal_set_pos_z(float value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.pos_z_ = value;
+}
+
+// uint64 timestamp = 4;
+inline void PositionCorrect::clear_timestamp() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.timestamp_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::uint64_t PositionCorrect::timestamp() const {
+  // @@protoc_insertion_point(field_get:farm.PositionCorrect.timestamp)
+  return _internal_timestamp();
+}
+inline void PositionCorrect::set_timestamp(::uint64_t value) {
+  _internal_set_timestamp(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:farm.PositionCorrect.timestamp)
+}
+inline ::uint64_t PositionCorrect::_internal_timestamp() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.timestamp_;
+}
+inline void PositionCorrect::_internal_set_timestamp(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.timestamp_ = value;
 }
 
 #ifdef __GNUC__

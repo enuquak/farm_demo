@@ -99,6 +99,8 @@ private:
                               const uint8_t* payload, size_t payload_len);
     void handle_enter_game_req(std::shared_ptr<GateSession> session,
                                uint64_t player_id, const std::string& payload);
+    void handle_position_update(uint64_t player_id,
+                                const uint8_t* payload, size_t payload_len);
 
     // 玩家加入回调处理
     void handle_player_join_callback(std::shared_ptr<GateSession> session,

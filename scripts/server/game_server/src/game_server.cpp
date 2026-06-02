@@ -17,6 +17,9 @@
 #include <arpa/inet.h>
 #endif
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <ctime>
 #include <tuple>
 
 #include "internal.pb.h"
@@ -193,6 +196,13 @@ bool GameServer::start() {
             game_clock_->handle_force_sleep_ready(player_id, payload, payload_len);
         });
     SPDLOG_INFO("[Game]Force sleep handler registered");
+
+    // 注册位置更新消息处理
+    msg_handler_.register_handler(MSG_ID_POSITION_UPDATE,
+        [this](uint64_t player_id, const uint8_t* payload, size_t payload_len) {
+            handle_position_update(player_id, payload, payload_len);
+        });
+    SPDLOG_INFO("[Game]Position update handler registered");
 
     // 初始化默认场景（farm）
     scene_mgr_->get_or_create_scene("farm");
@@ -653,6 +663,100 @@ void GameServer::handle_client_msg(std::shared_ptr<GateSession> session,
 void GameServer::handle_enter_game_req(std::shared_ptr<GateSession> session,
                                         uint64_t player_id, const std::string& payload) {
     login_stub_->handle_enter_game_req(session, player_id, payload);
+}
+
+void GameServer::handle_position_update(uint64_t player_id,
+                                        const uint8_t* payload, size_t payload_len) {
+    // Parse PositionUpdate
+    farm::PositionUpdate req;
+    if (payload_len > 0 && !req.ParseFromArray(payload, static_cast<int>(payload_len))) {
+        SPDLOG_ERROR("[Game]Failed to parse PositionUpdate for player_id={}", player_id);
+        return;
+    }
+
+    // Find player
+    Player* player = player_mgr_.get_player(player_id).value_or(nullptr);
+    if (!player || player->data_state() != PlayerBizDataState::LOADED) {
+        return;
+    }
+
+    // Check scene exists
+    const std::string& scene_id = player->get_scene_id();
+    auto scene_opt = scene_mgr_->get_scene(scene_id);
+    if (!scene_opt.has_value() || !scene_opt.value()) {
+        return;
+    }
+    SceneState* scene = scene_opt.value();
+
+    // Timeout check: discard stale updates
+    int64_t now_ms = static_cast<int64_t>(std::time(nullptr)) * 1000;
+    if (req.timestamp() > 0 && (now_ms - static_cast<int64_t>(req.timestamp())) > POSITION_UPDATE_TIMEOUT_MS) {
+        SPDLOG_DEBUG("[Game]Stale position update from player_id={} (age={}ms)", player_id, now_ms - req.timestamp());
+        return;
+    }
+
+    float new_x = req.pos_x();
+    float new_y = req.pos_y();
+    float new_z = req.pos_z();
+
+    // Boundary check (pixel coordinates, scene dimensions in tiles, TILE_SIZE=16)
+    constexpr float TILE_SIZE_PX = 16.0f;
+    float max_x = scene->width() * TILE_SIZE_PX - TILE_SIZE_PX;
+    float max_y = scene->height() * TILE_SIZE_PX - TILE_SIZE_PX;
+
+    if (new_x < 0.0f || new_x > max_x || new_y < 0.0f || new_y > max_y) {
+        SPDLOG_WARN("[Game]Boundary violation: player_id={} pos=({:.1f},{:.1f}) bounds=[0,0]-[{:.1f},{:.1f}]",
+                    player_id, new_x, new_y, max_x, max_y);
+        // Send correction with clamped position
+        float corr_x = std::max(0.0f, std::min(new_x, max_x));
+        float corr_y = std::max(0.0f, std::min(new_y, max_y));
+        farm::PositionCorrect corr;
+        corr.set_pos_x(corr_x);
+        corr.set_pos_y(corr_y);
+        corr.set_pos_z(new_z);
+        corr.set_timestamp(req.timestamp());
+        std::string corr_data;
+        corr.SerializeToString(&corr_data);
+        send_game_msg(player_id, MSG_ID_POSITION_CORRECT,
+                      reinterpret_cast<const uint8_t*>(corr_data.data()), corr_data.size());
+        return;
+    }
+
+    // Speed check
+    float old_x = player->get_pos_x();
+    float old_y = player->get_pos_y();
+    float dx = new_x - old_x;
+    float dy = new_y - old_y;
+    float distance = std::sqrt(dx * dx + dy * dy);
+
+    if (distance > 0.01f) {
+        // Estimate time delta: use 100ms as default if no prior timestamp
+        float time_delta_s = 0.1f;
+        float speed = distance / time_delta_s;
+
+        if (speed > MAX_PLAYER_SPEED) {
+            SPDLOG_WARN("[Game]Speed violation: player_id={} speed={:.1f} max={:.1f} dist={:.1f}",
+                        player_id, speed, MAX_PLAYER_SPEED, distance);
+            // Send correction with last known good position
+            farm::PositionCorrect corr;
+            corr.set_pos_x(old_x);
+            corr.set_pos_y(old_y);
+            corr.set_pos_z(player->get_pos_z());
+            corr.set_timestamp(req.timestamp());
+            std::string corr_data;
+            corr.SerializeToString(&corr_data);
+            send_game_msg(player_id, MSG_ID_POSITION_CORRECT,
+                          reinterpret_cast<const uint8_t*>(corr_data.data()), corr_data.size());
+            return;
+        }
+    }
+
+    // Valid update — apply
+    player->set_pos_x(new_x);
+    player->set_pos_y(new_y);
+    player->set_pos_z(new_z);
+
+    SPDLOG_DEBUG("[Game]Position updated: player_id=({:.1f},{:.1f})", player_id, new_x, new_y);
 }
 
 void GameServer::handle_item_use_req(uint64_t player_id,
