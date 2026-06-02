@@ -1,0 +1,34 @@
+{
+  "weapons": [
+    {
+      "id": "wooden_sword",
+      "name": "木剑",
+      "item_id": 100,
+      "attack": 10,
+      "attack_range": 1.5,
+      "attack_speed": 0.4,
+      "knockback": 2.0,
+      "description": "基础的木质短剑"
+    },
+    {
+      "id": "iron_sword",
+      "name": "铁剑",
+      "item_id": 101,
+      "attack": 25,
+      "attack_range": 1.8,
+      "attack_speed": 0.35,
+      "knockback": 3.0,
+      "description": "坚固的铁制长剑"
+    },
+    {
+      "id": "gold_sword",
+      "name": "金剑",
+      "item_id": 102,
+      "attack": 40,
+      "attack_range": 2.0,
+      "attack_speed": 0.3,
+      "knockback": 4.0,
+      "description": "闪耀的黄金之剑"
+    }
+  ]
+}

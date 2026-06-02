@@ -1,0 +1,55 @@
+{
+  "monsters": [
+    {
+      "id": "slime",
+      "name": "史莱姆",
+      "sprite_sheet": "monster_slime.png",
+      "hp": 30,
+      "attack": 5,
+      "defense": 0,
+      "speed": 30.0,
+      "exp_reward": 10,
+      "aggro_range": 5,
+      "attack_range": 1,
+      "attack_cooldown": 1.5,
+      "wander_interval": [2.0, 5.0],
+      "wander_radius": 3,
+      "color": [50, 180, 50],
+      "size": [12, 12]
+    },
+    {
+      "id": "bat",
+      "name": "蝙蝠",
+      "sprite_sheet": "monster_bat.png",
+      "hp": 20,
+      "attack": 8,
+      "defense": 0,
+      "speed": 50.0,
+      "exp_reward": 15,
+      "aggro_range": 6,
+      "attack_range": 1,
+      "attack_cooldown": 1.0,
+      "wander_interval": [1.0, 3.0],
+      "wander_radius": 5,
+      "color": [100, 60, 120],
+      "size": [10, 10]
+    },
+    {
+      "id": "skeleton",
+      "name": "骷髅战士",
+      "sprite_sheet": "monster_skeleton.png",
+      "hp": 80,
+      "attack": 15,
+      "defense": 5,
+      "speed": 25.0,
+      "exp_reward": 50,
+      "aggro_range": 4,
+      "attack_range": 1,
+      "attack_cooldown": 2.0,
+      "wander_interval": [3.0, 6.0],
+      "wander_radius": 2,
+      "color": [200, 200, 180],
+      "size": [12, 14]
+    }
+  ]
+}
