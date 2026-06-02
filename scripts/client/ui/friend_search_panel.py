@@ -55,8 +55,11 @@ class FriendSearchPanel:
         return self._input_rect.collidepoint(pos)
 
     def get_clicked_result_index(self, pos) -> int:
+        x = pos[0]
         y = pos[1]
         start_y = self._panel_y + 110
+        if x < self._panel_x or x > self._panel_x + self._panel_rect.w:
+            return -1
         if y < start_y:
             return -1
         idx = (y - start_y) // FRIEND_PANEL_ROW_HEIGHT
@@ -108,7 +111,8 @@ class FriendSearchPanel:
         screen.blit(btn_text, (self._search_rect.x + 15, self._search_rect.y + 6))
 
         # Results
-        for i, result in enumerate(self._results):
+        visible_count = (self._panel_rect.h - 110) // FRIEND_PANEL_ROW_HEIGHT
+        for i, result in enumerate(self._results[:visible_count]):
             row_y = self._panel_y + 110 + i * FRIEND_PANEL_ROW_HEIGHT
             name_text = self._font.render(f"{result.role_name} Lv.{result.level}", True, FRIEND_PANEL_TEXT_COLOR)
             screen.blit(name_text, (self._panel_x + 15, row_y + 10))

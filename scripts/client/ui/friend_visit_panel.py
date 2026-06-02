@@ -41,8 +41,9 @@ class FriendVisitPanel:
             self._font = pygame.font.Font(None, 15)
             self._title_font = pygame.font.Font(None, 17)
 
-    def open(self, owner_name: str):
+    def open(self, owner_id: int, owner_name: str):
         self._visible = True
+        self._owner_id = owner_id
         self._owner_name = owner_name
         self._actions_remaining = 5
 
