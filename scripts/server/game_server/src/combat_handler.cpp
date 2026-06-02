@@ -116,4 +116,60 @@ void CombatHandler::monster_attack_player(uint32_t monster_id, Player* player,
     }
 }
 
+void CombatHandler::distribute_exp(uint64_t killer_id, int32_t exp, Player* player,
+                                    SendGameMsgFunc send_msg) {
+    if (exp <= 0) return;
+
+    // 查询击杀者是否在队伍中
+    std::vector<uint64_t> team_members;
+    if (query_team_func_) {
+        team_members = query_team_func_(killer_id);
+    }
+
+    if (team_members.empty()) {
+        // 不在队伍中，击杀者独享经验
+        player->add_exp(exp);
+
+        // 发送经验更新
+        nlohmann::json exp_update;
+        exp_update["exp_gained"] = exp;
+        exp_update["total_exp"] = player->get_exp();
+        exp_update["level"] = player->get_level();
+
+        std::string data = exp_update.dump();
+        send_msg(killer_id, MSG_ID_COMBAT_EXP_UPDATE,
+                 reinterpret_cast<const uint8_t*>(data.data()), data.size());
+
+        SPDLOG_INFO("[Combat]Player {} gained {} exp (solo)", killer_id, exp);
+    } else {
+        // 在队伍中，平均分配经验
+        // TODO: 过滤在同一矿洞层的在线成员
+        int32_t exp_per_member = exp / static_cast<int32_t>(team_members.size());
+
+        for (uint64_t member_id : team_members) {
+            // TODO: 获取成员 Player 对象并添加经验
+            // 目前只给击杀者添加经验
+            if (member_id == killer_id) {
+                player->add_exp(exp_per_member);
+
+                // 发送经验更新
+                nlohmann::json exp_update;
+                exp_update["exp_gained"] = exp_per_member;
+                exp_update["total_exp"] = player->get_exp();
+                exp_update["level"] = player->get_level();
+                exp_update["shared"] = true;
+                exp_update["team_size"] = team_members.size();
+
+                std::string data = exp_update.dump();
+                send_msg(killer_id, MSG_ID_COMBAT_EXP_UPDATE,
+                         reinterpret_cast<const uint8_t*>(data.data()), data.size());
+
+                SPDLOG_INFO("[Combat]Player {} gained {} exp (team, {} members)",
+                            killer_id, exp_per_member, team_members.size());
+            }
+            // TODO: 给其他在线队员也添加经验
+        }
+    }
+}
+
 }  // namespace farm
