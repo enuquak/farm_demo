@@ -20,6 +20,12 @@ from .message_ids import (
     MSG_ID_MONSTER_ATTACK_NOTIFY, MSG_ID_PLAYER_HP_UPDATE,
     MSG_ID_PLAYER_DEATH_NOTIFY,
     MSG_ID_CHAT_MESSAGE, MSG_ID_CHAT_SEND_RESP,
+    MSG_ID_TEAM_CREATE_RESP, MSG_ID_TEAM_DISBAND_RESP,
+    MSG_ID_TEAM_INVITE_RESP, MSG_ID_TEAM_INVITE_NOTIFY,
+    MSG_ID_TEAM_ACCEPT_RESP, MSG_ID_TEAM_REJECT_RESP,
+    MSG_ID_TEAM_LEAVE_RESP, MSG_ID_TEAM_KICK_RESP,
+    MSG_ID_TEAM_INFO_RESP, MSG_ID_TEAM_MEMBER_UPDATE,
+    MSG_ID_TEAM_LEADER_CHANGE, MSG_ID_TEAM_STATUS_UPDATE,
 )
 
 import sys
@@ -65,6 +71,18 @@ class NetworkMessageDispatcher:
         on_player_death=None,
         on_chat_message: Callable[[bytes], None] = None,
         on_chat_send_resp: Callable[[bytes], None] = None,
+        on_team_create_resp: Callable[[bytes], None] = None,
+        on_team_disband_resp: Callable[[bytes], None] = None,
+        on_team_invite_resp: Callable[[bytes], None] = None,
+        on_team_invite_notify: Callable[[bytes], None] = None,
+        on_team_accept_resp: Callable[[bytes], None] = None,
+        on_team_reject_resp: Callable[[bytes], None] = None,
+        on_team_leave_resp: Callable[[bytes], None] = None,
+        on_team_kick_resp: Callable[[bytes], None] = None,
+        on_team_info_resp: Callable[[bytes], None] = None,
+        on_team_member_update: Callable[[bytes], None] = None,
+        on_team_leader_change: Callable[[bytes], None] = None,
+        on_team_status_update: Callable[[bytes], None] = None,
     ):
         """
         初始化消息分发器
@@ -114,6 +132,18 @@ class NetworkMessageDispatcher:
             "on_player_death": on_player_death,
             "on_chat_message": on_chat_message,
             "on_chat_send_resp": on_chat_send_resp,
+            "on_team_create_resp": on_team_create_resp,
+            "on_team_disband_resp": on_team_disband_resp,
+            "on_team_invite_resp": on_team_invite_resp,
+            "on_team_invite_notify": on_team_invite_notify,
+            "on_team_accept_resp": on_team_accept_resp,
+            "on_team_reject_resp": on_team_reject_resp,
+            "on_team_leave_resp": on_team_leave_resp,
+            "on_team_kick_resp": on_team_kick_resp,
+            "on_team_info_resp": on_team_info_resp,
+            "on_team_member_update": on_team_member_update,
+            "on_team_leader_change": on_team_leader_change,
+            "on_team_status_update": on_team_status_update,
         }
 
         # 分发表: msg_id -> handler 方法
@@ -144,6 +174,18 @@ class NetworkMessageDispatcher:
             MSG_ID_PLAYER_DEATH_NOTIFY: self._handle_player_death,
             MSG_ID_CHAT_MESSAGE: self._handle_chat_message,
             MSG_ID_CHAT_SEND_RESP: self._handle_chat_send_resp,
+            MSG_ID_TEAM_CREATE_RESP: self._handle_team_create_resp,
+            MSG_ID_TEAM_DISBAND_RESP: self._handle_team_disband_resp,
+            MSG_ID_TEAM_INVITE_RESP: self._handle_team_invite_resp,
+            MSG_ID_TEAM_INVITE_NOTIFY: self._handle_team_invite_notify,
+            MSG_ID_TEAM_ACCEPT_RESP: self._handle_team_accept_resp,
+            MSG_ID_TEAM_REJECT_RESP: self._handle_team_reject_resp,
+            MSG_ID_TEAM_LEAVE_RESP: self._handle_team_leave_resp,
+            MSG_ID_TEAM_KICK_RESP: self._handle_team_kick_resp,
+            MSG_ID_TEAM_INFO_RESP: self._handle_team_info_resp,
+            MSG_ID_TEAM_MEMBER_UPDATE: self._handle_team_member_update,
+            MSG_ID_TEAM_LEADER_CHANGE: self._handle_team_leader_change,
+            MSG_ID_TEAM_STATUS_UPDATE: self._handle_team_status_update,
         }
 
     def dispatch_pending(self, connection=None):
@@ -505,3 +547,125 @@ class NetworkMessageDispatcher:
                 self._callbacks["on_chat_send_resp"](player_msg.payload)
         except Exception as e:
             logger.error(f"[NetworkDispatcher]Failed to parse ChatSendResp: {e}")
+
+    # ========== 组队系统消息处理 ==========
+
+    def _handle_team_create_resp(self, payload: bytes):
+        """处理创建队伍响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_create_resp"):
+                self._callbacks["on_team_create_resp"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamCreateResp: {e}")
+
+    def _handle_team_disband_resp(self, payload: bytes):
+        """处理解散队伍响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_disband_resp"):
+                self._callbacks["on_team_disband_resp"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamDisbandResp: {e}")
+
+    def _handle_team_invite_resp(self, payload: bytes):
+        """处理邀请响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_invite_resp"):
+                self._callbacks["on_team_invite_resp"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamInviteResp: {e}")
+
+    def _handle_team_invite_notify(self, payload: bytes):
+        """处理收到邀请通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_invite_notify"):
+                self._callbacks["on_team_invite_notify"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamInviteNotify: {e}")
+
+    def _handle_team_accept_resp(self, payload: bytes):
+        """处理接受邀请响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_accept_resp"):
+                self._callbacks["on_team_accept_resp"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamAcceptResp: {e}")
+
+    def _handle_team_reject_resp(self, payload: bytes):
+        """处理拒绝邀请响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_reject_resp"):
+                self._callbacks["on_team_reject_resp"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamRejectResp: {e}")
+
+    def _handle_team_leave_resp(self, payload: bytes):
+        """处理离开队伍响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_leave_resp"):
+                self._callbacks["on_team_leave_resp"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamLeaveResp: {e}")
+
+    def _handle_team_kick_resp(self, payload: bytes):
+        """处理踢出响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_kick_resp"):
+                self._callbacks["on_team_kick_resp"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamKickResp: {e}")
+
+    def _handle_team_info_resp(self, payload: bytes):
+        """处理队伍信息响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_info_resp"):
+                self._callbacks["on_team_info_resp"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamInfoResp: {e}")
+
+    def _handle_team_member_update(self, payload: bytes):
+        """处理成员变更通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_member_update"):
+                self._callbacks["on_team_member_update"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamMemberUpdate: {e}")
+
+    def _handle_team_leader_change(self, payload: bytes):
+        """处理队长变更通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_leader_change"):
+                self._callbacks["on_team_leader_change"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamLeaderChange: {e}")
+
+    def _handle_team_status_update(self, payload: bytes):
+        """处理队伍状态变更"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_team_status_update"):
+                self._callbacks["on_team_status_update"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse TeamStatusUpdate: {e}")
