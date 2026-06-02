@@ -354,6 +354,66 @@ void Player::init_default_data() {
     SPDLOG_INFO("[Player]Initialized default data for player_id={}", player_id_);
 }
 
+bool Player::load_from_json(const std::string& json_str) {
+    try {
+        auto json = nlohmann::json::parse(json_str);
+
+        PlayerBizData data;
+        data.role_name = json.value("role_name", "");
+        data.level = json.value("level", 1);
+        data.gold = json.value("gold", int64_t(0));
+        data.experience = json.value("experience", int64_t(0));
+        data.pos_x = json.value("pos_x", 0.0f);
+        data.pos_y = json.value("pos_y", 0.0f);
+        data.pos_z = json.value("pos_z", 0.0f);
+        data.energy = json.value("energy", 100);
+        data.scene_id = json.value("scene_id", "");
+
+        // JSON 字符串字段：对象→dump()，字符串→直接用
+        auto load_json_str = [&json](const std::string& key) -> std::string {
+            if (json.contains(key)) {
+                auto& v = json[key];
+                if (v.is_string()) return v.get<std::string>();
+                return v.dump();
+            }
+            return "{}";
+        };
+        data.inventory = load_json_str("inventory");
+        data.farm_state = load_json_str("farm_state");
+        data.extra_data = load_json_str("extra_data");
+        data.task_infos = load_json_str("task_infos");
+        data.equipped_weapon = load_json_str("equipped_weapon");
+
+        // 战斗字段
+        data.max_hp = json.value("max_hp", 100);
+        data.current_hp = json.value("current_hp", 100);
+        data.attack_power = json.value("attack_power", 0);
+        data.defense_power = json.value("defense_power", 0);
+        data.combat_exp = json.value("combat_exp", 0);
+        data.combat_level = json.value("combat_level", 1);
+
+        // 检查关键字段是否存在于 JSON 中
+        static const std::vector<std::string> critical_fields = {
+            "role_name", "level", "gold", "scene_id"
+        };
+        for (const auto& field : critical_fields) {
+            if (!json.contains(field)) {
+                SPDLOG_WARN("[Player]Missing field '{}' in loaded data for player_id={}",
+                            field, player_id_);
+            }
+        }
+
+        set_player_data(std::move(data));
+        clear_dirty();  // 加载的数据不是脏数据
+        return true;
+
+    } catch (const std::exception& e) {
+        SPDLOG_ERROR("[Player]load_from_json failed for player_id={} error={}",
+                     player_id_, e.what());
+        return false;
+    }
+}
+
 void Player::start_save_timer(struct event_base* base) {
     if (save_timer_ || !base) return;
 

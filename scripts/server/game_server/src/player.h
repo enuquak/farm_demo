@@ -136,6 +136,10 @@ public:
     // 初始化默认数据（新玩家）
     void init_default_data();
 
+    // 从 JSON 字符串加载数据（DBMgr 返回的 BSON/JSON 数据）
+    // 返回 true 表示解析成功，false 表示解析失败
+    bool load_from_json(const std::string& json_str);
+
     // 存盘接口
     void save();                              // 差量存盘：遍历 dirty_fields_ 发 SET
     void save_field(const std::string& field); // 单字段存盘：发 SET
