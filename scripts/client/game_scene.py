@@ -33,6 +33,9 @@ from .affection_system import AffectionSystem
 from .bubble_ui import BubbleUI
 from .quest_handler import QuestHandler
 from .chat import ChatManager, ChatPanel
+from .team_manager import TeamManager
+from .team_hud import TeamHUD
+from .team_invite_notify import TeamInviteNotifyUI
 
 # 战斗系统（可选模块）
 try:
@@ -157,6 +160,12 @@ class GameScene:
         self._chat_manager = ChatManager(connection, player_data)
         self._chat_panel = ChatPanel(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
 
+        # 组队系统
+        player_id = player_data.get('player_id', 0)
+        self._team_mgr = TeamManager(connection, player_id)
+        self._team_hud = TeamHUD(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+        self._team_invite_ui = TeamInviteNotifyUI(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+
         # 战斗系统（可选）
         if _COMBAT_AVAILABLE:
             self._weapon_manager = WeaponManager()
@@ -217,6 +226,19 @@ class GameScene:
             # 聊天系统回调
             on_chat_message=self._chat_manager.on_chat_message,
             on_chat_send_resp=self._chat_manager.on_chat_send_resp,
+            # 组队系统回调
+            on_team_create_resp=self._team_mgr.on_team_create_resp,
+            on_team_disband_resp=self._team_mgr.on_team_disband_resp,
+            on_team_invite_resp=self._team_mgr.on_team_invite_resp,
+            on_team_invite_notify=self._on_team_invite_notify,
+            on_team_accept_resp=self._team_mgr.on_team_accept_resp,
+            on_team_reject_resp=self._team_mgr.on_team_reject_resp,
+            on_team_leave_resp=self._team_mgr.on_team_leave_resp,
+            on_team_kick_resp=self._team_mgr.on_team_kick_resp,
+            on_team_info_resp=self._team_mgr.on_team_info_resp,
+            on_team_member_update=self._team_mgr.on_team_member_update,
+            on_team_leader_change=self._team_mgr.on_team_leader_change,
+            on_team_status_update=self._team_mgr.on_team_status_update,
         )
 
         # 强制睡觉状态
@@ -260,6 +282,14 @@ class GameScene:
 
                 # 聊天面板事件（输入激活时优先处理）
                 if self._chat_panel.handle_event(event, self._chat_manager):
+                    continue
+
+                # 组队邀请通知事件
+                if self._team_invite_ui.handle_event(event, self._team_mgr):
+                    continue
+
+                # 队伍 HUD 事件
+                if self._team_hud.handle_event(event, self._team_mgr):
                     continue
 
                 if event.type == pygame.KEYDOWN:
@@ -373,6 +403,11 @@ class GameScene:
                 chat_panel=self._chat_panel,
                 chat_manager=self._chat_manager,
             )
+
+            # 组队 UI 渲染
+            self._team_hud.render(self.screen, self._team_mgr)
+            self._team_invite_ui.update()
+            self._team_invite_ui.render(self.screen)
 
             # 控制帧率
             self.clock.tick(TARGET_FPS)
@@ -758,6 +793,15 @@ class GameScene:
     def _on_quest_progress_notify(self, notify):
         """任务进度通知回调"""
         self._quest_handler.handle_quest_progress_notify(notify)
+
+    # ========== 组队系统回调 ==========
+
+    def _on_team_invite_notify(self, data):
+        """收到组队邀请"""
+        self._team_mgr.on_team_invite_notify(data)
+        invite = self._team_mgr.pending_invites[-1] if self._team_mgr.pending_invites else None
+        if invite:
+            self._team_invite_ui.add_invite(invite)
 
     # ========== 战斗系统回调 ==========
 
