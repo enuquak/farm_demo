@@ -6,7 +6,6 @@
 #include <cstring>
 
 #include "dbmgr.pb.h"
-#include "player.pb.h"
 #include "log_macros.h"
 
 namespace farm {
@@ -129,9 +128,9 @@ std::vector<Player*> PlayerManager::get_all_players() const {
 
 void PlayerManager::remove_players_by_gate(GateSession* gate_session) {
     std::vector<uint64_t> to_remove;
-    for (auto& kv : players_) {
-        if (kv.second->gate_session() == gate_session) {
-            to_remove.push_back(kv.first);
+    for (auto& [player_id, player] : players_) {
+        if (player->gate_session() == gate_session) {
+            to_remove.push_back(player_id);
         }
     }
     for (uint64_t pid : to_remove) {
@@ -149,9 +148,9 @@ void PlayerManager::remove_players_by_gate(GateSession* gate_session) {
 
 void PlayerManager::remove_players_by_gate_with_save(GateSession* gate_session) {
     std::vector<uint64_t> to_remove;
-    for (auto& kv : players_) {
-        if (kv.second->gate_session() == gate_session) {
-            to_remove.push_back(kv.first);
+    for (auto& [player_id, player] : players_) {
+        if (player->gate_session() == gate_session) {
+            to_remove.push_back(player_id);
         }
     }
     for (uint64_t pid : to_remove) {
@@ -183,36 +182,21 @@ void PlayerManager::handle_player_data_loaded(uint64_t player_id, int32_t code,
     Player* player = it->second.get();
 
     if (code == 0 && value_data && value_len > 0) {
-        // 数据加载成功，解析 PlayerData protobuf
+        // 数据加载成功，从 JSON 解析
         std::string data_str(reinterpret_cast<const char*>(value_data), value_len);
-        farm::PlayerData player_data;
-        if (player_data.ParseFromString(data_str)) {
-            // 将 protobuf 数据转换为 PlayerBizData
-            PlayerBizData data;
-            data.role_name = player_data.role_name();
-            data.level = player_data.level();
-            data.gold = 0;  // PlayerData 中没有 gold 字段，使用默认值
-            data.experience = player_data.exp();
-            data.pos_x = player_data.pos_x();
-            data.pos_y = player_data.pos_y();
-            data.pos_z = player_data.pos_z();
-            data.scene_id = player_data.scene_id();
-            data.energy = player_data.energy();
-            data.inventory = "{}";
-            data.farm_state = "{}";
-            data.extra_data = "{}";
 
-            player->set_player_data(std::move(data));
+        if (player->load_from_json(data_str)) {
             player->set_data_state(PlayerBizDataState::LOADED);
             player->start_save_timer(base_);
-
-            SPDLOG_INFO("[Player]Data loaded successfully for player_id={} role_name={} level={} scene_id={}", player_id, player_data.role_name(), player_data.level(), player_data.scene_id());
+            SPDLOG_INFO("[Player]Data loaded from DB for player_id={}", player_id);
         } else {
-            // protobuf 解析失败，使用默认数据
-            SPDLOG_ERROR("[Player]Failed to parse PlayerData proto for player_id={}", player_id);
+            // JSON 解析失败，数据可能损坏
+            SPDLOG_ERROR("[Player]Corrupted data for player_id={}, falling back to defaults", player_id);
             player->init_default_data();
             player->set_data_state(PlayerBizDataState::LOADED);
             player->start_save_timer(base_);
+            // 立即保存默认数据，防止下次加载仍然读到损坏数据
+            player->save_full();
         }
     } else if (code == 0 && (!value_data || value_len == 0)) {
         // 数据为空（新玩家），初始化默认数据
