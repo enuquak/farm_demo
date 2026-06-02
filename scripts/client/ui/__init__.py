@@ -14,6 +14,8 @@ from .toast_renderer import ToastRenderer
 from .marquee_renderer import MarqueeRenderer
 from .friend_list_panel import FriendListPanel
 from .friend_chat_panel import FriendChatPanel
+from .friend_search_panel import FriendSearchPanel
+from .friend_visit_panel import FriendVisitPanel
 
 __all__ = [
     'EnergyBar',
@@ -28,4 +30,6 @@ __all__ = [
     'MarqueeRenderer',
     'FriendListPanel',
     'FriendChatPanel',
+    'FriendSearchPanel',
+    'FriendVisitPanel',
 ]
