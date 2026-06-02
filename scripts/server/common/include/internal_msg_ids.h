@@ -75,6 +75,25 @@ inline constexpr uint32_t MSG_ID_CROSS_QUERY_RESP        = 7102;
 inline constexpr uint32_t MSG_ID_CROSS_FORWARD_REQ       = 7103;
 inline constexpr uint32_t MSG_ID_CROSS_FORWARD_RESP      = 7104;
 
+// Game <-> TeamServer (9000-9199)
+
+// 连接管理 (9000-9099)
+inline constexpr uint32_t MSG_ID_TEAM_SERVICE_IDENTIFY       = 9001;
+inline constexpr uint32_t MSG_ID_TEAM_SERVICE_IDENTIFY_RESP  = 9002;
+inline constexpr uint32_t MSG_ID_TEAM_SERVICE_HEARTBEAT       = 9003;
+inline constexpr uint32_t MSG_ID_TEAM_SERVICE_HEARTBEAT_RESP  = 9004;
+
+// 消息转发 (9100-9199)
+inline constexpr uint32_t MSG_ID_TEAM_CLIENT_MSG              = 9101;
+inline constexpr uint32_t MSG_ID_TEAM_SERVICE_MSG             = 9102;
+
+// 队伍查询 (9110-9119)
+inline constexpr uint32_t MSG_ID_TEAM_QUERY_MEMBERS_REQ       = 9111;
+inline constexpr uint32_t MSG_ID_TEAM_QUERY_MEMBERS_RESP      = 9112;
+
+// 队伍变更通知 (9120-9129)
+inline constexpr uint32_t MSG_ID_TEAM_MEMBERS_CHANGED_NOTIFY  = 9121;
+
 // ===========================================
 // 超时常量（带前缀避免冲突）
 // ===========================================
@@ -93,5 +112,10 @@ inline constexpr int CROSS_IDENTIFY_TIMEOUT = 10;   // 身份识别超时（秒�
 inline constexpr int CROSS_HEARTBEAT_INTERVAL = 5;  // 心跳发送间隔（秒）
 inline constexpr int CROSS_HEARTBEAT_TIMEOUT = 15;  // 心跳超时（秒）
 inline constexpr int CROSS_QUERY_TIMEOUT = 5;       // 查询超时（秒）
+
+// Game <-> TeamServer
+inline constexpr int TEAM_IDENTIFY_TIMEOUT = 10;   // 身份识别超时（秒）
+inline constexpr int TEAM_HEARTBEAT_INTERVAL = 5;  // 心跳发送间隔（秒）
+inline constexpr int TEAM_HEARTBEAT_TIMEOUT = 15;  // 心跳超时（秒）
 
 }  // namespace farm
