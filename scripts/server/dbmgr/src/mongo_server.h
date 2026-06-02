@@ -1,7 +1,7 @@
 #pragma once
 
-#include "mongo_connection.h"
-#include "data_manager.h"  // 复用 DataResult、AccountResult、AccountRole 定义
+#include "mongo_replica_set.h"
+#include "db_types.h"
 
 #include <string>
 #include <vector>
@@ -11,7 +11,7 @@ namespace farm {
 
 class MongoServer {
 public:
-    MongoServer(MongoConnection& conn, const std::string& index_config_dir);
+    MongoServer(MongoReplicaSetConnection& conn, const std::string& index_config_dir);
 
     // 初始化：读取索引配置，创建缺失索引
     bool init();
@@ -44,8 +44,9 @@ private:
     // 获取集合
     mongoc_collection_t* get_collection(const std::string& name);
 
-    MongoConnection& conn_;
+    MongoReplicaSetConnection& conn_;
     std::string index_config_dir_;
+    std::string database_name_;
 };
 
 }  // namespace farm

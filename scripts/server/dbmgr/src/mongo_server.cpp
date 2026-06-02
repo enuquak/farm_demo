@@ -7,7 +7,7 @@
 
 namespace farm {
 
-MongoServer::MongoServer(MongoConnection& conn, const std::string& index_config_dir)
+MongoServer::MongoServer(MongoReplicaSetConnection& conn, const std::string& index_config_dir)
     : conn_(conn)
     , index_config_dir_(index_config_dir) {
 }
@@ -18,19 +18,30 @@ bool MongoServer::init() {
         return false;
     }
 
-    // 创建 players 集合索引
+    // Extract database name from URI
+    mongoc_uri_t* uri = mongoc_uri_new(conn_.client() ?
+        mongoc_uri_get_string(mongoc_client_get_uri(conn_.client())) : "");
+    if (uri) {
+        const char* db = mongoc_uri_get_database(uri);
+        if (db) {
+            database_name_ = db;
+        }
+        mongoc_uri_destroy(uri);
+    }
+
+    // Create players collection indexes
     if (!create_indexes("players")) {
         SPDLOG_ERROR("[MongoServer]Failed to create players indexes");
         return false;
     }
 
-    // 创建 accounts 集合索引
+    // Create accounts collection indexes
     if (!create_indexes("accounts")) {
         SPDLOG_ERROR("[MongoServer]Failed to create accounts indexes");
         return false;
     }
 
-    SPDLOG_INFO("[MongoServer]Initialization complete");
+    SPDLOG_INFO("[MongoServer]Initialization complete, database: {}", database_name_);
     return true;
 }
 
@@ -167,18 +178,11 @@ bool MongoServer::read_index_config(const std::string& collection_name, std::vec
 }
 
 mongoc_collection_t* MongoServer::get_collection(const std::string& name) {
-    // 从 URI 中提取数据库名
-    std::string uri = "mongodb://localhost:27017/farm";  // 需要从配置获取
-    mongoc_uri_t* mongoc_uri = mongoc_uri_new(uri.c_str());
-    const char* db_name = mongoc_uri_get_database(mongoc_uri);
-
-    mongoc_database_t* db = mongoc_client_get_database(conn_.client(), db_name);
-    mongoc_collection_t* collection = mongoc_database_get_collection(db, name.c_str());
-
-    mongoc_database_destroy(db);
-    mongoc_uri_destroy(mongoc_uri);
-
-    return collection;
+    if (database_name_.empty()) {
+        SPDLOG_ERROR("[MongoServer]Database name not set");
+        return nullptr;
+    }
+    return mongoc_client_get_collection(conn_.client(), database_name_.c_str(), name.c_str());
 }
 
 DataResult MongoServer::get_all(uint64_t player_id, std::vector<uint8_t>& value) {
