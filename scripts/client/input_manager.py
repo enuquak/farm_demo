@@ -38,6 +38,7 @@ class InputManager:
             "hotbar_8": [pygame.K_8],
             "hotbar_9": [pygame.K_9],
             "hotbar_0": [pygame.K_0],
+            "attack": [pygame.K_e],
         }
 
         # 鼠标状态
@@ -134,6 +135,35 @@ class InputManager:
             True 表示鼠标左键在本帧按下
         """
         return self.mouse_just_pressed[1]
+
+    def is_attack_pressed(self) -> bool:
+        """
+        检查攻击键是否被按下（E键或鼠标左键）
+
+        Returns:
+            True 表示攻击键被按下
+        """
+        return self.is_action_pressed("attack") or self.is_left_mouse_just_pressed()
+
+    def get_attack_direction(self, player_screen_x: int, player_screen_y: int) -> str:
+        """
+        根据鼠标位置计算攻击方向
+
+        Args:
+            player_screen_x: 玩家屏幕坐标X
+            player_screen_y: 玩家屏幕坐标Y
+
+        Returns:
+            方向字符串 ("up", "down", "left", "right")
+        """
+        mx, my = self.mouse_pos
+        dx = mx - player_screen_x
+        dy = my - player_screen_y
+
+        if abs(dx) > abs(dy):
+            return "right" if dx > 0 else "left"
+        else:
+            return "down" if dy > 0 else "up"
 
     def get_mouse_pos(self) -> Tuple[int, int]:
         """
