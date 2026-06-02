@@ -37,7 +37,7 @@
 - Modify: `scripts/common/proto/dbmgr.proto`
 - Modify: `scripts/server/common/include/internal_msg_ids.h`
 
-- [ ] **Step 1: Add proto messages to `dbmgr.proto`**
+- [x] **Step 1: Add proto messages to `dbmgr.proto`**
 
 Add the following after the `AccountSetResp` message (before the closing of the file):
 
@@ -57,7 +57,7 @@ message AllocPlayerIdResp {
 }
 ```
 
-- [ ] **Step 2: Add message IDs to `internal_msg_ids.h`**
+- [x] **Step 2: Add message IDs to `internal_msg_ids.h`**
 
 Add after `MSG_ID_ACCOUNT_SET_RESP = 4204;`:
 
@@ -66,7 +66,7 @@ inline constexpr uint32_t MSG_ID_ALLOC_PLAYER_ID_REQ     = 4205;
 inline constexpr uint32_t MSG_ID_ALLOC_PLAYER_ID_RESP     = 4206;
 ```
 
-- [ ] **Step 3: Regenerate protobuf**
+- [x] **Step 3: Regenerate protobuf**
 
 ```bash
 cd D:/mb_workspace/farm_demo/scripts/common/proto
@@ -75,7 +75,7 @@ protoc --cpp_out=. dbmgr.proto
 
 Verify `generated/dbmgr.pb.h` and `generated/dbmgr.pb.cc` are updated with `AllocPlayerIdReq` and `AllocPlayerIdResp` classes.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add scripts/common/proto/dbmgr.proto scripts/common/proto/generated/dbmgr.pb.h scripts/common/proto/generated/dbmgr.pb.cc scripts/server/common/include/internal_msg_ids.h
@@ -90,7 +90,7 @@ git commit -m "feat(proto): add AllocPlayerIdReq/Resp messages and message IDs"
 - Modify: `scripts/server/dbmgr/src/mongo_server.h`
 - Modify: `scripts/server/dbmgr/src/mongo_server.cpp`
 
-- [ ] **Step 1: Add declarations to `mongo_server.h`**
+- [x] **Step 1: Add declarations to `mongo_server.h`**
 
 Add after the `set_account` declaration:
 
@@ -103,7 +103,7 @@ Add after the `set_account` declaration:
     int64_t alloc_player_ids(uint32_t count);
 ```
 
-- [ ] **Step 2: Implement `init_counter()` in `mongo_server.cpp`**
+- [x] **Step 2: Implement `init_counter()` in `mongo_server.cpp`**
 
 Add at the end of the file (before the closing `}  // namespace farm`):
 
@@ -207,7 +207,7 @@ int64_t MongoServer::alloc_player_ids(uint32_t count) {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/server/dbmgr/src/mongo_server.h scripts/server/dbmgr/src/mongo_server.cpp
@@ -222,7 +222,7 @@ git commit -m "feat(dbmgr): add MongoDB counter-based player ID allocation"
 - Modify: `scripts/server/dbmgr/src/dbmgr_server.h`
 - Modify: `scripts/server/dbmgr/src/dbmgr_server.cpp`
 
-- [ ] **Step 1: Add declaration to `dbmgr_server.h`**
+- [x] **Step 1: Add declaration to `dbmgr_server.h`**
 
 Add after `handle_account_set_req` declaration:
 
@@ -231,7 +231,7 @@ Add after `handle_account_set_req` declaration:
                                     const std::vector<uint8_t>& payload);
 ```
 
-- [ ] **Step 2: Add route to `route_message()` in `dbmgr_server.cpp`**
+- [x] **Step 2: Add route to `route_message()` in `dbmgr_server.cpp`**
 
 In the `switch (msg_id)` block (around line 297), add a new case before `default`:
 
@@ -241,7 +241,7 @@ In the `switch (msg_id)` block (around line 297), add a new case before `default
             break;
 ```
 
-- [ ] **Step 3: Implement `handle_alloc_player_id_req()`**
+- [x] **Step 3: Implement `handle_alloc_player_id_req()`**
 
 Add before the `send_to_game` section (around line 502):
 
@@ -287,7 +287,7 @@ void DbMgrServer::handle_alloc_player_id_req(std::shared_ptr<GameSession> sessio
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add scripts/server/dbmgr/src/dbmgr_server.h scripts/server/dbmgr/src/dbmgr_server.cpp
@@ -302,7 +302,7 @@ git commit -m "feat(dbmgr): handle AllocPlayerIdReq message"
 - Modify: `scripts/server/game_server/src/dbmgr_connection_manager.h`
 - Modify: `scripts/server/game_server/src/dbmgr_connection_manager.cpp`
 
-- [ ] **Step 1: Add callback type and declarations to header**
+- [x] **Step 1: Add callback type and declarations to header**
 
 In `dbmgr_connection_manager.h`, add after the `AccountSetCallback` typedef:
 
@@ -349,7 +349,7 @@ Add member after `pending_account_requests_`:
     std::unordered_map<uint64_t, PendingAllocIdRequest> pending_alloc_id_requests_;
 ```
 
-- [ ] **Step 2: Add route to `route_message()` in `dbmgr_connection_manager.cpp`**
+- [x] **Step 2: Add route to `route_message()` in `dbmgr_connection_manager.cpp`**
 
 In the `switch (msg_id)` block (around line 246), add a new case before `default`:
 
@@ -359,7 +359,7 @@ In the `switch (msg_id)` block (around line 246), add a new case before `default
             break;
 ```
 
-- [ ] **Step 3: Implement `send_alloc_player_id_req()`**
+- [x] **Step 3: Implement `send_alloc_player_id_req()`**
 
 Add after the `send_account_set_req` method (around line 624):
 
@@ -415,7 +415,7 @@ uint64_t DBMgrConnectionManager::send_alloc_player_id_req(uint32_t count,
 }
 ```
 
-- [ ] **Step 4: Implement `handle_alloc_player_id_resp()`**
+- [x] **Step 4: Implement `handle_alloc_player_id_resp()`**
 
 Add after `handle_account_set_resp` (around the same area):
 
@@ -446,7 +446,7 @@ void DBMgrConnectionManager::handle_alloc_player_id_resp(DBMgrConnection* conn,
 }
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/server/game_server/src/dbmgr_connection_manager.h scripts/server/game_server/src/dbmgr_connection_manager.cpp
@@ -460,7 +460,7 @@ git commit -m "feat(game): add AllocPlayerIdReq/Resp to DBMgrConnectionManager"
 **Files:**
 - Create: `scripts/server/game_server/src/player_id_pool.h`
 
-- [ ] **Step 1: Create `player_id_pool.h`**
+- [x] **Step 1: Create `player_id_pool.h`**
 
 ```cpp
 #pragma once
@@ -562,7 +562,7 @@ private:
 }  // namespace farm
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add scripts/server/game_server/src/player_id_pool.h
@@ -577,7 +577,7 @@ git commit -m "feat(game): add PlayerIdPool with batch pre-allocation"
 - Modify: `scripts/server/game_server/src/login_stub.h`
 - Modify: `scripts/server/game_server/src/login_stub.cpp`
 
-- [ ] **Step 1: Update `login_stub.h`**
+- [x] **Step 1: Update `login_stub.h`**
 
 Replace `#include "player_id_generator.h"` with `#include "player_id_pool.h"`.
 
@@ -598,7 +598,7 @@ Replace the member `PlayerIdGenerator player_id_gen_;` with:
     PlayerIdPool* id_pool_;
 ```
 
-- [ ] **Step 2: Update `login_stub.cpp` constructor**
+- [x] **Step 2: Update `login_stub.cpp` constructor**
 
 Update the constructor to add `id_pool` parameter (keep `server_id`):
 
@@ -619,7 +619,7 @@ LoginStub::LoginStub(PlayerManager* player_mgr,
 }
 ```
 
-- [ ] **Step 3: Update `handle_create_role()`**
+- [x] **Step 3: Update `handle_create_role()`**
 
 In `handle_create_role()`, replace:
 
@@ -635,7 +635,7 @@ with:
     uint64_t player_id = id_pool_->acquire();
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add scripts/server/game_server/src/login_stub.h scripts/server/game_server/src/login_stub.cpp
@@ -650,7 +650,7 @@ git commit -m "refactor(game): replace PlayerIdGenerator with PlayerIdPool in Lo
 - Modify: `scripts/server/game_server/src/game_server.h`
 - Modify: `scripts/server/game_server/src/game_server.cpp`
 
-- [ ] **Step 1: Add `PlayerIdPool` include and member to `game_server.h`**
+- [x] **Step 1: Add `PlayerIdPool` include and member to `game_server.h`**
 
 Add include:
 
@@ -665,7 +665,7 @@ Add member (after `DBMgrConnectionManager dbmgr_mgr_`):
     std::unique_ptr<PlayerIdPool> id_pool_;
 ```
 
-- [ ] **Step 2: Create `PlayerIdPool` in `game_server.cpp` `start()`**
+- [x] **Step 2: Create `PlayerIdPool` in `game_server.cpp` `start()`**
 
 In the `start()` method, after the DBMgr connection manager init block (around line 113) and before the `send_to_gate_func` lambda, add:
 
@@ -677,7 +677,7 @@ In the `start()` method, after the DBMgr connection manager init block (around l
     }
 ```
 
-- [ ] **Step 3: Update LoginStub construction**
+- [x] **Step 3: Update LoginStub construction**
 
 Change the LoginStub creation line (around line 142):
 
@@ -691,7 +691,7 @@ To:
     login_stub_ = std::make_unique<LoginStub>(&player_mgr_, &dbmgr_mgr_, &redis_conn_, server_id_, id_pool_.get(), send_to_gate_func);
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add scripts/server/game_server/src/game_server.h scripts/server/game_server/src/game_server.cpp
@@ -705,7 +705,7 @@ git commit -m "feat(game): integrate PlayerIdPool into GameServer and LoginStub"
 **Files:**
 - Delete: `scripts/server/game_server/src/player_id_generator.h`
 
-- [ ] **Step 1: Verify no remaining references to `player_id_generator.h`**
+- [x] **Step 1: Verify no remaining references to `player_id_generator.h`**
 
 ```bash
 grep -r "player_id_generator" scripts/server/
@@ -713,13 +713,13 @@ grep -r "player_id_generator" scripts/server/
 
 Expected: No results (all references removed in Task 6).
 
-- [ ] **Step 2: Delete `player_id_generator.h`**
+- [x] **Step 2: Delete `player_id_generator.h`**
 
 ```bash
 git rm scripts/server/game_server/src/player_id_generator.h
 ```
 
-- [ ] **Step 3: Build DBMgr**
+- [x] **Step 3: Build DBMgr**
 
 ```bash
 cd D:/mb_workspace/farm_demo/scripts/server/dbmgr
@@ -728,7 +728,7 @@ cmake --build build --config Release
 
 Expected: Build succeeds with no errors.
 
-- [ ] **Step 4: Build Game Server**
+- [x] **Step 4: Build Game Server**
 
 ```bash
 cd D:/mb_workspace/farm_demo/scripts/server/game_server
@@ -737,7 +737,7 @@ cmake --build build --config Release
 
 Expected: Build succeeds with no errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -751,7 +751,7 @@ git commit -m "chore: remove player_id_generator.h, verify build"
 **Files:**
 - Modify: `scripts/server/dbmgr/src/dbmgr_server.cpp`
 
-- [ ] **Step 1: Call `init_counter()` after MongoDB init**
+- [x] **Step 1: Call `init_counter()` after MongoDB init**
 
 In `dbmgr_server.cpp`, in the `start()` method, after `mongo_server_.init()` succeeds (around line 45-48), add:
 
@@ -778,7 +778,7 @@ Also add in the recovery callback (around line 53-56):
         });
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add scripts/server/dbmgr/src/dbmgr_server.cpp
@@ -792,7 +792,7 @@ git commit -m "feat(dbmgr): initialize player ID counter on startup"
 **Files:**
 - Modify: `data/accounts/0.json`
 
-- [ ] **Step 1: Update sample account data**
+- [x] **Step 1: Update sample account data**
 
 The sample data currently has `player_id: 1048577` (old format: `1 << 20 | 1`). Update to the new format:
 
@@ -800,7 +800,7 @@ The sample data currently has `player_id: 1048577` (old format: `1 << 20 | 1`). 
 {"account_id":"test_account","roles":[{"server_id":1,"player_id":1,"role_name":"TestFarmer"}]}
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add data/accounts/0.json

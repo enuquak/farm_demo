@@ -332,3 +332,18 @@ Action: 创建 scripts/client/sprite_data.py，将 OBJECT_PROPERTIES 中每个�
 Description: 在 Windows 上使用 bash 运行 Python AST 检查时，open() 默认使用 gbk 编码读取含中文注释的 .py 文件会报 UnicodeDecodeError。需显式指定 encoding='utf-8'。
 Context: 使用 `python -c "import ast; ast.parse(open('file.py').read())"` 检查 Python 文件语法。
 Action: 改用 `open('file.py', encoding='utf-8').read()` 读取含非 ASCII 字符的 Python 文件。
+
+[2026-06-02] [Pattern] [GateServer 新服务连接扩展模式]
+Description: GateServer 添加与新服务（如 ChatServer）的连接时，遵循固定的扩展模式：(1) 创建 XxxConnection 类（复制 GameConnection 模式，重命名类名/状态枚举/回调类型）；(2) 在 GateServer 中添加 unique_ptr<XxxConnection> 成员、ip/port 配置、set_xxx_server 方法；(3) 在 start() 中初始化连接并绑定消息回调；(4) 在 route_message() 中按 msg_id 范围添加路由分支；(5) 实现 forward_to_xxx 和 handle_xxx_message 方法；(6) 在 CMakeLists.txt 中添加新的 .pb.cc 和 connection.cpp 源文件。所有 Connection 类使用相同的内部协议（GateIdentify + InternHeartbeat），消息 ID 3001-3004。
+Context: GateServer 需要连接多个后端服务（Game、Chat、Friend 等），每个服务的连接管理遵循相同模式。
+Action: 复制 GameConnection 作为模板，替换类名后修改具体的路由和转发逻辑。handle_xxx_message 必须处理 MSG_ID_GATE_IDENTIFY_RESP 和 MSG_ID_INTERN_HEARTBEAT_RESP，设置连接状态为 IDENTIFIED。forward_to_xxx 将客户端 PlayerMsg 解包后重新包装为 ClientMessage 发送给目标服务。
+
+[2026-06-02] [Pattern] [Chat 消息路由在 GateServer 中的实现]
+Description: Chat 消息（msg_id 6000-6999）在 GateServer 的 route_message() 中被拦截并转发到 ChatServer。转发流程：客户端发送 PlayerMsg（包含 player_id + payload）-> Gate 解析 PlayerMsg 获取 player_id -> 包装为 ClientMessage（player_id + msg_id + payload）-> 通过 MSG_ID_CLIENT_MSG (3201) 发送给 ChatServer。ChatServer 响应使用 GameMessage 格式（MSG_ID_GAME_MSG = 3202），Gate 从 GameMessage 中提取 player_id 查找客户端 Session 并直接转发内层 msg_id + payload。
+Context: 聊天系统需要在 GateServer 中添加消息路由，将聊天请求转发到独立的 ChatServer 处理。
+Action: 在 route_message() 中 chat 路由分支放在 3000+ catchall 之前（因为 6000 > 3000）。forward_to_chat 解析 PlayerMsg 并包装为 ClientMessage。handle_chat_message 处理 MSG_ID_GAME_MSG 时使用 session_mgr_.find_by_player_id 查找客户端 Session，使用 MessageParser::pack 打包后直接写入 session 的 bev。
+
+[2026-06-02] [Pattern] [Player 实体战斗字段扩展]
+Description: 扩展 PlayerBizData 结构体添加战斗相关字段（max_hp, current_hp, attack_power, defense_power, combat_exp, combat_level, equipped_weapon），遵循现有的脏字段追踪模式。每个字段需要：(1) 在 PlayerBizData 中声明并设置默认值；(2) 在 Player 类中添加内联 getter 和声明 setter；(3) 在 player.cpp 中实现 setter（带值变化检查和 mark_dirty）；(4) 在 get_field_json 中添加序列化分支；(5) 在 get_all_data_json 中添加 JSON 输出；(6) 在 set_player_data 重载方法的 dirty_fields_ 集合中添加新字段名。
+Context: 农场游戏需要添加战斗系统，需要在玩家数据中存储战斗相关属性。
+Action: 按照现有代码模式（如 energy、gold 等字段）扩展 PlayerBizData。注意：(1) int32_t 字段使用 std::to_string 序列化；(2) std::string 字段序列化时需要加引号；(3) set_player_data 的 dirty_fields_ 必须包含所有新字段，否则全量加载后差量存盘会丢失新字段数据。

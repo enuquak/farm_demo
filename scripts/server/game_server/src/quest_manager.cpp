@@ -102,7 +102,7 @@ void QuestManager::handle_quest_accept(uint64_t player_id, const std::string& qu
     auto it = quests.find(quest_id);
 
     // Check if quest is already accepted or completed
-    if (it != quests.end() && it->second.state != TaskState::NOT_ACCEPTED) {
+    if (it != quests.end() && it->second.state != QuestState::NOT_ACCEPTED) {
         SPDLOG_WARN("[QuestManager]Quest {} already in state {} for player {}",
                    quest_id, static_cast<int>(it->second.state), player_id);
         return;
@@ -115,9 +115,9 @@ void QuestManager::handle_quest_accept(uint64_t player_id, const std::string& qu
     }
 
     // Accept the quest
-    TaskInfo info;
+    QuestTaskInfo info;
     info.task_id = quest_id;
-    info.state = TaskState::ACCEPTED;
+    info.state = QuestState::ACCEPTED;
     info.accept_time = std::time(nullptr);
 
     // Initialize progress for all objectives
@@ -137,7 +137,7 @@ void QuestManager::handle_quest_submit(uint64_t player_id, const std::string& qu
     auto& quests = get_player_quests(player_id);
     auto it = quests.find(quest_id);
 
-    if (it == quests.end() || it->second.state != TaskState::IN_PROGRESS) {
+    if (it == quests.end() || it->second.state != QuestState::IN_PROGRESS) {
         SPDLOG_WARN("[QuestManager]Cannot submit quest {} for player {}: not in progress", quest_id, player_id);
         return;
     }
@@ -166,7 +166,7 @@ void QuestManager::handle_quest_abandon(uint64_t player_id, const std::string& q
 
     if (it == quests.end()) return;
 
-    if (it->second.state == TaskState::ACCEPTED || it->second.state == TaskState::IN_PROGRESS) {
+    if (it->second.state == QuestState::ACCEPTED || it->second.state == QuestState::IN_PROGRESS) {
         quests.erase(it);
         SPDLOG_INFO("[QuestManager]Player {} abandoned quest {}", player_id, quest_id);
     }
@@ -201,7 +201,7 @@ void QuestManager::load_task_infos(uint64_t player_id, const std::string& json_s
     }
 }
 
-const TaskInfo* QuestManager::get_task_info(uint64_t player_id, const std::string& quest_id) const {
+const QuestTaskInfo* QuestManager::get_task_info(uint64_t player_id, const std::string& quest_id) const {
     auto player_it = player_quests_.find(player_id);
     if (player_it == player_quests_.end()) return nullptr;
 
@@ -209,13 +209,13 @@ const TaskInfo* QuestManager::get_task_info(uint64_t player_id, const std::strin
     return quest_it != player_it->second.end() ? &quest_it->second : nullptr;
 }
 
-std::vector<TaskInfo> QuestManager::get_active_quests(uint64_t player_id) const {
-    std::vector<TaskInfo> result;
+std::vector<QuestTaskInfo> QuestManager::get_active_quests(uint64_t player_id) const {
+    std::vector<QuestTaskInfo> result;
     auto player_it = player_quests_.find(player_id);
     if (player_it == player_quests_.end()) return result;
 
     for (const auto& [quest_id, info] : player_it->second) {
-        if (info.state == TaskState::ACCEPTED || info.state == TaskState::IN_PROGRESS) {
+        if (info.state == QuestState::ACCEPTED || info.state == QuestState::IN_PROGRESS) {
             result.push_back(info);
         }
     }
@@ -228,7 +228,7 @@ std::vector<std::string> QuestManager::get_available_quests(uint64_t player_id) 
     for (const auto& [quest_id, quest_def] : config_->quests()) {
         // Skip if already accepted or completed
         auto* task_info = get_task_info(player_id, quest_id);
-        if (task_info && task_info->state != TaskState::NOT_ACCEPTED) {
+        if (task_info && task_info->state != QuestState::NOT_ACCEPTED) {
             continue;
         }
 
@@ -245,7 +245,7 @@ void QuestManager::on_game_event(const GameEvent& event) {
     auto& quests = get_player_quests(event.player_id);
 
     for (auto& [quest_id, info] : quests) {
-        if (info.state != TaskState::ACCEPTED && info.state != TaskState::IN_PROGRESS) {
+        if (info.state != QuestState::ACCEPTED && info.state != QuestState::IN_PROGRESS) {
             continue;
         }
 
@@ -278,8 +278,8 @@ void QuestManager::on_game_event(const GameEvent& event) {
                 prog_it->second = std::min(prog_it->second + count, obj.count);
 
                 // Mark as in progress
-                if (info.state == TaskState::ACCEPTED) {
-                    info.state = TaskState::IN_PROGRESS;
+                if (info.state == QuestState::ACCEPTED) {
+                    info.state = QuestState::IN_PROGRESS;
                 }
 
                 SPDLOG_DEBUG("[QuestManager]Player {} quest {} objective {} progress: {}/{}",
@@ -299,7 +299,7 @@ void QuestManager::update_quest_progress(uint64_t player_id, ObjectiveType obj_t
     auto& quests = get_player_quests(player_id);
 
     for (auto& [quest_id, info] : quests) {
-        if (info.state != TaskState::ACCEPTED && info.state != TaskState::IN_PROGRESS) {
+        if (info.state != QuestState::ACCEPTED && info.state != QuestState::IN_PROGRESS) {
             continue;
         }
 
@@ -313,8 +313,8 @@ void QuestManager::update_quest_progress(uint64_t player_id, ObjectiveType obj_t
             auto prog_it = info.progress.find(obj.id);
             if (prog_it != info.progress.end()) {
                 prog_it->second = std::min(prog_it->second + count, obj.count);
-                if (info.state == TaskState::ACCEPTED) {
-                    info.state = TaskState::IN_PROGRESS;
+                if (info.state == QuestState::ACCEPTED) {
+                    info.state = QuestState::IN_PROGRESS;
                 }
             }
         }
@@ -341,7 +341,7 @@ void QuestManager::check_quest_completion(uint64_t player_id, const std::string&
         }
     }
 
-    if (all_complete && it->second.state == TaskState::IN_PROGRESS) {
+    if (all_complete && it->second.state == QuestState::IN_PROGRESS) {
         // Auto-complete for non-submit quests
         // For submit quests, the player must explicitly submit
         SPDLOG_INFO("[QuestManager]Player {} quest {} objectives complete, ready to submit",
@@ -354,7 +354,7 @@ void QuestManager::complete_quest(uint64_t player_id, const std::string& quest_i
     auto it = quests.find(quest_id);
     if (it == quests.end()) return;
 
-    it->second.state = TaskState::COMPLETED;
+    it->second.state = QuestState::COMPLETED;
     it->second.complete_time = std::time(nullptr);
 
     auto* quest_def = config_->get_quest(quest_id);
@@ -424,9 +424,9 @@ void QuestManager::unlock_quests(uint64_t player_id, const std::vector<std::stri
 
         // Only unlock if not already tracked
         if (quests.find(quest_id) == quests.end()) {
-            TaskInfo info;
+            QuestTaskInfo info;
             info.task_id = quest_id;
-            info.state = TaskState::NOT_ACCEPTED;
+            info.state = QuestState::NOT_ACCEPTED;
             quests[quest_id] = std::move(info);
             SPDLOG_INFO("[QuestManager]Unlocked quest {} for player {}", quest_id, player_id);
         }
@@ -442,13 +442,13 @@ bool QuestManager::are_prerequisites_met(uint64_t player_id, const QuestDef& que
     for (const auto& pre_id : quest.prerequisites) {
         auto quest_it = player_it->second.find(pre_id);
         if (quest_it == player_it->second.end()) return false;
-        if (quest_it->second.state != TaskState::COMPLETED) return false;
+        if (quest_it->second.state != QuestState::COMPLETED) return false;
     }
 
     return true;
 }
 
-std::unordered_map<std::string, TaskInfo>& QuestManager::get_player_quests(uint64_t player_id) {
+std::unordered_map<std::string, QuestTaskInfo>& QuestManager::get_player_quests(uint64_t player_id) {
     return player_quests_[player_id];
 }
 
@@ -490,9 +490,9 @@ void QuestManager::deserialize_task_infos(uint64_t player_id, const nlohmann::js
     quests.clear();
 
     for (auto& [quest_id, info_json] : json.items()) {
-        TaskInfo info;
+        QuestTaskInfo info;
         info.task_id = info_json.value("task_id", quest_id);
-        info.state = static_cast<TaskState>(info_json.value("state", 0));
+        info.state = static_cast<QuestState>(info_json.value("state", 0));
         info.accept_time = info_json.value("accept_time", 0LL);
         info.complete_time = info_json.value("complete_time", 0LL);
 

@@ -2,6 +2,7 @@
 
 #include <event2/util.h>
 #include <string>
+#include <string_view>
 #include <ctime>
 #include <cstdint>
 #include <vector>
@@ -43,7 +44,7 @@ public:
 
     // 发送消息
     bool send(uint32_t msg_id, const uint8_t* payload, size_t len);
-    bool send(uint32_t msg_id, const std::string& payload);
+    bool send(uint32_t msg_id, std::string_view payload);
 
     // 读缓冲区管理
     std::vector<uint8_t>& read_buffer() { return read_buffer_; }

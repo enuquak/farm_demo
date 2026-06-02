@@ -11,7 +11,7 @@ namespace farm {
 // Enums
 // ---------------------------------------------------------------------------
 
-enum class TaskState : int32_t {
+enum class QuestState : int32_t {
     NOT_ACCEPTED = 0,
     ACCEPTED     = 1,
     IN_PROGRESS  = 2,
@@ -95,9 +95,9 @@ struct BranchGroupDef {
     std::vector<std::string> quest_ids;
 };
 
-struct TaskInfo {
+struct QuestTaskInfo {
     std::string task_id;
-    TaskState state = TaskState::NOT_ACCEPTED;
+    QuestState state = QuestState::NOT_ACCEPTED;
     std::unordered_map<std::string, int32_t> progress;
     int64_t accept_time = 0;
     int64_t complete_time = 0;

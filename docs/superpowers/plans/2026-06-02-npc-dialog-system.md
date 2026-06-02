@@ -1,6 +1,6 @@
 # NPC 对话交互系统实现计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 实现 NPC 对话交互系统，支持分支对话、好感度、送礼、按时间移动的 NPC 行为。
 
@@ -51,7 +51,7 @@
 - Create: `scripts/client/data/npc_dialog.json`
 - Create: `scripts/client/data/npc_gifts.json`
 
-- [ ] **Step 1: 在 constants.py 中添加 NPC 相关常量**
+- [x] **Step 1: 在 constants.py 中添加 NPC 相关常量**
 
 在 `ObjectType` 枚举中添加 NPC 类型（在 STOVE=14 之后）：
 
@@ -91,7 +91,7 @@ BUBBLE_FADE_TIME = 1.5             # 反馈气泡消失时间（秒）
 NPC_INTERACT_RANGE = 1             # NPC 交互距离（格子）
 ```
 
-- [ ] **Step 2: 创建 npc_defs.json**
+- [x] **Step 2: 创建 npc_defs.json**
 
 创建目录 `scripts/client/data/`，然后创建文件：
 
@@ -111,7 +111,7 @@ NPC_INTERACT_RANGE = 1             # NPC 交互距离（格子）
 }
 ```
 
-- [ ] **Step 3: 创建 npc_schedule.json**
+- [x] **Step 3: 创建 npc_schedule.json**
 
 ```json
 {
@@ -138,7 +138,7 @@ NPC_INTERACT_RANGE = 1             # NPC 交互距离（格子）
 }
 ```
 
-- [ ] **Step 4: 创建 npc_dialog.json**
+- [x] **Step 4: 创建 npc_dialog.json**
 
 ```json
 {
@@ -201,7 +201,7 @@ NPC_INTERACT_RANGE = 1             # NPC 交互距离（格子）
 }
 ```
 
-- [ ] **Step 5: 创建 npc_gifts.json**
+- [x] **Step 5: 创建 npc_gifts.json**
 
 ```json
 {
@@ -214,7 +214,7 @@ NPC_INTERACT_RANGE = 1             # NPC 交互距离（格子）
 }
 ```
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add scripts/client/constants.py scripts/client/data/
@@ -236,7 +236,7 @@ git commit -m "feat(npc): add NPC constants and data files
 - Create: `scripts/client/npc_sprite.py`
 - Create: `assets/sprites/npc/` (directory)
 
-- [ ] **Step 1: 创建 NPC 精灵占位图**
+- [x] **Step 1: 创建 NPC 精灵占位图**
 
 创建一个简单的 128x128 像素（32x32 per frame, 4x4 grid）的占位精灵图。用纯色方块区分不同方向。后续替换为正式素材。
 
@@ -263,7 +263,7 @@ for row in range(4):
 pygame.image.save(surface, "assets/sprites/npc/npc_merchant.png")
 ```
 
-- [ ] **Step 2: 创建 NPCSprite 类**
+- [x] **Step 2: 创建 NPCSprite 类**
 
 ```python
 # scripts/client/npc_sprite.py
@@ -392,7 +392,7 @@ class NPCSprite(pygame.sprite.Sprite):
             self.image = self._frames[self._direction][self._frame_index]
 ```
 
-- [ ] **Step 3: 验证 NPCSprite 可以实例化**
+- [x] **Step 3: 验证 NPCSprite 可以实例化**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -410,7 +410,7 @@ pygame.quit()
 
 Expected: 输出精灵信息，无报错。
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 git add scripts/client/npc_sprite.py assets/sprites/npc/
@@ -429,7 +429,7 @@ git commit -m "feat(npc): add NPCSprite with animation and placeholder sprites
 **Files:**
 - Create: `scripts/client/npc_manager.py`
 
-- [ ] **Step 1: 创建 NPCManager 类**
+- [x] **Step 1: 创建 NPCManager 类**
 
 ```python
 # scripts/client/npc_manager.py
@@ -616,7 +616,7 @@ class NPCManager:
                     npc.set_direction('up' if dy < 0 else 'down')
 ```
 
-- [ ] **Step 2: 验证 NPCManager 初始化**
+- [x] **Step 2: 验证 NPCManager 初始化**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -637,7 +637,7 @@ pygame.quit()
 
 Expected: 输出 NPC 加载和场景切换信息。
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add scripts/client/npc_manager.py
@@ -657,7 +657,7 @@ git commit -m "feat(npc): add NPCManager for instance management and scheduling
 **Files:**
 - Create: `scripts/client/dialog_engine.py`
 
-- [ ] **Step 1: 创建 DialogEngine 类**
+- [x] **Step 1: 创建 DialogEngine 类**
 
 ```python
 # scripts/client/dialog_engine.py
@@ -1028,7 +1028,7 @@ class DialogEngine:
         return True
 ```
 
-- [ ] **Step 2: 验证 DialogEngine 对话流程**
+- [x] **Step 2: 验证 DialogEngine 对话流程**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -1067,7 +1067,7 @@ print(f'State: {engine.state}')
 
 Expected: 对话流程正常推进，状态转换正确。
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add scripts/client/dialog_engine.py
@@ -1088,7 +1088,7 @@ git commit -m "feat(npc): add DialogEngine state machine
 **Files:**
 - Create: `scripts/client/dialog_ui.py`
 
-- [ ] **Step 1: 创建 DialogUI 类**
+- [x] **Step 1: 创建 DialogUI 类**
 
 ```python
 # scripts/client/dialog_ui.py
@@ -1266,7 +1266,7 @@ class DialogUI:
             y += 26 + DIALOG_OPTION_GAP
 ```
 
-- [ ] **Step 2: 验证 DialogUI 渲染**
+- [x] **Step 2: 验证 DialogUI 渲染**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -1285,7 +1285,7 @@ pygame.quit()
 
 Expected: 布局信息输出，无报错。
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add scripts/client/dialog_ui.py
@@ -1305,7 +1305,7 @@ git commit -m "feat(npc): add DialogUI for bottom dialog box rendering
 **Files:**
 - Create: `scripts/client/bubble_ui.py`
 
-- [ ] **Step 1: 创建 BubbleUI 类**
+- [x] **Step 1: 创建 BubbleUI 类**
 
 ```python
 # scripts/client/bubble_ui.py
@@ -1432,7 +1432,7 @@ class BubbleUI:
         self._active_bubbles.clear()
 ```
 
-- [ ] **Step 2: 提交**
+- [x] **Step 2: 提交**
 
 ```bash
 git add scripts/client/bubble_ui.py
@@ -1451,7 +1451,7 @@ git commit -m "feat(npc): add BubbleUI for overhead NPC bubbles
 **Files:**
 - Create: `scripts/client/affection_system.py`
 
-- [ ] **Step 1: 创建 AffectionSystem 类**
+- [x] **Step 1: 创建 AffectionSystem 类**
 
 ```python
 # scripts/client/affection_system.py
@@ -1505,7 +1505,7 @@ class AffectionSystem:
         return self._affection.copy()
 ```
 
-- [ ] **Step 2: 提交**
+- [x] **Step 2: 提交**
 
 ```bash
 git add scripts/client/affection_system.py
@@ -1526,7 +1526,7 @@ git commit -m "feat(npc): add AffectionSystem for gift and affection tracking
 - Modify: `scripts/client/game_scene.py`
 - Modify: `scripts/client/game_renderer.py`
 
-- [ ] **Step 1: 修改 interaction.py 添加 NPC 支持**
+- [x] **Step 1: 修改 interaction.py 添加 NPC 支持**
 
 在 `ITEM_EFFECTS` 字典中添加 NPC 条目：
 
@@ -1555,7 +1555,7 @@ def get_npc_at_tile(npc_manager, tile_x: int, tile_y: int):
     return npc_manager.get_npc_at_tile(tile_x, tile_y)
 ```
 
-- [ ] **Step 2: 修改 game_scene.py 集成 NPC 系统**
+- [x] **Step 2: 修改 game_scene.py 集成 NPC 系统**
 
 在 `GameScene.__init__` 中添加 NPC 相关模块初始化（在 `Inventory.from_save_data` 之后）：
 
@@ -1733,7 +1733,7 @@ self._npc_manager.set_current_scene(new_scene_id)
 self._update_npc_sprites_in_group()
 ```
 
-- [ ] **Step 3: 修改 game_renderer.py 添加 NPC 渲染层**
+- [x] **Step 3: 修改 game_renderer.py 添加 NPC 渲染层**
 
 在 `GameRenderer.__init__` 中添加对话 UI 和气泡 UI：
 
@@ -1895,7 +1895,7 @@ self._renderer.render(
 )
 ```
 
-- [ ] **Step 4: 处理对话副作用**
+- [x] **Step 4: 处理对话副作用**
 
 在 `GameScene.run()` 的主循环中，更新对话推进后处理副作用：
 
@@ -1918,7 +1918,7 @@ if not self._dialog_engine.is_active and self._input_manager.is_ui_blocking():
     self._input_manager.set_ui_blocking(False)
 ```
 
-- [ ] **Step 5: 更新 NPC 可交互状态（气泡显示）**
+- [x] **Step 5: 更新 NPC 可交互状态（气泡显示）**
 
 在 `GameScene.run()` 中添加 NPC 可交互状态更新：
 
@@ -1937,7 +1937,7 @@ for npc in self._npc_manager.get_npcs_in_scene():
         self._bubble_ui.hide_dots(npc.npc_id)
 ```
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add scripts/client/interaction.py scripts/client/game_scene.py scripts/client/game_renderer.py
@@ -1963,7 +1963,7 @@ git commit -m "feat(npc): integrate NPC dialog system into game loop
 - Modify: `shared/message_ids.json`
 - Modify: `scripts/client/network_dispatcher.py`
 
-- [ ] **Step 1: 更新 message_ids.json 添加新消息 ID**
+- [x] **Step 1: 更新 message_ids.json 添加新消息 ID**
 
 在 `shared/message_ids.json` 中添加（在现有条目之后）：
 
@@ -1976,7 +1976,7 @@ git commit -m "feat(npc): integrate NPC dialog system into game loop
 }
 ```
 
-- [ ] **Step 2: 更新 player.proto 添加消息定义**
+- [x] **Step 2: 更新 player.proto 添加消息定义**
 
 在 `scripts/common/proto/player.proto` 中添加：
 
@@ -2003,7 +2003,7 @@ message DialogStartNotify {
 }
 ```
 
-- [ ] **Step 3: 重新生成 protobuf 代码**
+- [x] **Step 3: 重新生成 protobuf 代码**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -2012,7 +2012,7 @@ python -m grpc_tools.protoc -I scripts/common/proto --python_out=scripts/common/
 
 或者运行项目已有的代码生成脚本。
 
-- [ ] **Step 4: 更新 network_dispatcher.py 添加消息处理器**
+- [x] **Step 4: 更新 network_dispatcher.py 添加消息处理器**
 
 在 `NetworkMessageDispatcher.__init__` 中添加新回调参数：
 
@@ -2053,7 +2053,7 @@ self._dispatch_table[MessageIds.MSG_ID_GIFT_RESP] = self._handle_gift_resp
 self._dispatch_table[MessageIds.MSG_ID_AFFECTION_SYNC] = self._handle_affection_sync
 ```
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add shared/message_ids.json scripts/common/proto/player.proto scripts/client/network_dispatcher.py
@@ -2072,7 +2072,7 @@ git commit -m "feat(npc): add network message definitions for NPC system
 **Files:**
 - Test: 集成测试脚本
 
-- [ ] **Step 1: 创建集成测试脚本**
+- [x] **Step 1: 创建集成测试脚本**
 
 ```python
 # scripts/client/test_npc_integration.py
@@ -2209,7 +2209,7 @@ if __name__ == '__main__':
     pygame.quit()
 ```
 
-- [ ] **Step 2: 运行集成测试**
+- [x] **Step 2: 运行集成测试**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -2218,7 +2218,7 @@ python scripts/client/test_npc_integration.py
 
 Expected: 所有测试通过，输出 ✅。
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add scripts/client/test_npc_integration.py
@@ -2236,9 +2236,9 @@ git commit -m "test(npc): add integration tests for NPC dialog system
 
 ## 自检清单
 
-- [ ] 所有 Task 的代码块完整，无 TBD/TODO
-- [ ] 类型/方法签名在所有 Task 中一致
-- [ ] 每个 Task 有明确的文件路径
-- [ ] 每个 Task 有提交步骤
-- [ ] 与现有代码模式一致（UI 组件构造、网络消息、交互表）
-- [ ] 实现优先级合理（数据 → 精灵 → 管理器 → 引擎 → UI → 集成）
+- [x] 所有 Task 的代码块完整，无 TBD/TODO
+- [x] 类型/方法签名在所有 Task 中一致
+- [x] 每个 Task 有明确的文件路径
+- [x] 每个 Task 有提交步骤
+- [x] 与现有代码模式一致（UI 组件构造、网络消息、交互表）
+- [x] 实现优先级合理（数据 → 精灵 → 管理器 → 引擎 → UI → 集成）

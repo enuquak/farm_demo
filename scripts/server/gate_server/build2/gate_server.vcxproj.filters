@@ -16,10 +16,16 @@
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\gate_server\src\game_connection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\gate_server\src\chat_connection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\common\proto\generated\base.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\common\proto\generated\internal.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\common\proto\generated\chat.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\common\src\admin_msg_ids.cpp">
@@ -35,6 +41,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\common\src\server_main_helper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\mb_workspace\farm_demo\scripts\server\common\src\etcd_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -45,10 +45,10 @@ public:
     void load_task_infos(uint64_t player_id, const std::string& json_str);
 
     // Get player's quest progress for a specific quest
-    const TaskInfo* get_task_info(uint64_t player_id, const std::string& quest_id) const;
+    const QuestTaskInfo* get_task_info(uint64_t player_id, const std::string& quest_id) const;
 
     // Get all active quests for a player
-    std::vector<TaskInfo> get_active_quests(uint64_t player_id) const;
+    std::vector<QuestTaskInfo> get_active_quests(uint64_t player_id) const;
 
     // Get all available (not accepted) quests for a player
     std::vector<std::string> get_available_quests(uint64_t player_id) const;
@@ -58,8 +58,8 @@ private:
     const QuestConfig* config_;
     std::vector<EventHandlerId> event_handler_ids_;
 
-    // Per-player quest data: player_id -> (quest_id -> TaskInfo)
-    std::unordered_map<uint64_t, std::unordered_map<std::string, TaskInfo>> player_quests_;
+    // Per-player quest data: player_id -> (quest_id -> QuestTaskInfo)
+    std::unordered_map<uint64_t, std::unordered_map<std::string, QuestTaskInfo>> player_quests_;
 
     // Event handlers
     void on_game_event(const GameEvent& event);
@@ -76,7 +76,7 @@ private:
     bool are_prerequisites_met(uint64_t player_id, const QuestDef& quest) const;
 
     // Helper: get or create player quest data
-    std::unordered_map<std::string, TaskInfo>& get_player_quests(uint64_t player_id);
+    std::unordered_map<std::string, QuestTaskInfo>& get_player_quests(uint64_t player_id);
 
     // Helper: map ObjectiveType to EventType
     EventType objective_type_to_event_type(ObjectiveType type) const;

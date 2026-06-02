@@ -38,13 +38,13 @@ scripts/server/common/include/       # 已存在
 **Files:**
 - Create: `shared/error_codes.json`
 
-- [ ] **Step 1: 创建 shared 目录**
+- [x] **Step 1: 创建 shared 目录**
 
 ```bash
 mkdir -p shared
 ```
 
-- [ ] **Step 2: 创建 error_codes.json**
+- [x] **Step 2: 创建 error_codes.json**
 
 ```json
 {
@@ -83,7 +83,7 @@ mkdir -p shared
 }
 ```
 
-- [ ] **Step 3: 验证 JSON 格式**
+- [x] **Step 3: 验证 JSON 格式**
 
 ```bash
 python -c "import json; json.load(open('shared/error_codes.json', encoding='utf-8')); print('JSON valid')"
@@ -91,7 +91,7 @@ python -c "import json; json.load(open('shared/error_codes.json', encoding='utf-
 
 Expected: `JSON valid`
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 git add shared/error_codes.json
@@ -105,7 +105,7 @@ git commit -m "feat(config): add shared error codes configuration"
 **Files:**
 - Create: `shared/message_ids.json`
 
-- [ ] **Step 1: 创建 message_ids.json**
+- [x] **Step 1: 创建 message_ids.json**
 
 从 `scripts/client/msg_ids.py` 和 `scripts/common/proto/msg_ids.h` 提取现有定义：
 
@@ -231,7 +231,7 @@ git commit -m "feat(config): add shared error codes configuration"
 }
 ```
 
-- [ ] **Step 2: 验证 JSON 格式**
+- [x] **Step 2: 验证 JSON 格式**
 
 ```bash
 python -c "import json; json.load(open('shared/message_ids.json', encoding='utf-8')); print('JSON valid')"
@@ -239,7 +239,7 @@ python -c "import json; json.load(open('shared/message_ids.json', encoding='utf-
 
 Expected: `JSON valid`
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add shared/message_ids.json
@@ -253,7 +253,7 @@ git commit -m "feat(config): add shared message IDs configuration"
 **Files:**
 - Create: `tools/generate_constants.py`
 
-- [ ] **Step 1: 创建 generate_constants.py**
+- [x] **Step 1: 创建 generate_constants.py**
 
 ```python
 #!/usr/bin/env python3
@@ -491,7 +491,7 @@ if __name__ == '__main__':
     sys.exit(main())
 ```
 
-- [ ] **Step 2: 测试生成脚本**
+- [x] **Step 2: 测试生成脚本**
 
 ```bash
 python tools/generate_constants.py
@@ -510,7 +510,7 @@ Expected:
 生成完成: 成功 2, 失败 0
 ```
 
-- [ ] **Step 3: 验证生成的 Python 文件**
+- [x] **Step 3: 验证生成的 Python 文件**
 
 ```bash
 python -c "from scripts.client.error_codes import ErrorCode; print(ErrorCode.SUCCESS, ErrorCode.INVALID_PASSWORD)"
@@ -518,7 +518,7 @@ python -c "from scripts.client.error_codes import ErrorCode; print(ErrorCode.SUC
 
 Expected: `0 1001`
 
-- [ ] **Step 4: 验证生成的 C++ 文件**
+- [x] **Step 4: 验证生成的 C++ 文件**
 
 ```bash
 head -20 scripts/server/common/include/error_codes.h
@@ -526,7 +526,7 @@ head -20 scripts/server/common/include/error_codes.h
 
 Expected: 看到正确的 C++ 枚举定义
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add tools/generate_constants.py
@@ -540,13 +540,13 @@ git commit -m "feat(tools): add constants code generator script"
 **Files:**
 - Create: `tools/file_watcher.py`
 
-- [ ] **Step 1: 安装 watchdog 依赖**
+- [x] **Step 1: 安装 watchdog 依赖**
 
 ```bash
 pip install watchdog
 ```
 
-- [ ] **Step 2: 创建 file_watcher.py**
+- [x] **Step 2: 创建 file_watcher.py**
 
 ```python
 #!/usr/bin/env python3
@@ -679,7 +679,7 @@ if __name__ == '__main__':
     sys.exit(main())
 ```
 
-- [ ] **Step 3: 测试文件监控服务**
+- [x] **Step 3: 测试文件监控服务**
 
 启动监控服务：
 ```bash
@@ -693,7 +693,7 @@ Expected:
 按 Ctrl+C 停止服务
 ```
 
-- [ ] **Step 4: 测试文件变化检测**
+- [x] **Step 4: 测试文件变化检测**
 
 在另一个终端修改 shared/error_codes.json，添加一个新错误码：
 
@@ -703,7 +703,7 @@ echo '{"error_codes":[{"code":0,"name":"SUCCESS","description":"操作成功"},{
 
 Expected: 监控服务输出检测到变化并重新生成
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add tools/file_watcher.py
@@ -717,7 +717,7 @@ git commit -m "feat(tools): add file watcher service for auto-generation"
 **Files:**
 - Modify: `tools/build_all.bat`
 
-- [ ] **Step 1: 修改 build_all.bat**
+- [x] **Step 1: 修改 build_all.bat**
 
 在构建服务之前添加代码生成步骤：
 
@@ -867,7 +867,7 @@ if %BUILD_FAILED% equ 0 (
 endlocal
 ```
 
-- [ ] **Step 2: 测试构建流程**
+- [x] **Step 2: 测试构建流程**
 
 ```bash
 tools/build_all.bat
@@ -875,7 +875,7 @@ tools/build_all.bat
 
 Expected: 看到代码生成步骤在构建服务之前执行
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add tools/build_all.bat
@@ -890,7 +890,7 @@ git commit -m "build: integrate constants generation into build process"
 - Delete: `scripts/common/proto/msg_ids.h` (已被自动生成的文件替代)
 - Modify: `scripts/client/msg_ids.py` (已改为自动生成)
 
-- [ ] **Step 1: 确认生成的文件正确**
+- [x] **Step 1: 确认生成的文件正确**
 
 ```bash
 python -c "from scripts.client.msg_ids import MSG_ID_HEARTBEAT; print(MSG_ID_HEARTBEAT)"
@@ -898,13 +898,13 @@ python -c "from scripts.client.msg_ids import MSG_ID_HEARTBEAT; print(MSG_ID_HEA
 
 Expected: `1`
 
-- [ ] **Step 2: 删除旧的 msg_ids.h**
+- [x] **Step 2: 删除旧的 msg_ids.h**
 
 ```bash
 git rm scripts/common/proto/msg_ids.h
 ```
 
-- [ ] **Step 3: 更新 C++ 代码中的 include 路径**
+- [x] **Step 3: 更新 C++ 代码中的 include 路径**
 
 检查所有包含 `msg_ids.h` 的 C++ 文件，更新 include 路径：
 
@@ -914,7 +914,7 @@ grep -r "msg_ids.h" scripts/server/ --include="*.cpp" --include="*.h"
 
 将 `#include "msg_ids.h"` 或 `#include "common/proto/msg_ids.h"` 更新为 `#include "msg_ids.h"`（因为新文件在 `scripts/server/common/include/` 目录下）
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 git add -A
@@ -929,7 +929,7 @@ git commit -m "refactor: remove manually maintained msg_ids.h, use generated ver
 - Modify: `tools/generate_constants.py`
 - Modify: `tools/file_watcher.py`
 
-- [ ] **Step 1: 添加日志配置到 generate_constants.py**
+- [x] **Step 1: 添加日志配置到 generate_constants.py**
 
 在文件开头添加：
 
@@ -953,15 +953,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 ```
 
-- [ ] **Step 2: 更新日志记录**
+- [x] **Step 2: 更新日志记录**
 
 将 `print` 语句替换为 `logger.info` 和 `logger.error`
 
-- [ ] **Step 3: 添加日志配置到 file_watcher.py**
+- [x] **Step 3: 添加日志配置到 file_watcher.py**
 
 类似地添加日志配置
 
-- [ ] **Step 4: 测试日志记录**
+- [x] **Step 4: 测试日志记录**
 
 ```bash
 python tools/generate_constants.py
@@ -970,7 +970,7 @@ cat logs/generate_constants.log
 
 Expected: 看到日志文件中有生成记录
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add tools/generate_constants.py tools/file_watcher.py
@@ -984,7 +984,7 @@ git commit -m "feat(tools): add logging to constants generation"
 **Files:**
 - Create: `shared/README.md`
 
-- [ ] **Step 1: 创建 README.md**
+- [x] **Step 1: 创建 README.md**
 
 ```markdown
 # 共享常量配置
@@ -1040,7 +1040,7 @@ python tools/file_watcher.py
 - `message_ids.json` - 消息ID定义
 ```
 
-- [ ] **Step 2: 提交**
+- [x] **Step 2: 提交**
 
 ```bash
 git add shared/README.md
@@ -1051,14 +1051,14 @@ git commit -m "docs: add README for shared constants directory"
 
 ### Task 9: 验证完整流程
 
-- [ ] **Step 1: 清理生成的文件**
+- [x] **Step 1: 清理生成的文件**
 
 ```bash
 rm -f scripts/client/error_codes.py scripts/client/msg_ids.py
 rm -f scripts/server/common/include/error_codes.h scripts/server/common/include/msg_ids.h
 ```
 
-- [ ] **Step 2: 运行生成脚本**
+- [x] **Step 2: 运行生成脚本**
 
 ```bash
 python tools/generate_constants.py
@@ -1066,7 +1066,7 @@ python tools/generate_constants.py
 
 Expected: 所有文件重新生成成功
 
-- [ ] **Step 3: 验证 Python 导入**
+- [x] **Step 3: 验证 Python 导入**
 
 ```bash
 python -c "from scripts.client.error_codes import ErrorCode; from scripts.client.msg_ids import MessageIds; print('SUCCESS')"
@@ -1074,15 +1074,15 @@ python -c "from scripts.client.error_codes import ErrorCode; from scripts.client
 
 Expected: `SUCCESS`
 
-- [ ] **Step 4: 验证 C++ 编译**
+- [x] **Step 4: 验证 C++ 编译**
 
 如果可能，验证 C++ 代码可以正确编译
 
-- [ ] **Step 5: 测试文件监控**
+- [x] **Step 5: 测试文件监控**
 
 启动监控服务，修改一个 JSON 文件，验证自动生成
 
-- [ ] **Step 6: 最终提交**
+- [x] **Step 6: 最终提交**
 
 ```bash
 git add -A

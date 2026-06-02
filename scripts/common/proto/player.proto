@@ -270,3 +270,76 @@ message QuestProgressNotify {
     string quest_id = 1;
     map<string, int32> progress = 2;
 }
+
+// ===========================================
+// 战斗系统消息
+// MsgID 范围: 5001-5099
+// ===========================================
+
+// 攻击请求 (Client -> Game)
+message AttackReq {
+    float dir_x = 1;
+    float dir_y = 2;
+    string weapon_id = 3;
+}
+
+// 攻击结果通知 (Game -> Client)
+message AttackNotify {
+    repeated AttackHit hits = 1;
+}
+
+message AttackHit {
+    uint32 monster_id = 1;
+    int32 damage = 2;
+    int32 remaining_hp = 3;
+    bool is_kill = 4;
+}
+
+// 怪物刷新通知 (Game -> Client)
+message MonsterSpawnNotify {
+    uint32 monster_id = 1;
+    string monster_type = 2;
+    float x = 3;
+    float y = 4;
+    int32 hp = 5;
+    int32 max_hp = 6;
+}
+
+// 怪物死亡通知 (Game -> Client)
+message MonsterDeathNotify {
+    uint32 monster_id = 1;
+    repeated DropEntry drops = 2;
+    int32 exp_reward = 3;
+}
+
+message DropEntry {
+    int32 item_id = 1;
+    int32 count = 2;
+}
+
+// 怪物移动通知 (Game -> Client)
+message MonsterMoveNotify {
+    uint32 monster_id = 1;
+    float x = 2;
+    float y = 3;
+    string state = 4;
+}
+
+// 玩家HP更新 (Game -> Client)
+message PlayerHpUpdate {
+    int32 current_hp = 1;
+    int32 max_hp = 2;
+    int32 damage = 3;
+    string source = 4;
+}
+
+// 玩家死亡通知 (Game -> Client)
+message PlayerDeathNotify {
+    uint64 player_id = 1;
+    repeated LostItem lost_items = 2;
+}
+
+message LostItem {
+    int32 item_id = 1;
+    int32 count = 2;
+}

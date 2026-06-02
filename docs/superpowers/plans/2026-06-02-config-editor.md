@@ -1,6 +1,6 @@
 # 配置编辑器 & 导表工具实现计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 构建一个配置编辑器 GUI 工具和独立导表引擎，支持从 Excel 读取游戏配置数据并生成 Python/C++ 代码。
 
@@ -45,7 +45,7 @@ farm_demo/
 - Create: `scripts/client/data/` (目录)
 - Create: `scripts/server/data/` (目录)
 
-- [ ] **Step 1: 添加 openpyxl 依赖**
+- [x] **Step 1: 添加 openpyxl 依赖**
 
 将 `requirements.txt` 修改为：
 
@@ -56,7 +56,7 @@ watchdog>=6.0.0
 openpyxl>=3.1.0
 ```
 
-- [ ] **Step 2: 创建目录结构和包文件**
+- [x] **Step 2: 创建目录结构和包文件**
 
 ```bash
 mkdir -p tables tools/table_export tools/config_editor scripts/client/data scripts/server/data
@@ -83,7 +83,7 @@ mkdir -p tables tools/table_export tools/config_editor scripts/client/data scrip
 
 创建 `scripts/server/data/.gitkeep`（空文件，保持目录被 git 跟踪）。
 
-- [ ] **Step 3: 安装依赖并验证**
+- [x] **Step 3: 安装依赖并验证**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -93,7 +93,7 @@ python -c "import openpyxl; print(openpyxl.__version__)"
 
 Expected: 输出 openpyxl 版本号（如 `3.1.5`）
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 git add requirements.txt tables/ tools/table_export/__init__.py tools/config_editor/__init__.py scripts/client/data/__init__.py scripts/server/data/.gitkeep
@@ -108,7 +108,7 @@ git commit -m "feat: initialize config editor project structure"
 - Create: `tools/table_export/excel_reader.py`
 - Create: `tests/test_excel_reader.py`
 
-- [ ] **Step 1: 编写测试**
+- [x] **Step 1: 编写测试**
 
 创建 `tests/test_excel_reader.py`：
 
@@ -210,7 +210,7 @@ class TestReadExcel:
         assert result["rows"][0] == [1, 3.14, True]
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -219,7 +219,7 @@ python -m pytest tests/test_excel_reader.py -v
 
 Expected: FAIL — `ModuleNotFoundError: No module named 'tools.table_export.excel_reader'`
 
-- [ ] **Step 3: 实现 Excel 读取器**
+- [x] **Step 3: 实现 Excel 读取器**
 
 创建 `tools/table_export/excel_reader.py`：
 
@@ -353,7 +353,7 @@ def _convert_row(
     return result
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -362,7 +362,7 @@ python -m pytest tests/test_excel_reader.py -v
 
 Expected: 全部 PASS
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add tools/table_export/excel_reader.py tests/test_excel_reader.py
@@ -377,7 +377,7 @@ git commit -m "feat: add Excel reader for table export"
 - Create: `tools/table_export/validators.py`
 - Create: `tests/test_validators.py`
 
-- [ ] **Step 1: 编写测试**
+- [x] **Step 1: 编写测试**
 
 创建 `tests/test_validators.py`：
 
@@ -489,7 +489,7 @@ class TestValidateTable:
         assert len(errors) == 2
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -498,7 +498,7 @@ python -m pytest tests/test_validators.py -v
 
 Expected: FAIL — `ModuleNotFoundError`
 
-- [ ] **Step 3: 实现校验器**
+- [x] **Step 3: 实现校验器**
 
 创建 `tools/table_export/validators.py`：
 
@@ -597,7 +597,7 @@ def _check_primary_key_unique(table: Dict[str, Any], rows: List[List]) -> List[s
     return errors
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -606,7 +606,7 @@ python -m pytest tests/test_validators.py -v
 
 Expected: 全部 PASS
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add tools/table_export/validators.py tests/test_validators.py
@@ -621,7 +621,7 @@ git commit -m "feat: add table data validators"
 - Create: `tools/table_export/code_generator.py`
 - Create: `tests/test_code_generator.py`
 
-- [ ] **Step 1: 编写测试**
+- [x] **Step 1: 编写测试**
 
 创建 `tests/test_code_generator.py`：
 
@@ -734,7 +734,7 @@ class TestGenerateCpp:
         assert "bool active" in content
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -743,7 +743,7 @@ python -m pytest tests/test_code_generator.py -v
 
 Expected: FAIL — `ModuleNotFoundError`
 
-- [ ] **Step 3: 实现代码生成器**
+- [x] **Step 3: 实现代码生成器**
 
 创建 `tools/table_export/code_generator.py`：
 
@@ -919,7 +919,7 @@ def _atomic_write(file_path: str, content: str, temp_suffix: str) -> None:
     os.replace(temp_path, file_path)
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -928,7 +928,7 @@ python -m pytest tests/test_code_generator.py -v
 
 Expected: 全部 PASS
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add tools/table_export/code_generator.py tests/test_code_generator.py
@@ -943,7 +943,7 @@ git commit -m "feat: add Python/C++ code generator"
 - Modify: `tools/table_export/__init__.py`
 - Create: `tests/test_table_export.py`
 
-- [ ] **Step 1: 编写测试**
+- [x] **Step 1: 编写测试**
 
 创建 `tests/test_table_export.py`：
 
@@ -1079,7 +1079,7 @@ class TestExportAll:
         assert result["fail_count"] == 1
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -1088,7 +1088,7 @@ python -m pytest tests/test_table_export.py -v
 
 Expected: FAIL — `ImportError: cannot import name 'export_table'`
 
-- [ ] **Step 3: 实现导表引擎入口**
+- [x] **Step 3: 实现导表引擎入口**
 
 修改 `tools/table_export/__init__.py`：
 
@@ -1246,7 +1246,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -1255,7 +1255,7 @@ python -m pytest tests/test_table_export.py -v
 
 Expected: 全部 PASS
 
-- [ ] **Step 5: 运行全部导表引擎测试**
+- [x] **Step 5: 运行全部导表引擎测试**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -1264,7 +1264,7 @@ python -m pytest tests/test_excel_reader.py tests/test_validators.py tests/test_
 
 Expected: 全部 PASS
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add tools/table_export/__init__.py tests/test_table_export.py
@@ -1278,7 +1278,7 @@ git commit -m "feat: add table export engine with CLI support"
 **Files:**
 - Create: `tables/items.xlsx`
 
-- [ ] **Step 1: 创建 items.xlsx 示例表**
+- [x] **Step 1: 创建 items.xlsx 示例表**
 
 运行以下 Python 脚本创建示例 Excel：
 
@@ -1326,7 +1326,7 @@ python tools/create_sample_tables.py
 
 Expected: 输出 `创建 tables/items.xlsx`
 
-- [ ] **Step 2: 用导表引擎测试导出**
+- [x] **Step 2: 用导表引擎测试导出**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -1335,7 +1335,7 @@ python -m tools.table_export tables/items.xlsx
 
 Expected: 输出 `导出成功: items`，并生成 `scripts/client/data/items.py` 和 `scripts/server/data/items.h`
 
-- [ ] **Step 3: 验证生成的文件**
+- [x] **Step 3: 验证生成的文件**
 
 ```bash
 cat scripts/client/data/items.py
@@ -1344,7 +1344,7 @@ cat scripts/server/data/items.h
 
 Expected: 两个文件内容正确，与现有 item_registry.py 数据一致
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 git add tables/items.xlsx tools/create_sample_tables.py scripts/client/data/items.py scripts/server/data/items.h
@@ -1358,7 +1358,7 @@ git commit -m "feat: add sample items.xlsx and generated code"
 **Files:**
 - Create: `tools/config_editor/sidebar.py`
 
-- [ ] **Step 1: 实现侧边栏组件**
+- [x] **Step 1: 实现侧边栏组件**
 
 创建 `tools/config_editor/sidebar.py`：
 
@@ -1471,7 +1471,7 @@ import tkinter as tk
 import customtkinter as ctk
 ```
 
-- [ ] **Step 2: 验证语法**
+- [x] **Step 2: 验证语法**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -1480,7 +1480,7 @@ python -c "from tools.config_editor.sidebar import Sidebar; print('OK')"
 
 Expected: 输出 `OK`
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add tools/config_editor/sidebar.py
@@ -1494,7 +1494,7 @@ git commit -m "feat: add sidebar component for config editor"
 **Files:**
 - Create: `tools/config_editor/table_editor.py`
 
-- [ ] **Step 1: 实现表格编辑器组件**
+- [x] **Step 1: 实现表格编辑器组件**
 
 创建 `tools/config_editor/table_editor.py`：
 
@@ -1822,7 +1822,7 @@ class TableEditor(ctk.CTkFrame):
             self._on_modified()
 ```
 
-- [ ] **Step 2: 验证语法**
+- [x] **Step 2: 验证语法**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -1831,7 +1831,7 @@ python -c "from tools.config_editor.table_editor import TableEditor; print('OK')
 
 Expected: 输出 `OK`
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add tools/config_editor/table_editor.py
@@ -1845,7 +1845,7 @@ git commit -m "feat: add table editor component with inline editing"
 **Files:**
 - Create: `tools/config_editor/export_runner.py`
 
-- [ ] **Step 1: 实现导表触发器**
+- [x] **Step 1: 实现导表触发器**
 
 创建 `tools/config_editor/export_runner.py`：
 
@@ -2059,7 +2059,7 @@ class ExportRunner:
             messagebox.showwarning("导出结果", message)
 ```
 
-- [ ] **Step 2: 验证语法**
+- [x] **Step 2: 验证语法**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -2068,7 +2068,7 @@ python -c "from tools.config_editor.export_runner import ExportRunner; print('OK
 
 Expected: 输出 `OK`
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add tools/config_editor/export_runner.py
@@ -2082,7 +2082,7 @@ git commit -m "feat: add export runner for config editor GUI"
 **Files:**
 - Create: `tools/config_editor/app.py`
 
-- [ ] **Step 1: 实现主窗口**
+- [x] **Step 1: 实现主窗口**
 
 创建 `tools/config_editor/app.py`：
 
@@ -2341,7 +2341,7 @@ class ConfigEditorApp:
         self._info_label.configure(text=text)
 ```
 
-- [ ] **Step 2: 验证语法**
+- [x] **Step 2: 验证语法**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -2350,7 +2350,7 @@ python -c "from tools.config_editor.app import ConfigEditorApp; print('OK')"
 
 Expected: 输出 `OK`
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add tools/config_editor/app.py
@@ -2364,7 +2364,7 @@ git commit -m "feat: add config editor main window"
 **Files:**
 - Create: `tools/run_config_editor.py`
 
-- [ ] **Step 1: 创建入口脚本**
+- [x] **Step 1: 创建入口脚本**
 
 创建 `tools/run_config_editor.py`：
 
@@ -2391,7 +2391,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 2: 验证语法**
+- [x] **Step 2: 验证语法**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -2400,7 +2400,7 @@ python -c "import tools.run_config_editor; print('OK')"
 
 Expected: 输出 `OK`
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add tools/run_config_editor.py
@@ -2414,7 +2414,7 @@ git commit -m "feat: add config editor entry script"
 **Files:**
 - None (手动测试)
 
-- [ ] **Step 1: 启动编辑器验证 GUI**
+- [x] **Step 1: 启动编辑器验证 GUI**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -2423,7 +2423,7 @@ python tools/run_config_editor.py
 
 Expected: 编辑器窗口正常打开，左侧显示 items.xlsx
 
-- [ ] **Step 2: 测试完整工作流**
+- [x] **Step 2: 测试完整工作流**
 
 1. 编辑器中打开 items.xlsx
 2. 编辑一个单元格
@@ -2431,7 +2431,7 @@ Expected: 编辑器窗口正常打开，左侧显示 items.xlsx
 4. 点击"导出当前表"
 5. 验证 scripts/client/data/items.py 和 scripts/server/data/items.h 已更新
 
-- [ ] **Step 3: 测试命令行导表**
+- [x] **Step 3: 测试命令行导表**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -2441,7 +2441,7 @@ python -m tools.table_export --all tables/
 
 Expected: 两个命令都成功执行
 
-- [ ] **Step 4: 运行全部测试**
+- [x] **Step 4: 运行全部测试**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -2450,7 +2450,7 @@ python -m pytest tests/test_excel_reader.py tests/test_validators.py tests/test_
 
 Expected: 全部 PASS
 
-- [ ] **Step 5: 最终提交**
+- [x] **Step 5: 最终提交**
 
 ```bash
 git add -A

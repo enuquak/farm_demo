@@ -39,7 +39,7 @@
 
 | File | Change |
 |------|--------|
-| `shared/message_ids.json` | Add 28 friend MsgIDs (5001-5063) |
+| `shared/message_ids.json` | Add 28 friend MsgIDs (8001-5063) |
 | `scripts/common/proto/generated/friend_pb2.py` | Regenerated from friend.proto |
 | `scripts/common/proto/generated/friend.pb.cc` | Regenerated from friend.proto |
 | `scripts/common/proto/generated/friend.pb.h` | Regenerated from friend.proto |
@@ -361,7 +361,7 @@ message FriendServiceMessage {
 Add these entries to the `message_ids` array in `shared/message_ids.json`:
 
 ```json
-{"code": 5001, "name": "MSG_ID_FRIEND_SEARCH_REQ", "description": "搜索玩家请求"},
+{"code": 8001, "name": "MSG_ID_FRIEND_SEARCH_REQ", "description": "搜索玩家请求"},
 {"code": 5002, "name": "MSG_ID_FRIEND_SEARCH_RESP", "description": "搜索玩家响应"},
 {"code": 5003, "name": "MSG_ID_FRIEND_ADD_REQ", "description": "发送好友请求"},
 {"code": 5004, "name": "MSG_ID_FRIEND_ADD_RESP", "description": "好友请求结果"},

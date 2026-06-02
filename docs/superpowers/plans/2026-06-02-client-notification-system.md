@@ -35,7 +35,7 @@
 **Files:**
 - Create: `scripts/client/notification.py`
 
-- [ ] **Step 1: 创建 notification.py 文件**
+- [x] **Step 1: 创建 notification.py 文件**
 
 ```python
 """
@@ -95,12 +95,12 @@ class Notification:
             self.duration = 3.0
 ```
 
-- [ ] **Step 2: 运行测试验证文件语法**
+- [x] **Step 2: 运行测试验证文件语法**
 
 Run: `python -c "from scripts.client.notification import NotificationType, NotificationPriority, Notification; print('Import OK')"`
 Expected: 输出 "Import OK"
 
-- [ ] **Step 3: 提交代码**
+- [x] **Step 3: 提交代码**
 
 ```bash
 git add scripts/client/notification.py
@@ -114,7 +114,7 @@ git commit -m "feat: add notification data structures"
 **Files:**
 - Create: `scripts/client/ui/toast_renderer.py`
 
-- [ ] **Step 1: 创建 toast_renderer.py 文件**
+- [x] **Step 1: 创建 toast_renderer.py 文件**
 
 ```python
 """
@@ -279,12 +279,12 @@ class ToastRenderer:
         logger.info("[ToastRenderer]Cleaned up")
 ```
 
-- [ ] **Step 2: 运行测试验证文件语法**
+- [x] **Step 2: 运行测试验证文件语法**
 
 Run: `python -c "from scripts.client.ui.toast_renderer import ToastRenderer; print('Import OK')"`
 Expected: 输出 "Import OK"
 
-- [ ] **Step 3: 提交代码**
+- [x] **Step 3: 提交代码**
 
 ```bash
 git add scripts/client/ui/toast_renderer.py
@@ -298,7 +298,7 @@ git commit -m "feat: add Toast renderer with scale animation"
 **Files:**
 - Create: `scripts/client/ui/toast_channel.py`
 
-- [ ] **Step 1: 创建 toast_channel.py 文件**
+- [x] **Step 1: 创建 toast_channel.py 文件**
 
 ```python
 """
@@ -465,12 +465,12 @@ class ToastChannel:
         logger.info("[ToastChannel]Cleaned up")
 ```
 
-- [ ] **Step 2: 运行测试验证文件语法**
+- [x] **Step 2: 运行测试验证文件语法**
 
 Run: `python -c "from scripts.client.ui.toast_channel import ToastChannel, ToastState; print('Import OK')"`
 Expected: 输出 "Import OK"
 
-- [ ] **Step 3: 提交代码**
+- [x] **Step 3: 提交代码**
 
 ```bash
 git add scripts/client/ui/toast_channel.py
@@ -484,7 +484,7 @@ git commit -m "feat: add Toast channel with priority queue"
 **Files:**
 - Create: `scripts/client/ui/marquee_renderer.py`
 
-- [ ] **Step 1: 创建 marquee_renderer.py 文件**
+- [x] **Step 1: 创建 marquee_renderer.py 文件**
 
 ```python
 """
@@ -586,12 +586,12 @@ class MarqueeRenderer:
         logger.info("[MarqueeRenderer]Cleaned up")
 ```
 
-- [ ] **Step 2: 运行测试验证文件语法**
+- [x] **Step 2: 运行测试验证文件语法**
 
 Run: `python -c "from scripts.client.ui.marquee_renderer import MarqueeRenderer; print('Import OK')"`
 Expected: 输出 "Import OK"
 
-- [ ] **Step 3: 提交代码**
+- [x] **Step 3: 提交代码**
 
 ```bash
 git add scripts/client/ui/marquee_renderer.py
@@ -605,7 +605,7 @@ git commit -m "feat: add Marquee renderer"
 **Files:**
 - Create: `scripts/client/ui/marquee_channel.py`
 
-- [ ] **Step 1: 创建 marquee_channel.py 文件**
+- [x] **Step 1: 创建 marquee_channel.py 文件**
 
 ```python
 """
@@ -723,12 +723,12 @@ class MarqueeChannel:
         logger.info("[MarqueeChannel]Cleaned up")
 ```
 
-- [ ] **Step 2: 运行测试验证文件语法**
+- [x] **Step 2: 运行测试验证文件语法**
 
 Run: `python -c "from scripts.client.ui.marquee_channel import MarqueeChannel, MarqueeState; print('Import OK')"`
 Expected: 输出 "Import OK"
 
-- [ ] **Step 3: 提交代码**
+- [x] **Step 3: 提交代码**
 
 ```bash
 git add scripts/client/ui/marquee_channel.py
@@ -742,7 +742,7 @@ git commit -m "feat: add Marquee channel with scrolling logic"
 **Files:**
 - Create: `scripts/client/ui/notification_manager.py`
 
-- [ ] **Step 1: 创建 notification_manager.py 文件**
+- [x] **Step 1: 创建 notification_manager.py 文件**
 
 ```python
 """
@@ -859,12 +859,12 @@ class NotificationManager:
         logger.info("[NotificationManager]Cleaned up")
 ```
 
-- [ ] **Step 2: 运行测试验证文件语法**
+- [x] **Step 2: 运行测试验证文件语法**
 
 Run: `python -c "from scripts.client.ui.notification_manager import NotificationManager; print('Import OK')"`
 Expected: 输出 "Import OK"
 
-- [ ] **Step 3: 提交代码**
+- [x] **Step 3: 提交代码**
 
 ```bash
 git add scripts/client/ui/notification_manager.py
@@ -878,7 +878,7 @@ git commit -m "feat: add NotificationManager"
 **Files:**
 - Modify: `scripts/common/proto/player.proto`
 
-- [ ] **Step 1: 在 player.proto 末尾添加 NotifyToast 消息定义**
+- [x] **Step 1: 在 player.proto 末尾添加 NotifyToast 消息定义**
 
 在文件末尾添加：
 
@@ -907,7 +907,7 @@ message NotifyToast {
 }
 ```
 
-- [ ] **Step 2: 提交代码**
+- [x] **Step 2: 提交代码**
 
 ```bash
 git add scripts/common/proto/player.proto
@@ -921,7 +921,7 @@ git commit -m "feat: add NotifyToast protobuf definition"
 **Files:**
 - Modify: `scripts/client/message_ids.py`
 
-- [ ] **Step 1: 在 MessageIds 类中添加新消息 ID**
+- [x] **Step 1: 在 MessageIds 类中添加新消息 ID**
 
 在 `MSG_ID_ACTIVE_SLOT_CHANGE = 3101` 之后添加：
 
@@ -929,7 +929,7 @@ git commit -m "feat: add NotifyToast protobuf definition"
     MSG_ID_NOTIFY_TOAST = 4001  # 服务器通知提示
 ```
 
-- [ ] **Step 2: 提交代码**
+- [x] **Step 2: 提交代码**
 
 ```bash
 git add scripts/client/message_ids.py
@@ -943,7 +943,7 @@ git commit -m "feat: add MSG_ID_NOTIFY_TOAST message ID"
 **Files:**
 - Modify: `scripts/client/network_dispatcher.py`
 
-- [ ] **Step 1: 添加 import 和回调参数**
+- [x] **Step 1: 添加 import 和回调参数**
 
 在文件顶部的 import 部分添加：
 
@@ -957,7 +957,7 @@ from .message_ids import (
 )
 ```
 
-- [ ] **Step 2: 更新 __init__ 方法签名**
+- [x] **Step 2: 更新 __init__ 方法签名**
 
 在 `__init__` 方法的参数列表中添加：
 
@@ -971,7 +971,7 @@ from .message_ids import (
             "on_notify_toast": on_notify_toast,
 ```
 
-- [ ] **Step 3: 更新分发表**
+- [x] **Step 3: 更新分发表**
 
 在 `self._dispatch_table` 中添加：
 
@@ -979,7 +979,7 @@ from .message_ids import (
             MSG_ID_NOTIFY_TOAST: self._handle_notify_toast,
 ```
 
-- [ ] **Step 4: 添加处理方法**
+- [x] **Step 4: 添加处理方法**
 
 在类的末尾添加新方法：
 
@@ -1003,7 +1003,7 @@ from .message_ids import (
             logger.error(f"[NetworkDispatcher]Failed to parse NotifyToast: {e}")
 ```
 
-- [ ] **Step 5: 提交代码**
+- [x] **Step 5: 提交代码**
 
 ```bash
 git add scripts/client/network_dispatcher.py
@@ -1017,7 +1017,7 @@ git commit -m "feat: add NotifyToast handler to NetworkDispatcher"
 **Files:**
 - Modify: `scripts/client/game_scene.py`
 
-- [ ] **Step 1: 添加 import**
+- [x] **Step 1: 添加 import**
 
 在文件顶部添加：
 
@@ -1026,7 +1026,7 @@ from .notification import Notification, NotificationType, NotificationPriority
 from .ui.notification_manager import NotificationManager
 ```
 
-- [ ] **Step 2: 在 __init__ 方法中创建 NotificationManager**
+- [x] **Step 2: 在 __init__ 方法中创建 NotificationManager**
 
 在 `self._drop_item_renderer = DropItemRenderer()` 之后添加：
 
@@ -1037,7 +1037,7 @@ from .ui.notification_manager import NotificationManager
         )
 ```
 
-- [ ] **Step 3: 更新 NetworkMessageDispatcher 初始化**
+- [x] **Step 3: 更新 NetworkMessageDispatcher 初始化**
 
 在 `NetworkMessageDispatcher` 初始化的参数中添加：
 
@@ -1045,7 +1045,7 @@ from .ui.notification_manager import NotificationManager
             on_notify_toast=self._on_notify_toast,
 ```
 
-- [ ] **Step 4: 添加回调方法**
+- [x] **Step 4: 添加回调方法**
 
 在 `_on_inventory_sync` 方法之后添加：
 
@@ -1064,7 +1064,7 @@ from .ui.notification_manager import NotificationManager
         logger.info(f"[GameScene]Notification received: {notify.title}")
 ```
 
-- [ ] **Step 5: 更新 render 调用**
+- [x] **Step 5: 更新 render 调用**
 
 在 `self._renderer.render(...)` 调用中添加 `notification_manager` 参数：
 
@@ -1077,7 +1077,7 @@ from .ui.notification_manager import NotificationManager
             )
 ```
 
-- [ ] **Step 6: 提交代码**
+- [x] **Step 6: 提交代码**
 
 ```bash
 git add scripts/client/game_scene.py
@@ -1091,7 +1091,7 @@ git commit -m "feat: integrate NotificationManager into GameScene"
 **Files:**
 - Modify: `scripts/client/game_renderer.py`
 
-- [ ] **Step 1: 添加 import**
+- [x] **Step 1: 添加 import**
 
 在文件顶部添加：
 
@@ -1099,7 +1099,7 @@ git commit -m "feat: integrate NotificationManager into GameScene"
 from .ui.notification_manager import NotificationManager
 ```
 
-- [ ] **Step 2: 更新 render 方法签名**
+- [x] **Step 2: 更新 render 方法签名**
 
 将 `render` 方法签名更新为：
 
@@ -1109,7 +1109,7 @@ from .ui.notification_manager import NotificationManager
                notification_manager: NotificationManager = None):
 ```
 
-- [ ] **Step 3: 添加通知渲染逻辑**
+- [x] **Step 3: 添加通知渲染逻辑**
 
 在 `# 时间 HUD 渲染（左上角）` 之前添加：
 
@@ -1119,7 +1119,7 @@ from .ui.notification_manager import NotificationManager
             notification_manager.render(self._screen, dt)
 ```
 
-- [ ] **Step 4: 提交代码**
+- [x] **Step 4: 提交代码**
 
 ```bash
 git add scripts/client/game_renderer.py
@@ -1133,7 +1133,7 @@ git commit -m "feat: integrate notification rendering into GameRenderer"
 **Files:**
 - Create: `scripts/client/ui/test_notification_system.py`
 
-- [ ] **Step 1: 创建测试文件**
+- [x] **Step 1: 创建测试文件**
 
 ```python
 """
@@ -1314,12 +1314,12 @@ if __name__ == "__main__":
     unittest.main()
 ```
 
-- [ ] **Step 2: 运行测试**
+- [x] **Step 2: 运行测试**
 
 Run: `python -m pytest scripts/client/ui/test_notification_system.py -v`
 Expected: 所有测试通过
 
-- [ ] **Step 3: 提交代码**
+- [x] **Step 3: 提交代码**
 
 ```bash
 git add scripts/client/ui/test_notification_system.py
@@ -1333,7 +1333,7 @@ git commit -m "test: add notification system unit tests"
 **Files:**
 - Modify: `scripts/client/ui/__init__.py`
 
-- [ ] **Step 1: 更新 __init__.py 导出新模块**
+- [x] **Step 1: 更新 __init__.py 导出新模块**
 
 ```python
 """
@@ -1365,7 +1365,7 @@ __all__ = [
 ]
 ```
 
-- [ ] **Step 2: 提交代码**
+- [x] **Step 2: 提交代码**
 
 ```bash
 git add scripts/client/ui/__init__.py

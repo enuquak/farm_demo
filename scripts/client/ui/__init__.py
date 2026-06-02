@@ -4,7 +4,7 @@ UI 模块
 """
 from .energy_bar import EnergyBar
 from .exhaustion_modal import ExhaustionModal
-from .hotbar import Hotbar
+from .hotbar import HotbarRenderer as Hotbar
 from .inventory_panel import InventoryPanel
 from .time_hud import TimeHUD
 from .notification_manager import NotificationManager

@@ -47,7 +47,7 @@
 - Create: `scripts/server/game_server/src/redis_connection.h`
 - Create: `scripts/server/game_server/src/redis_connection.cpp`
 
-- [ ] **Step 1: Create redis_connection.h**
+- [x] **Step 1: Create redis_connection.h**
 
 ```cpp
 #pragma once
@@ -87,7 +87,7 @@ private:
 }  // namespace farm
 ```
 
-- [ ] **Step 2: Create redis_connection.cpp**
+- [x] **Step 2: Create redis_connection.cpp**
 
 ```cpp
 #include "redis_connection.h"
@@ -239,7 +239,7 @@ bool RedisConnection::del(const std::string& key) {
 }  // namespace farm
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/server/game_server/src/redis_connection.h scripts/server/game_server/src/redis_connection.cpp
@@ -254,7 +254,7 @@ git commit -m "feat(game_server): add RedisConnection hiredis wrapper"
 - Create: `scripts/server/game_server/src/login_stub.h`
 - Create: `scripts/server/game_server/src/login_stub.cpp`
 
-- [ ] **Step 1: Create login_stub.h**
+- [x] **Step 1: Create login_stub.h**
 
 ```cpp
 #pragma once
@@ -329,7 +329,7 @@ private:
 }  // namespace farm
 ```
 
-- [ ] **Step 2: Create login_stub.cpp**
+- [x] **Step 2: Create login_stub.cpp**
 
 ```cpp
 #include "login_stub.h"
@@ -787,7 +787,7 @@ void LoginStub::mark_player_online(uint64_t player_id) {
 }  // namespace farm
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/server/game_server/src/login_stub.h scripts/server/game_server/src/login_stub.cpp
@@ -802,7 +802,7 @@ git commit -m "feat(game_server): add LoginStub with Redis online tracking"
 - Create: `scripts/server/game_server/src/online_stub.h`
 - Create: `scripts/server/game_server/src/online_stub.cpp`
 
-- [ ] **Step 1: Create online_stub.h**
+- [x] **Step 1: Create online_stub.h**
 
 ```cpp
 #pragma once
@@ -831,7 +831,7 @@ private:
 }  // namespace farm
 ```
 
-- [ ] **Step 2: Create online_stub.cpp**
+- [x] **Step 2: Create online_stub.cpp**
 
 ```cpp
 #include "online_stub.h"
@@ -877,7 +877,7 @@ void OnlineStub::query_player_server(uint64_t player_id, OnlineQueryCallback cal
 }  // namespace farm
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/server/game_server/src/online_stub.h scripts/server/game_server/src/online_stub.cpp
@@ -892,7 +892,7 @@ git commit -m "feat(game_server): add OnlineStub for online status queries"
 - Modify: `scripts/server/game_server/src/game_server.h:31-127`
 - Modify: `scripts/server/game_server/src/game_server.cpp:33-46,99-134,284-294,435-437,576-702`
 
-- [ ] **Step 1: Update game_server.h**
+- [x] **Step 1: Update game_server.h**
 
 Add includes and new members to `game_server.h`:
 
@@ -941,7 +941,7 @@ Remove `account_handler_` member:
     // Remove: std::unique_ptr<AccountMessageHandler> account_handler_;
 ```
 
-- [ ] **Step 2: Update game_server.cpp constructor**
+- [x] **Step 2: Update game_server.cpp constructor**
 
 Update constructor to accept and store redis_uri:
 
@@ -963,7 +963,7 @@ GameServer::GameServer(const std::string& ip, uint16_t port,
 }
 ```
 
-- [ ] **Step 3: Update game_server.cpp start() to initialize stubs**
+- [x] **Step 3: Update game_server.cpp start() to initialize stubs**
 
 In `start()`, replace the `account_handler_` initialization block with stub initialization:
 
@@ -995,7 +995,7 @@ Add (after `game_clock_` initialization):
 
 Note: `server_id` needs to be extracted from config. Add to the config parsing in `main.cpp` and pass to GameServer.
 
-- [ ] **Step 4: Update route_internal_message to use LoginStub**
+- [x] **Step 4: Update route_internal_message to use LoginStub**
 
 Replace `account_handler_->handle` with `login_stub_->handle_account_msg`:
 
@@ -1005,7 +1005,7 @@ Replace `account_handler_->handle` with `login_stub_->handle_account_msg`:
             break;
 ```
 
-- [ ] **Step 5: Update handle_enter_game_req to delegate to LoginStub**
+- [x] **Step 5: Update handle_enter_game_req to delegate to LoginStub**
 
 Replace the entire `handle_enter_game_req` method body with delegation:
 
@@ -1016,7 +1016,7 @@ void GameServer::handle_enter_game_req(std::shared_ptr<GateSession> session,
 }
 ```
 
-- [ ] **Step 6: Update handle_disconnect to notify LoginStub**
+- [x] **Step 6: Update handle_disconnect to notify LoginStub**
 
 Add LoginStub notification in `handle_disconnect`:
 
@@ -1042,7 +1042,7 @@ void GameServer::handle_disconnect(std::shared_ptr<GateSession> session) {
 }
 ```
 
-- [ ] **Step 7: Update stop() to disconnect Redis**
+- [x] **Step 7: Update stop() to disconnect Redis**
 
 Add Redis disconnect in `stop()`:
 
@@ -1057,7 +1057,7 @@ void GameServer::stop() {
 }
 ```
 
-- [ ] **Step 8: Remove AccountMessageHandler include**
+- [x] **Step 8: Remove AccountMessageHandler include**
 
 Remove from game_server.cpp:
 
@@ -1065,7 +1065,7 @@ Remove from game_server.cpp:
 // Remove: #include "account_message_handler.h"
 ```
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add scripts/server/game_server/src/game_server.h scripts/server/game_server/src/game_server.cpp
@@ -1080,7 +1080,7 @@ git commit -m "feat(game_server): integrate LoginStub and OnlineStub into GameSe
 - Modify: `scripts/server/game_server/src/player_manager.h:15-72`
 - Modify: `scripts/server/game_server/src/player_manager.cpp:88-147`
 
-- [ ] **Step 1: Update player_manager.h**
+- [x] **Step 1: Update player_manager.h**
 
 Add offline callback type and setter:
 
@@ -1104,7 +1104,7 @@ Add private member:
     PlayerOfflineCallback offline_callback_;
 ```
 
-- [ ] **Step 2: Update player_manager.cpp remove methods**
+- [x] **Step 2: Update player_manager.cpp remove methods**
 
 Update `remove_player` to notify:
 
@@ -1177,7 +1177,7 @@ void PlayerManager::remove_players_by_gate_with_save(GateSession* gate_session) 
 }
 ```
 
-- [ ] **Step 3: Wire up in GameServer::start()**
+- [x] **Step 3: Wire up in GameServer::start()**
 
 Add after LoginStub initialization:
 
@@ -1188,7 +1188,7 @@ Add after LoginStub initialization:
     });
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add scripts/server/game_server/src/player_manager.h scripts/server/game_server/src/player_manager.cpp scripts/server/game_server/src/game_server.cpp
@@ -1203,7 +1203,7 @@ git commit -m "feat(game_server): add offline callback to PlayerManager for Redi
 - Modify: `scripts/server/game_server/src/main.cpp:23-90`
 - Modify: `config/game_server.json`
 
-- [ ] **Step 1: Update main.cpp to parse Redis config and server_id**
+- [x] **Step 1: Update main.cpp to parse Redis config and server_id**
 
 Add Redis config parsing after DBMgr config parsing:
 
@@ -1230,7 +1230,7 @@ Add logging:
     }
 ```
 
-- [ ] **Step 2: Update config/game_server.json**
+- [x] **Step 2: Update config/game_server.json**
 
 Add Redis config block and server ID:
 
@@ -1260,7 +1260,7 @@ Add Redis config block and server ID:
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/server/game_server/src/main.cpp config/game_server.json
@@ -1274,7 +1274,7 @@ git commit -m "feat(game_server): add Redis config and server_id to main.cpp"
 **Files:**
 - Modify: `scripts/server/game_server/CMakeLists.txt:1-203`
 
-- [ ] **Step 1: Add hiredis include path**
+- [x] **Step 1: Add hiredis include path**
 
 Add after LIBEVENT_ROOT:
 
@@ -1282,7 +1282,7 @@ Add after LIBEVENT_ROOT:
 set(HIREDIS_ROOT "C:/hiredis_install")
 ```
 
-- [ ] **Step 2: Add new source files to SOURCES**
+- [x] **Step 2: Add new source files to SOURCES**
 
 Add to SOURCES list:
 
@@ -1292,7 +1292,7 @@ Add to SOURCES list:
     src/online_stub.cpp
 ```
 
-- [ ] **Step 3: Add hiredis include directory**
+- [x] **Step 3: Add hiredis include directory**
 
 Add to target_include_directories:
 
@@ -1300,7 +1300,7 @@ Add to target_include_directories:
     ${HIREDIS_ROOT}/include
 ```
 
-- [ ] **Step 4: Add hiredis library**
+- [x] **Step 4: Add hiredis library**
 
 Add to target_link_libraries (MSVC section):
 
@@ -1314,7 +1314,7 @@ Add to target_link_libraries (Linux section):
         hiredis
 ```
 
-- [ ] **Step 5: Remove account_message_handler from SOURCES**
+- [x] **Step 5: Remove account_message_handler from SOURCES**
 
 Remove from SOURCES:
 
@@ -1322,11 +1322,11 @@ Remove from SOURCES:
     # Remove: src/account_message_handler.cpp
 ```
 
-- [ ] **Step 6: Update TEST_SOURCES similarly**
+- [x] **Step 6: Update TEST_SOURCES similarly**
 
 Add new source files and remove account_message_handler.cpp from TEST_SOURCES.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add scripts/server/game_server/CMakeLists.txt
@@ -1341,18 +1341,18 @@ git commit -m "build(game_server): add hiredis and new stub source files"
 - Delete: `scripts/server/game_server/src/account_message_handler.h`
 - Delete: `scripts/server/game_server/src/account_message_handler.cpp`
 
-- [ ] **Step 1: Delete the files**
+- [x] **Step 1: Delete the files**
 
 ```bash
 rm scripts/server/game_server/src/account_message_handler.h
 rm scripts/server/game_server/src/account_message_handler.cpp
 ```
 
-- [ ] **Step 2: Verify no remaining references**
+- [x] **Step 2: Verify no remaining references**
 
 Search for any remaining includes or references to account_message_handler.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add -A
@@ -1366,7 +1366,7 @@ git commit -m "refactor(game_server): remove AccountMessageHandler (replaced by 
 **Files:**
 - None (verification only)
 
-- [ ] **Step 1: Build the project**
+- [x] **Step 1: Build the project**
 
 ```bash
 cd scripts/server/game_server
@@ -1375,15 +1375,15 @@ cmake .. -G "Visual Studio 17 2022"
 cmake --build . --config Release
 ```
 
-- [ ] **Step 2: Fix any compilation errors**
+- [x] **Step 2: Fix any compilation errors**
 
 Address missing includes, type mismatches, or linker errors.
 
-- [ ] **Step 3: Verify hiredis links correctly**
+- [x] **Step 3: Verify hiredis links correctly**
 
 Check that the binary can load hiredis.dll at runtime.
 
-- [ ] **Step 4: Commit any fixes**
+- [x] **Step 4: Commit any fixes**
 
 ```bash
 git add -A
