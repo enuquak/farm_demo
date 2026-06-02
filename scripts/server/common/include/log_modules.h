@@ -25,6 +25,9 @@ constexpr std::string_view Admin = "Admin";
 constexpr std::string_view GameConnection = "GameConnection";
 constexpr std::string_view DBMgrConnection = "DBMgrConnection";
 
+// Redis 模块
+constexpr std::string_view RedisPool = "RedisPool";
+
 // etcd 模块
 constexpr std::string_view Etcd = "Etcd";
 
