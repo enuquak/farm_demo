@@ -681,22 +681,22 @@ struct PlayerBizData {
 ### 10.1 新增消息 ID
 
 ```cpp
-// 战斗相关消息 (4000-4099)
-MSG_ID_ATTACK_REQ = 4001,           // 攻击请求
-MSG_ID_ATTACK_NOTIFY = 4002,        // 攻击结果通知
-MSG_ID_MONSTER_SPAWN_NOTIFY = 4010, // 怪物刷新通知
-MSG_ID_MONSTER_DEATH_NOTIFY = 4011, // 怪物死亡通知
-MSG_ID_MONSTER_MOVE_NOTIFY = 4012,  // 怪物移动通知
-MSG_ID_MONSTER_ATTACK_NOTIFY = 4013,// 怪物攻击通知
-MSG_ID_PLAYER_HP_UPDATE = 4020,     // 玩家HP更新
-MSG_ID_PLAYER_DEATH_NOTIFY = 4021,  // 玩家死亡通知
-MSG_ID_PLAYER_RESPAWN = 4022,       // 玩家复活
-MSG_ID_COMBAT_EXP_UPDATE = 4030,    // 战斗经验更新
-MSG_ID_COMBAT_LEVEL_UP = 4031,      // 战斗升级
-MSG_ID_WEAPON_EQUIP_REQ = 4040,     // 装备武器请求
-MSG_ID_WEAPON_EQUIP_RESP = 4041,    // 装备武器响应
-MSG_ID_WEAPON_CRAFT_REQ = 4050,     // 武器合成请求
-MSG_ID_WEAPON_CRAFT_RESP = 4051     // 武器合成响应
+// 战斗相关消息 (5000-5099)
+MSG_ID_ATTACK_REQ = 5001,           // 攻击请求
+MSG_ID_ATTACK_NOTIFY = 5002,        // 攻击结果通知
+MSG_ID_MONSTER_SPAWN_NOTIFY = 5010, // 怪物刷新通知
+MSG_ID_MONSTER_DEATH_NOTIFY = 5011, // 怪物死亡通知
+MSG_ID_MONSTER_MOVE_NOTIFY = 5012,  // 怪物移动通知
+MSG_ID_MONSTER_ATTACK_NOTIFY = 5013,// 怪物攻击通知
+MSG_ID_PLAYER_HP_UPDATE = 5020,     // 玩家HP更新
+MSG_ID_PLAYER_DEATH_NOTIFY = 5021,  // 玩家死亡通知
+MSG_ID_PLAYER_RESPAWN = 5022,       // 玩家复活
+MSG_ID_COMBAT_EXP_UPDATE = 5030,    // 战斗经验更新
+MSG_ID_COMBAT_LEVEL_UP = 5031,      // 战斗升级
+MSG_ID_WEAPON_EQUIP_REQ = 5040,     // 装备武器请求
+MSG_ID_WEAPON_EQUIP_RESP = 5041,    // 装备武器响应
+MSG_ID_WEAPON_CRAFT_REQ = 5050,     // 武器合成请求
+MSG_ID_WEAPON_CRAFT_RESP = 5051     // 武器合成响应
 ```
 
 ### 10.2 核心数据流
