@@ -36,6 +36,13 @@ struct PlayerBizData {
     std::string inventory;       // 背包数据（JSON 格式）
     std::string farm_state;      // 农场状态（JSON 格式）
     std::string extra_data;      // 扩展数据（JSON 格式）
+    int32_t max_hp = 100;        // 最大生命值
+    int32_t current_hp = 100;    // 当前生命值
+    int32_t attack_power = 0;    // 额外攻击力（装备加成）
+    int32_t defense_power = 0;   // 额外防御力（装备加成）
+    int32_t combat_exp = 0;      // 战斗经验值
+    int32_t combat_level = 1;    // 战斗等级
+    std::string equipped_weapon; // 装备的武器ID（JSON）
     std::string task_infos;      // 任务进度数据（JSON 格式）
 };
 
@@ -101,6 +108,27 @@ public:
 
     const std::string& get_extra_data() const { return player_data_.extra_data; }
     void set_extra_data(const std::string& extra_data);
+
+    int32_t get_max_hp() const { return player_data_.max_hp; }
+    void set_max_hp(int32_t max_hp);
+
+    int32_t get_current_hp() const { return player_data_.current_hp; }
+    void set_current_hp(int32_t current_hp);
+
+    int32_t get_attack_power() const { return player_data_.attack_power; }
+    void set_attack_power(int32_t attack_power);
+
+    int32_t get_defense_power() const { return player_data_.defense_power; }
+    void set_defense_power(int32_t defense_power);
+
+    int32_t get_combat_exp() const { return player_data_.combat_exp; }
+    void set_combat_exp(int32_t combat_exp);
+
+    int32_t get_combat_level() const { return player_data_.combat_level; }
+    void set_combat_level(int32_t combat_level);
+
+    const std::string& get_equipped_weapon() const { return player_data_.equipped_weapon; }
+    void set_equipped_weapon(const std::string& weapon_id);
 
     const std::string& get_task_infos() const { return player_data_.task_infos; }
     void set_task_infos(const std::string& task_infos);

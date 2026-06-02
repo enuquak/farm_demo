@@ -40,6 +40,13 @@ std::string Player::get_all_data_json() const {
     data["inventory"] = player_data_.inventory;
     data["farm_state"] = player_data_.farm_state;
     data["extra_data"] = player_data_.extra_data;
+    data["max_hp"] = player_data_.max_hp;
+    data["current_hp"] = player_data_.current_hp;
+    data["attack_power"] = player_data_.attack_power;
+    data["defense_power"] = player_data_.defense_power;
+    data["combat_exp"] = player_data_.combat_exp;
+    data["combat_level"] = player_data_.combat_level;
+    data["equipped_weapon"] = player_data_.equipped_weapon;
     data["task_infos"] = player_data_.task_infos;
     return data.dump();
 }
@@ -68,6 +75,13 @@ std::string Player::get_field_json(const std::string& field) const {
         try { val = nlohmann::json::parse(player_data_.extra_data); }
         catch (...) { val = player_data_.extra_data; }
     }
+    else if (field == "max_hp") val = player_data_.max_hp;
+    else if (field == "current_hp") val = player_data_.current_hp;
+    else if (field == "attack_power") val = player_data_.attack_power;
+    else if (field == "defense_power") val = player_data_.defense_power;
+    else if (field == "combat_exp") val = player_data_.combat_exp;
+    else if (field == "combat_level") val = player_data_.combat_level;
+    else if (field == "equipped_weapon") val = player_data_.equipped_weapon;
     else if (field == "task_infos") {
         return player_data_.task_infos.empty() ? "{}" : player_data_.task_infos;
     }
@@ -162,6 +176,8 @@ void Player::set_player_data(const PlayerBizData& data) {
     dirty_fields_ = {"role_name", "level", "gold", "experience",
                      "pos_x", "pos_y", "pos_z", "energy",
                      "scene_id", "inventory", "farm_state", "extra_data",
+                     "max_hp", "current_hp", "attack_power", "defense_power",
+                     "combat_exp", "combat_level", "equipped_weapon",
                      "task_infos"};
 }
 
@@ -171,6 +187,8 @@ void Player::set_player_data(PlayerBizData&& data) {
     dirty_fields_ = {"role_name", "level", "gold", "experience",
                      "pos_x", "pos_y", "pos_z", "energy",
                      "scene_id", "inventory", "farm_state", "extra_data",
+                     "max_hp", "current_hp", "attack_power", "defense_power",
+                     "combat_exp", "combat_level", "equipped_weapon",
                      "task_infos"};
 }
 
@@ -262,6 +280,55 @@ void Player::set_task_infos(const std::string& task_infos) {
     if (player_data_.task_infos != task_infos) {
         player_data_.task_infos = task_infos;
         mark_dirty("task_infos");
+    }
+}
+
+void Player::set_max_hp(int32_t max_hp) {
+    if (player_data_.max_hp != max_hp) {
+        player_data_.max_hp = max_hp;
+        mark_dirty("max_hp");
+    }
+}
+
+void Player::set_current_hp(int32_t current_hp) {
+    if (player_data_.current_hp != current_hp) {
+        player_data_.current_hp = current_hp;
+        mark_dirty("current_hp");
+    }
+}
+
+void Player::set_attack_power(int32_t attack_power) {
+    if (player_data_.attack_power != attack_power) {
+        player_data_.attack_power = attack_power;
+        mark_dirty("attack_power");
+    }
+}
+
+void Player::set_defense_power(int32_t defense_power) {
+    if (player_data_.defense_power != defense_power) {
+        player_data_.defense_power = defense_power;
+        mark_dirty("defense_power");
+    }
+}
+
+void Player::set_combat_exp(int32_t combat_exp) {
+    if (player_data_.combat_exp != combat_exp) {
+        player_data_.combat_exp = combat_exp;
+        mark_dirty("combat_exp");
+    }
+}
+
+void Player::set_combat_level(int32_t combat_level) {
+    if (player_data_.combat_level != combat_level) {
+        player_data_.combat_level = combat_level;
+        mark_dirty("combat_level");
+    }
+}
+
+void Player::set_equipped_weapon(const std::string& weapon_id) {
+    if (player_data_.equipped_weapon != weapon_id) {
+        player_data_.equipped_weapon = weapon_id;
+        mark_dirty("equipped_weapon");
     }
 }
 
