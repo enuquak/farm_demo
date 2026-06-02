@@ -33,30 +33,30 @@ RUNTIME_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
 
 # PID 文件路径
 PID_FILES = {
-    'dbmgr': os.path.join(RUNTIME_DATA_DIR, 'dbmgr.pid'),
+    'dbmgr_server': os.path.join(RUNTIME_DATA_DIR, 'dbmgr_server.pid'),
     'game_server': os.path.join(RUNTIME_DATA_DIR, 'game_server.pid'),
     'gate_server': os.path.join(RUNTIME_DATA_DIR, 'gate_server.pid'),
 }
 
 # 日志文件路径
 LOG_FILES = {
-    'dbmgr': os.path.join(RUNTIME_DATA_DIR, 'logs', 'server', 'dbmgr.log'),
+    'dbmgr_server': os.path.join(RUNTIME_DATA_DIR, 'logs', 'server', 'dbmgr_server.log'),
     'game_server': os.path.join(RUNTIME_DATA_DIR, 'logs', 'server', 'game_server.log'),
     'gate_server': os.path.join(RUNTIME_DATA_DIR, 'logs', 'server', 'gate_server.log'),
 }
 
 # 服务可执行文件路径
 SERVICE_EXE_PATHS = {
-    'dbmgr': os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'scripts', 'server', 'dbmgr', 'Release', 'dbmgr.exe'),
+    'dbmgr_server': os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'scripts', 'server', 'dbmgr_server', 'Release', 'dbmgr_server.exe'),
     'game_server': os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'scripts', 'server', 'game_server', 'Release', 'game_server.exe'),
     'gate_server': os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'scripts', 'server', 'gate_server', 'Release', 'gate_server.exe'),
 }
 
 # 服务启动顺序（依赖顺序）
-STARTUP_ORDER = ['dbmgr', 'game_server', 'gate_server']
+STARTUP_ORDER = ['dbmgr_server', 'game_server', 'gate_server']
 
 # 服务停服顺序（启动顺序的逆序）
-SHUTDOWN_ORDER = ['gate_server', 'game_server', 'dbmgr']
+SHUTDOWN_ORDER = ['gate_server', 'game_server', 'dbmgr_server']
 
 # 默认端口配置
 DEFAULT_PORTS = {
@@ -118,7 +118,7 @@ def read_pid_file(service_name: str) -> Optional[int]:
     读取指定服务的 PID 文件
 
     Args:
-        service_name: 服务名称（dbmgr, game_server, gate_server）
+        service_name: 服务名称（dbmgr_server, game_server, gate_server）
 
     Returns:
         int: PID 值，如果文件不存在或读取失败返回 None
@@ -659,7 +659,7 @@ def start_service(service_name: str, exe_path: Optional[str] = None, delay_after
 
 def start_all_services() -> bool:
     """
-    按顺序启动所有服务（dbmgr -> game_server -> gate_server）
+    按顺序启动所有服务（dbmgr_server -> game_server -> gate_server）
 
     Returns:
         bool: 是否全部成功启动

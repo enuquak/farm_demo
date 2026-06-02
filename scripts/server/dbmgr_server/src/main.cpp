@@ -27,7 +27,7 @@ static void signal_handler(int sig) {
 int main(int argc, char* argv[]) {
     if (!farm::init_platform_network()) return 1;
 
-    farm::init_logging_default("dbmgr");
+    farm::init_logging_default("dbmgr_server");
 
     // 解析配置文件
     std::string config_path = farm::parse_config_path(argc, argv, "config/dbmgr.json");
@@ -46,13 +46,13 @@ int main(int argc, char* argv[]) {
     }
     config_file.close();
 
-    farm::init_logging_from_config("dbmgr", config);
+    farm::init_logging_from_config("dbmgr_server", config);
 
     // 读取服务器配置
     uint32_t index = config.value("/server/index"_json_pointer, 0);
     uint16_t port = static_cast<uint16_t>(config.value("/server/port"_json_pointer, 5000));
     std::string ip = config.value("/server/ip"_json_pointer, "0.0.0.0");
-    std::string pid_file = config.value("pid_file", "./runtimeData/dbmgr.pid");
+    std::string pid_file = config.value("pid_file", "./runtimeData/dbmgr_server.pid");
 
     // 数据库连接配置
     farm::MongoConfig mongo_config;
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
     });
 
     // 从 etcd 配置中心读取服务器配置（如果存在）
-    std::string config_key = "servers/dbmgr/" + std::to_string(index);
+    std::string config_key = "servers/dbmgr_server/" + std::to_string(index);
     auto etcd_config = etcd.get_config(config_key);
     if (etcd_config.has_value()) {
         try {
@@ -111,12 +111,12 @@ int main(int argc, char* argv[]) {
         {"port", port},
         {"index", index}
     };
-    if (!etcd.register_service("dbmgr", std::to_string(index), service_info.dump())) {
+    if (!etcd.register_service("dbmgr_server", std::to_string(index), service_info.dump())) {
         SPDLOG_ERROR("[Main]Failed to register service to etcd");
         return 1;
     }
 
-    SPDLOG_INFO("[Main]Registered to etcd as dbmgr/{}", index);
+    SPDLOG_INFO("[Main]Registered to etcd as dbmgr_server/{}", index);
 
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);

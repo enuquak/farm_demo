@@ -23,7 +23,7 @@
     "shutdown": {
         "timeout_ms": 60000
     },
-    "pid_file": "./runtimeData/dbmgr.pid",
+    "pid_file": "./runtimeData/dbmgr_server.pid",
     "logging": {
         "dir": "./runtimeData/logs/server",
         "level": "debug",

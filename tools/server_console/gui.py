@@ -175,7 +175,7 @@ class ServerConsoleGUI:
         """页签切换事件。
 
         Args:
-            display_name: 分段按钮的显示文本（可能包含状态图标，如 '● dbmgr'）
+            display_name: 分段按钮的显示文本（可能包含状态图标，如 '● dbmgr_server'）
         """
         # 从显示文本中提取原始服务名称（去掉状态图标前缀）
         tab_name = display_name

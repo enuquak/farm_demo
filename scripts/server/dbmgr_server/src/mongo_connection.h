@@ -8,7 +8,7 @@ namespace farm {
 class MongoConnection {
 public:
     MongoConnection();
-    virtual ~MongoConnection();
+    ~MongoConnection();
 
     // 禁止拷贝
     MongoConnection(const MongoConnection&) = delete;
@@ -18,15 +18,15 @@ public:
     bool connect(const std::string& uri);
 
     // 断开连接
-    virtual void disconnect();
+    void disconnect();
 
     // 是否已连接
-    virtual bool is_connected() const;
+    bool is_connected() const;
 
     // 获取底层 client（供 MongoServer 使用）
     mongoc_client_t* client();
 
-protected:
+private:
     mongoc_client_t* client_ = nullptr;
     bool connected_ = false;
 };

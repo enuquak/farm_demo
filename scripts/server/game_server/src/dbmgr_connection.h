@@ -55,7 +55,7 @@ public:
     void consume_read_data(size_t len);
 
 private:
-    uint32_t config_index_;    // Index from config (dbmgr_list position)
+    uint32_t config_index_;    // Index from config (dbmgr_server list position)
     uint32_t remote_index_;    // Index reported by DBMgrIdentify
     std::string remote_address_; // Address reported by DBMgrIdentify
     std::string host_;         // Target host from config

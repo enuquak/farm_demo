@@ -27,7 +27,7 @@ def read_pid(name: str) -> int | None:
     """读取服务的 PID 文件，返回 PID 整数或 None。
 
     Args:
-        name: 服务名称（如 dbmgr, game_server, gate_server）
+        name: 服务名称（如 dbmgr_server, game_server, gate_server）
 
     Returns:
         PID 整数，文件不存在或读取失败返回 None
@@ -126,7 +126,7 @@ def _cleanup_pid_file(name: str) -> None:
 
 
 def force_stop_all() -> None:
-    """强制终止所有服务并清理 PID 文件。按逆序停止：gate_server -> game_server -> dbmgr。"""
+    """强制终止所有服务并清理 PID 文件。按逆序停止：gate_server -> game_server -> dbmgr_server。"""
     for name in STOP_ORDER:
         force_stop_service(name)
         _cleanup_pid_file(name)

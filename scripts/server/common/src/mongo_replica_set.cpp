@@ -39,7 +39,7 @@ bool MongoReplicaSetConnection::connect()
     bson_t* opts = bson_new();
     BSON_APPEND_INT32(opts, "connectTimeoutMS", config_.connect_timeout_ms);
     BSON_APPEND_INT32(opts, "socketTimeoutMS", config_.socket_timeout_ms);
-    mongoc_client_set_appname(client_, "farm_dbmgr");
+    mongoc_client_set_appname(client_, "farm_dbmgr_server");
     bson_destroy(opts);
 
     // 应用初始 read preference

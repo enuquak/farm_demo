@@ -37,3 +37,11 @@ logs/
 
 # 脑暴会话临时文件
 .superpowers/
+
+# pytest 缓存
+.pytest_cache/
+
+# 运行时输出文件
+*_stderr.txt
+*_stdout.txt
+*.output

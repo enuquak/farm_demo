@@ -31,7 +31,7 @@ class LogReader:
         """初始化日志读取器。
 
         Args:
-            name: 服务名称（如 dbmgr, game_server, gate_server）
+            name: 服务名称（如 dbmgr_server, game_server, gate_server）
             on_new_line: 新行到达时的回调函数（GUI 线程中调用）
         """
         self.name = name

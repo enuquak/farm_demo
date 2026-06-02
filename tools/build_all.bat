@@ -23,74 +23,35 @@ if errorlevel 1 (
 )
 echo.
 
-REM 定义服务列表
-set "SERVICES=dbmgr game_server gate_server"
-
-REM 创建 bin 目录（如果不存在）
-if not exist "bin" (
-    echo Creating bin directory...
-    mkdir bin
+REM 创建 build 目录（如果不存在）
+if not exist "build" (
+    echo Creating build directory...
+    mkdir build
 )
 
-REM 遍历每个服务
-set "BUILD_SUCCESS=0"
-set "BUILD_FAILED=0"
-
-for %%s in (%SERVICES%) do (
-    echo.
-    echo ========================================
-    echo Building %%s...
-    echo ========================================
-
-    REM 检查服务目录是否存在
-    if not exist "scripts\server\%%s" (
-        echo ERROR: Service directory not found: scripts\server\%%s
-        set /a "BUILD_FAILED+=1"
-        goto :next_service
-    )
-
-    REM 检查 main.cpp 是否存在
-    if not exist "scripts\server\%%s\src\main.cpp" (
-        echo ERROR: main.cpp not found: scripts\server\%%s\src\main.cpp
-        set /a "BUILD_FAILED+=1"
-        goto :next_service
-    )
-
-    REM 调用构建脚本
-    echo Calling build_cpp14.bat for %%s...
-    cmd /c "D:\mb_workspace\farm_demo\tool\build_cpp14.bat" "D:\mb_workspace\farm_demo\scripts\server\%%s"
-
-    if errorlevel 1 (
-        echo ERROR: Build failed for %%s
-        set /a "BUILD_FAILED+=1"
-    ) else (
-        echo Build successful for %%s
-
-        REM 复制 exe 到 bin 目录
-        if exist "scripts\server\%%s\Release\%%s.exe" (
-            echo Copying %%s.exe to bin\...
-            copy /y "scripts\server\%%s\Release\%%s.exe" "bin\%%s.exe" >nul
-            if errorlevel 1 (
-                echo WARNING: Failed to copy %%s.exe to bin\
-            ) else (
-                echo Copied %%s.exe to bin\
-            )
-        ) else (
-            echo WARNING: %%s.exe not found in Release directory
-        )
-
-        set /a "BUILD_SUCCESS+=1"
-    )
-
-    :next_service
+REM 使用根 CMakeLists.txt 构建所有服务
+echo ========================================
+echo Building all services with CMake...
+echo ========================================
+cd build
+cmake .. -G "Visual Studio 17 2022" -A x64
+if errorlevel 1 (
+    echo ERROR: CMake configuration failed
+    cd "%PROJECT_DIR%"
+    exit /b 1
 )
+cmake --build . --config Release
+if errorlevel 1 (
+    echo ERROR: Build failed
+    cd "%PROJECT_DIR%"
+    exit /b 1
+)
+cd "%PROJECT_DIR%"
 
 echo.
 echo ========================================
-echo Build Summary
+echo Build successful
 echo ========================================
-echo Successful: %BUILD_SUCCESS%
-echo Failed: %BUILD_FAILED%
 echo.
 
 REM 检查 bin 目录内容
@@ -130,14 +91,8 @@ if %MISSING_DLL% gtr 0 (
 )
 
 echo.
-if %BUILD_FAILED% equ 0 (
-    echo ========================================
-    echo All services built successfully
-    echo ========================================
-) else (
-    echo ========================================
-    echo Build completed with %BUILD_FAILED% failure(s)
-    echo ========================================
-)
+echo ========================================
+echo All services built successfully
+echo ========================================
 
 endlocal

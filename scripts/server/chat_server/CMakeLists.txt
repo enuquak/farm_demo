@@ -7,10 +7,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Static runtime (matching precompiled absl/protobuf)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-# Dependency paths
-set(LIBEVENT_ROOT "C:/libevent_install")
-set(PROTOBUF_ROOT "C:/protobuf_install")
-set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
+# Dependency paths (inherited from parent project or defaults)
+if(NOT DEFINED LIBEVENT_ROOT)
+    set(LIBEVENT_ROOT "C:/libevent_install")
+endif()
+if(NOT DEFINED PROTOBUF_ROOT)
+    set(PROTOBUF_ROOT "C:/protobuf_install")
+endif()
+if(NOT DEFINED COMMON_PROTO_DIR)
+    set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
+endif()
 
 # Protobuf generated sources
 set(PROTO_GENERATED_DIR "${COMMON_PROTO_DIR}/generated")

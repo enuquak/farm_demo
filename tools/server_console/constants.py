@@ -7,7 +7,7 @@ import os
 PROJECT_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 # 服务列表（按启动顺序排列）
-SERVICE_NAMES = ["dbmgr", "game_server", "gate_server"]
+SERVICE_NAMES = ["dbmgr_server", "game_server", "gate_server"]
 
 # 停服顺序（启动顺序的逆序）
 STOP_ORDER = list(reversed(SERVICE_NAMES))

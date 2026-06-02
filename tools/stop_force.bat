@@ -13,7 +13,7 @@ echo Project Directory: %PROJECT_DIR%
 echo.
 
 REM 定义服务列表
-set "SERVICES=dbmgr game_server gate_server"
+set "SERVICES=dbmgr_server game_server gate_server"
 
 REM 遍历每个服务
 for %%s in (%SERVICES%) do (

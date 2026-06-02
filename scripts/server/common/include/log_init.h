@@ -9,7 +9,7 @@ namespace farm {
  * 初始化日志系统
  * 使用 spdlog 创建日志器，配置文件输出、格式和级别
  *
- * @param process_name 进程名称 (如 "gate_server", "game_server", "dbmgr")
+ * @param process_name 进程名称 (如 "gate_server", "game_server", "dbmgr_server")
  * @param config 日志配置
  */
 void init_logging(const std::string& process_name, const LoggingConfig& config);

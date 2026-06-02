@@ -7,12 +7,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 静态链接运行时（与预编译的 absl/protobuf 匹配）
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-# 依赖路径
-set(LIBEVENT_ROOT "C:/libevent_install")
-set(PROTOBUF_ROOT "C:/protobuf_install")
-set(VCPKG_ROOT "C:/vcpkg/installed/x64-windows")
-set(ETCD_ROOT "C:/etcd-cpp-apiv3_install")
-set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
+# 依赖路径（从父项目继承或使用默认值）
+if(NOT DEFINED LIBEVENT_ROOT)
+    set(LIBEVENT_ROOT "C:/libevent_install")
+endif()
+if(NOT DEFINED PROTOBUF_ROOT)
+    set(PROTOBUF_ROOT "C:/protobuf_install")
+endif()
+if(NOT DEFINED COMMON_PROTO_DIR)
+    set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
+endif()
 
 # Protobuf 生成的源文件
 set(PROTO_GENERATED_DIR "${COMMON_PROTO_DIR}/generated")

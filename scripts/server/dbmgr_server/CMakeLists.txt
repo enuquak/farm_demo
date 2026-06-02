@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(dbmgr LANGUAGES CXX)
+project(dbmgr_server LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -7,14 +7,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 静态链接运行时
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-# 依赖路径
-set(LIBEVENT_ROOT "C:/libevent_install")
-set(PROTOBUF_ROOT "C:/protobuf_install")
-set(MONGOC_ROOT "C:/mongoc_install")  # libmongoc 安装路径
-set(HIREDIS_ROOT "C:/hiredis_install")  # hiredis 安装路径
-set(VCPKG_ROOT "C:/vcpkg/installed/x64-windows")
-set(ETCD_ROOT "C:/etcd-cpp-apiv3_install")
-set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
+# 依赖路径（从父项目继承或使用默认值）
+if(NOT DEFINED LIBEVENT_ROOT)
+    set(LIBEVENT_ROOT "C:/libevent_install")
+endif()
+if(NOT DEFINED PROTOBUF_ROOT)
+    set(PROTOBUF_ROOT "C:/protobuf_install")
+endif()
+if(NOT DEFINED MONGOC_ROOT)
+    set(MONGOC_ROOT "C:/mongoc_install")
+endif()
+if(NOT DEFINED HIREDIS_ROOT)
+    set(HIREDIS_ROOT "C:/hiredis_install")
+endif()
+if(NOT DEFINED COMMON_PROTO_DIR)
+    set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
+endif()
 
 # Protobuf 生成的源文件
 set(PROTO_GENERATED_DIR "${COMMON_PROTO_DIR}/generated")
@@ -52,10 +60,10 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/mongo_replica_set.cpp
 )
 
-add_executable(dbmgr ${SOURCES})
+add_executable(dbmgr_server ${SOURCES})
 
 # Include 目录
-target_include_directories(dbmgr PRIVATE
+target_include_directories(dbmgr_server PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${PROTOBUF_ROOT}/include
     ${LIBEVENT_ROOT}/include
@@ -72,7 +80,7 @@ target_include_directories(dbmgr PRIVATE
 )
 
 # 链接库目录
-target_link_directories(dbmgr PRIVATE
+target_link_directories(dbmgr_server PRIVATE
     ${PROTOBUF_ROOT}/lib
     ${LIBEVENT_ROOT}/lib
     ${MONGOC_ROOT}/lib
@@ -83,17 +91,17 @@ target_link_directories(dbmgr PRIVATE
 
 # MSVC 特定设置
 if(MSVC)
-    target_compile_definitions(dbmgr PRIVATE
+    target_compile_definitions(dbmgr_server PRIVATE
         _CRT_SECURE_NO_WARNINGS
         _WINSOCK_DEPRECATED_NO_WARNINGS
         NOMINMAX
     )
 
-    target_compile_options(dbmgr PRIVATE /utf-8 /MT$<$<CONFIG:Debug>:d>)
+    target_compile_options(dbmgr_server PRIVATE /utf-8 /MT$<$<CONFIG:Debug>:d>)
 
     # 链接库
     file(GLOB ABSL_LIBS "${PROTOBUF_ROOT}/lib/absl_*.lib")
-    target_link_libraries(dbmgr PRIVATE
+    target_link_libraries(dbmgr_server PRIVATE
         libprotobuf-lite.lib
         libutf8_range.lib
         libutf8_validity.lib
@@ -124,7 +132,7 @@ if(MSVC)
     )
 else()
     # Linux/macOS
-    target_link_libraries(dbmgr PRIVATE
+    target_link_libraries(dbmgr_server PRIVATE
         protobuf
         event
         event_core
@@ -142,7 +150,7 @@ else()
 endif()
 
 # 输出目录
-set_target_properties(dbmgr PROPERTIES
+set_target_properties(dbmgr_server PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../../../bin"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/../../../bin"
 )

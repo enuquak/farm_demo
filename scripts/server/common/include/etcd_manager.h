@@ -35,7 +35,7 @@ struct ServiceInstance {
     std::string ip;
     uint16_t port = 0;
     uint32_t server_id = 0;  // 仅 game_server 使用
-    uint32_t index = 0;      // 仅 dbmgr 使用
+    uint32_t index = 0;      // 仅 dbmgr_server 使用
 };
 
 class EtcdManager {
@@ -80,7 +80,7 @@ public:
 
     /**
      * @brief 注册服务到 etcd（带 lease，进程崩溃后自动过期）
-     * @param service_type  服务类型："gate"/"game"/"dbmgr"
+     * @param service_type  服务类型："gate"/"game"/"dbmgr_server"
      * @param instance_id   实例唯一标识
      * @param value_json    注册信息 JSON（如 {"ip":"0.0.0.0","port":8080}）
      * @return true 成功，false 失败
@@ -99,7 +99,7 @@ public:
 
     /**
      * @brief 一次性查询当前在线的所有服务实例
-     * @param service_type  服务类型："gate"/"game"/"dbmgr"
+     * @param service_type  服务类型："gate"/"game"/"dbmgr_server"
      * @return 实例列表
      */
     std::vector<ServiceInstance> discover_services(const std::string& service_type);

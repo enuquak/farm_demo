@@ -121,10 +121,10 @@ if %WAIT_COUNT% geq %MAX_WAIT% (
 REM 检查是否所有服务器都已退出
 set "ALL_STOPPED=1"
 
-REM 检查 dbmgr
-if exist "runtimeData\dbmgr.pid" (
-    set /p DBMGR_PID=<"runtimeData\dbmgr.pid"
-    tasklist /FI "PID eq !DBMGR_PID!" 2>nul | find /i "dbmgr.exe" >nul
+REM 检查 dbmgr_server
+if exist "runtimeData\dbmgr_server.pid" (
+    set /p DBMGR_PID=<"runtimeData\dbmgr_server.pid"
+    tasklist /FI "PID eq !DBMGR_PID!" 2>nul | find /i "dbmgr_server.exe" >nul
     if not errorlevel 1 set "ALL_STOPPED=0"
 )
 
