@@ -32,6 +32,7 @@ from .dialog_engine import DialogEngine
 from .affection_system import AffectionSystem
 from .bubble_ui import BubbleUI
 from .quest_handler import QuestHandler
+from .chat import ChatManager, ChatPanel
 
 # 战斗系统（可选模块）
 try:
@@ -152,6 +153,10 @@ class GameScene:
         # 任务系统
         self._quest_handler = QuestHandler(connection)
 
+        # 聊天系统
+        self._chat_manager = ChatManager(connection, player_data)
+        self._chat_panel = ChatPanel(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+
         # 战斗系统（可选）
         if _COMBAT_AVAILABLE:
             self._weapon_manager = WeaponManager()
@@ -209,6 +214,9 @@ class GameScene:
             ) if self._monster_manager else None,
             on_player_hp_update=lambda data: self._handle_player_hp_update(data),
             on_player_death=lambda data: self._handle_player_death(data),
+            # 聊天系统回调
+            on_chat_message=self._chat_manager.on_chat_message,
+            on_chat_send_resp=self._chat_manager.on_chat_send_resp,
         )
 
         # 强制睡觉状态
@@ -248,6 +256,10 @@ class GameScene:
 
                 # 弹窗优先处理事件
                 if self._renderer.exhaustion_modal.handle_event(event):
+                    continue
+
+                # 聊天面板事件（输入激活时优先处理）
+                if self._chat_panel.handle_event(event, self._chat_manager):
                     continue
 
                 if event.type == pygame.KEYDOWN:
@@ -358,6 +370,8 @@ class GameScene:
                 battle_ui=self._battle_ui if _COMBAT_AVAILABLE else None,
                 player_hp=self._player_hp,
                 player_max_hp=self._player_max_hp,
+                chat_panel=self._chat_panel,
+                chat_manager=self._chat_manager,
             )
 
             # 控制帧率
@@ -374,6 +388,8 @@ class GameScene:
         鼠标左键点击世界中的 tile 触发物品交互
         """
         if self._dialog_engine.is_active:
+            return
+        if self._chat_panel.is_input_active:
             return
         if self._input_manager.is_ui_blocking():
             return
@@ -464,6 +480,8 @@ class GameScene:
         玩家站在 Portal 旁（切比雪夫距离=1），面前 tile 是 Portal，按空格触发场景切换
         """
         if self._dialog_engine.is_active:
+            return
+        if self._chat_panel.is_input_active:
             return
         if not self._input_manager.is_action_pressed("interact"):
             return

@@ -19,6 +19,7 @@ from .message_ids import (
     MSG_ID_MONSTER_DEATH_NOTIFY, MSG_ID_MONSTER_MOVE_NOTIFY,
     MSG_ID_MONSTER_ATTACK_NOTIFY, MSG_ID_PLAYER_HP_UPDATE,
     MSG_ID_PLAYER_DEATH_NOTIFY,
+    MSG_ID_CHAT_MESSAGE, MSG_ID_CHAT_SEND_RESP,
 )
 
 import sys
@@ -62,6 +63,8 @@ class NetworkMessageDispatcher:
         on_monster_attack=None,
         on_player_hp_update=None,
         on_player_death=None,
+        on_chat_message: Callable[[bytes], None] = None,
+        on_chat_send_resp: Callable[[bytes], None] = None,
     ):
         """
         初始化消息分发器
@@ -109,6 +112,8 @@ class NetworkMessageDispatcher:
             "on_monster_attack": on_monster_attack,
             "on_player_hp_update": on_player_hp_update,
             "on_player_death": on_player_death,
+            "on_chat_message": on_chat_message,
+            "on_chat_send_resp": on_chat_send_resp,
         }
 
         # 分发表: msg_id -> handler 方法
@@ -137,6 +142,8 @@ class NetworkMessageDispatcher:
             MSG_ID_MONSTER_ATTACK_NOTIFY: self._handle_monster_attack,
             MSG_ID_PLAYER_HP_UPDATE: self._handle_player_hp_update,
             MSG_ID_PLAYER_DEATH_NOTIFY: self._handle_player_death,
+            MSG_ID_CHAT_MESSAGE: self._handle_chat_message,
+            MSG_ID_CHAT_SEND_RESP: self._handle_chat_send_resp,
         }
 
     def dispatch_pending(self, connection=None):
@@ -476,3 +483,25 @@ class NetworkMessageDispatcher:
                 self._callbacks["on_player_death"](data)
         except Exception as e:
             logger.error(f"[NetworkDispatcher]Failed to parse PlayerDeathNotify: {e}")
+
+    # ========== 聊天系统消息处理 ==========
+
+    def _handle_chat_message(self, payload: bytes):
+        """处理聊天消息推送"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_chat_message"):
+                self._callbacks["on_chat_message"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse ChatMessage: {e}")
+
+    def _handle_chat_send_resp(self, payload: bytes):
+        """处理聊天发送响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            if self._callbacks.get("on_chat_send_resp"):
+                self._callbacks["on_chat_send_resp"](player_msg.payload)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse ChatSendResp: {e}")

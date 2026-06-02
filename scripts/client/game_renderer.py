@@ -89,7 +89,8 @@ class GameRenderer:
                npc_manager=None, bubble_ui=None,
                dialog_engine=None, affection_system=None,
                monster_manager=None, battle_ui=None,
-               player_hp=100, player_max_hp=100):
+               player_hp=100, player_max_hp=100,
+               chat_panel=None, chat_manager=None):
         """
         渲染一帧
 
@@ -143,6 +144,10 @@ class GameRenderer:
 
         # 时间 HUD 渲染（左上角）
         self._time_hud.draw(self._screen)
+
+        # 聊天面板渲染（左下角）
+        if chat_panel is not None and chat_manager is not None:
+            chat_panel.render(self._screen, chat_manager)
 
         # 对话框渲染
         if dialog_engine and dialog_engine.is_active:
