@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
 
     farm::init_logging_from_config("gate_server", config);
 
-    // 读取服务器配置
+    // 读取本地配置（作为 fallback）
     std::string ip = config.value("/server/ip"_json_pointer, "0.0.0.0");
     uint16_t port = static_cast<uint16_t>(config.value("/server/port"_json_pointer, 8080));
     std::string pid_file = config.value("pid_file", "./runtimeData/gate_server.pid");
@@ -64,6 +64,31 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     g_etcd = &etcd;
+
+    // 设置 etcd 错误回调
+    etcd.set_error_callback([](const std::string& error_msg) {
+        SPDLOG_ERROR("[Etcd]Error: {}", error_msg);
+        // 可以在这里添加告警或其他处理逻辑
+    });
+
+    // 从 etcd 配置中心读取服务器配置（如果存在）
+    std::string config_key = "servers/gate/" + instance_id;
+    auto etcd_config = etcd.get_config(config_key);
+    if (etcd_config.has_value()) {
+        try {
+            auto cfg = nlohmann::json::parse(etcd_config.value());
+            ip = cfg.value("ip", ip);
+            port = static_cast<uint16_t>(cfg.value("port", port));
+            SPDLOG_INFO("[Main]Loaded config from etcd: {}:{}", ip, port);
+        } catch (const std::exception& e) {
+            SPDLOG_WARN("[Main]Failed to parse etcd config, using local: {}", e.what());
+        }
+    } else {
+        SPDLOG_INFO("[Main]No config in etcd, using local config");
+        // 将本地配置写入 etcd 配置中心
+        nlohmann::json local_cfg = {{"ip", ip}, {"port", port}};
+        etcd.put_config(config_key, local_cfg.dump());
+    }
 
     // 注册服务到 etcd
     nlohmann::json service_info = {

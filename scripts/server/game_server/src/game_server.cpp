@@ -248,6 +248,14 @@ void GameServer::register_handler(uint32_t msg_id, MessageCallback callback) {
     msg_handler_.register_handler(msg_id, std::move(callback));
 }
 
+void GameServer::add_dbmgr(uint32_t index, const std::string& host, uint16_t port) {
+    dbmgr_mgr_.add_dbmgr(index, host, port);
+}
+
+void GameServer::remove_dbmgr(uint32_t index) {
+    dbmgr_mgr_.remove_dbmgr(index);
+}
+
 // ===========================================
 // libevent 回调
 // ===========================================

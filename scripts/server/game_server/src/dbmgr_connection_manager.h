@@ -12,6 +12,7 @@
 #include <functional>
 #include <memory>
 #include <atomic>
+#include <mutex>
 #include <optional>
 #include <tuple>
 
@@ -75,6 +76,24 @@ public:
 
     // Shutdown: close all connections, cancel all pending requests
     void shutdown();
+
+    /**
+     * @brief 动态添加 DBMgr 连接
+     * @param index  DBMgr 索引
+     * @param host   主机地址
+     * @param port   端口
+     *
+     * 注意：此方法线程安全，可从 etcd watch 回调调用
+     */
+    void add_dbmgr(uint32_t index, const std::string& host, uint16_t port);
+
+    /**
+     * @brief 动态移除 DBMgr 连接
+     * @param index  DBMgr 索引
+     *
+     * 注意：此方法线程安全，可从 etcd watch 回调调用
+     */
+    void remove_dbmgr(uint32_t index);
 
     /**
      * @brief Send a PlayerDataReq to the appropriate DBMgr.
@@ -179,6 +198,9 @@ private:
     struct event* heartbeat_timer_;
     struct event* reconnect_timer_;
     bool running_;
+
+    // 保护 connections_ 的互斥锁（动态增删时使用）
+    mutable std::mutex connections_mutex_;
 
     // Connections indexed by config_index (0, 1, 2, ...)
     std::vector<std::unique_ptr<DBMgrConnection>> connections_;

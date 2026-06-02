@@ -79,6 +79,32 @@ int main(int argc, char* argv[]) {
     }
     g_etcd = &etcd;
 
+    // 设置 etcd 错误回调
+    etcd.set_error_callback([](const std::string& error_msg) {
+        SPDLOG_ERROR("[Etcd]Error: {}", error_msg);
+        // 可以在这里添加告警或其他处理逻辑
+    });
+
+    // 从 etcd 配置中心读取服务器配置（如果存在）
+    std::string config_key = "servers/dbmgr/" + std::to_string(index);
+    auto etcd_config = etcd.get_config(config_key);
+    if (etcd_config.has_value()) {
+        try {
+            auto cfg = nlohmann::json::parse(etcd_config.value());
+            ip = cfg.value("ip", ip);
+            port = static_cast<uint16_t>(cfg.value("port", port));
+            index = cfg.value("index", index);
+            SPDLOG_INFO("[Main]Loaded config from etcd: index={} {}:{}", index, ip, port);
+        } catch (const std::exception& e) {
+            SPDLOG_WARN("[Main]Failed to parse etcd config, using local: {}", e.what());
+        }
+    } else {
+        SPDLOG_INFO("[Main]No config in etcd, using local config");
+        // 将本地配置写入 etcd 配置中心
+        nlohmann::json local_cfg = {{"ip", ip}, {"port", port}, {"index", index}};
+        etcd.put_config(config_key, local_cfg.dump());
+    }
+
     // 注册服务到 etcd
     nlohmann::json service_info = {
         {"ip", ip},

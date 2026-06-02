@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
 
     farm::init_logging_from_config("game_server", config);
 
-    // 读取服务器配置
+    // 读取本地配置（作为 fallback）
     std::string ip = config.value("/server/ip"_json_pointer, "0.0.0.0");
     uint16_t port = static_cast<uint16_t>(config.value("/server/port"_json_pointer, 9090));
     std::string pid_file = config.value("pid_file", "./runtimeData/game_server.pid");
@@ -87,6 +87,32 @@ int main(int argc, char* argv[]) {
     }
     g_etcd = &etcd;
 
+    // 设置 etcd 错误回调
+    etcd.set_error_callback([](const std::string& error_msg) {
+        SPDLOG_ERROR("[Etcd]Error: {}", error_msg);
+        // 可以在这里添加告警或其他处理逻辑
+    });
+
+    // 从 etcd 配置中心读取服务器配置（如果存在）
+    std::string config_key = "servers/game/" + std::to_string(server_id);
+    auto etcd_config = etcd.get_config(config_key);
+    if (etcd_config.has_value()) {
+        try {
+            auto cfg = nlohmann::json::parse(etcd_config.value());
+            ip = cfg.value("ip", ip);
+            port = static_cast<uint16_t>(cfg.value("port", port));
+            server_id = cfg.value("id", server_id);
+            SPDLOG_INFO("[Main]Loaded config from etcd: server_id={} {}:{}", server_id, ip, port);
+        } catch (const std::exception& e) {
+            SPDLOG_WARN("[Main]Failed to parse etcd config, using local: {}", e.what());
+        }
+    } else {
+        SPDLOG_INFO("[Main]No config in etcd, using local config");
+        // 将本地配置写入 etcd 配置中心
+        nlohmann::json local_cfg = {{"ip", ip}, {"port", port}, {"id", server_id}};
+        etcd.put_config(config_key, local_cfg.dump());
+    }
+
     // 注册服务到 etcd
     nlohmann::json service_info = {
         {"ip", ip},
@@ -115,16 +141,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // 监听 dbmgr 服务变更
-    etcd.watch_services("dbmgr", [&](const std::string& instance_id,
-                                      const farm::ServiceInstance& inst,
-                                      bool is_delete) {
-        if (is_delete) {
-            SPDLOG_INFO("[Main]DBMgr {} removed from etcd", instance_id);
-        } else {
-            SPDLOG_INFO("[Main]DBMgr {} added to etcd: {}:{}", instance_id, inst.ip, inst.port);
-        }
-    });
 #else
     // 从配置文件读取 DBMgr 地址
     if (config.contains("dbmgrs") && config["dbmgrs"].is_array()) {
@@ -166,6 +182,32 @@ int main(int argc, char* argv[]) {
 
     farm::GameServer server(ip, port, dbmgr_configs, redis_uri, server_id, gm_http_port, gm_static_dir);
     g_server = &server;
+
+#ifdef ENABLE_ETCD
+    // 监听 dbmgr 服务变更（需要在 server 创建之后设置回调）
+    etcd.watch_services("dbmgr", [&server](const std::string& instance_id,
+                                            const farm::ServiceInstance& inst,
+                                            bool is_delete) {
+        if (is_delete) {
+            SPDLOG_INFO("[Main]DBMgr {} removed from etcd, removing connection", instance_id);
+            // 从 instance_id 解析 index（格式为数字字符串）
+            try {
+                uint32_t index = static_cast<uint32_t>(std::stoul(instance_id));
+                server.remove_dbmgr(index);
+            } catch (const std::exception& e) {
+                SPDLOG_ERROR("[Main]Failed to parse DBMgr index from instance_id={}: {}", instance_id, e.what());
+            }
+        } else {
+            SPDLOG_INFO("[Main]DBMgr {} added to etcd: {}:{}, adding connection", instance_id, inst.ip, inst.port);
+            try {
+                uint32_t index = static_cast<uint32_t>(std::stoul(instance_id));
+                server.add_dbmgr(index, inst.ip, inst.port);
+            } catch (const std::exception& e) {
+                SPDLOG_ERROR("[Main]Failed to parse DBMgr index from instance_id={}: {}", instance_id, e.what());
+            }
+        }
+    });
+#endif
 
     if (!server.start()) {
         SPDLOG_ERROR("[Main]Server failed to start");

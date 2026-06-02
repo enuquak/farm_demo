@@ -55,6 +55,10 @@ public:
     // 注册业务消息 handler（在 start() 之前调用）
     void register_handler(uint32_t msg_id, MessageCallback callback);
 
+    // 动态管理 DBMgr 连接（线程安全，可从 etcd watch 回调调用）
+    void add_dbmgr(uint32_t index, const std::string& host, uint16_t port);
+    void remove_dbmgr(uint32_t index);
+
 private:
     // libevent 回调
     static void on_accept(struct evconnlistener* listener, evutil_socket_t fd,

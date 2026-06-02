@@ -88,6 +88,56 @@ void DBMgrConnectionManager::shutdown() {
     SPDLOG_INFO("[DBMgrConnection]Shutdown complete");
 }
 
+void DBMgrConnectionManager::add_dbmgr(uint32_t index, const std::string& host, uint16_t port) {
+    std::lock_guard<std::mutex> lock(connections_mutex_);
+
+    // 检查是否已存在
+    if (index < connections_.size() && connections_[index]) {
+        SPDLOG_WARN("[DBMgrConnection]DBMgr index={} already exists, updating", index);
+        // 清理旧连接
+        auto& old_conn = connections_[index];
+        bev_to_index_.erase(old_conn->bev());
+        // 释放 bufferevent
+        if (old_conn->bev()) {
+            bufferevent_free(old_conn->bev());
+            old_conn->release_bev();
+        }
+        connections_[index].reset();
+    }
+
+    // 创建新连接
+    connect_to_dbmgr(index, host, port);
+    SPDLOG_INFO("[DBMgrConnection]Added DBMgr index={} at {}:{}", index, host, port);
+}
+
+void DBMgrConnectionManager::remove_dbmgr(uint32_t index) {
+    std::lock_guard<std::mutex> lock(connections_mutex_);
+
+    if (index >= connections_.size() || !connections_[index]) {
+        SPDLOG_WARN("[DBMgrConnection]DBMgr index={} not found for removal", index);
+        return;
+    }
+
+    auto& conn = connections_[index];
+
+    // 清理 bev 映射
+    bev_to_index_.erase(conn->bev());
+
+    // 释放 bufferevent
+    if (conn->bev()) {
+        bufferevent_free(conn->bev());
+        conn->release_bev();
+    }
+
+    // 失败所有待处理请求
+    fail_pending_requests_for(index);
+
+    // 移除连接
+    connections_[index].reset();
+
+    SPDLOG_INFO("[DBMgrConnection]Removed DBMgr index={}", index);
+}
+
 // ===========================================
 // Connection lifecycle
 // ===========================================
