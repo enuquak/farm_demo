@@ -97,6 +97,13 @@ DBMgr 持久化：
 2. **读取**：优先读 Redis，缓存未命中时从 DBMgr 加载
 3. **一致性**：使用定时任务（如每 5 分钟）将 Redis 脏数据刷到 DBMgr
 
+### 聊天消息限制
+
+- 文字消息最大长度：200 字符
+- 表情消息：使用预定义的表情 ID（0-50），不存储文字
+- 离线消息队列上限：每个玩家 100 条
+- 聊天历史记录保留：最近 7 天
+
 ## 消息协议设计
 
 ### MsgID 分配
@@ -134,6 +141,10 @@ DBMgr 持久化：
 | 5043 | FRIEND_VISIT_ACTION_RESP | Game → Client | 操作结果 |
 | 5050 | FRIEND_RECOMMEND_REQ | Client → Game | 获取推荐好友 |
 | 5051 | FRIEND_RECOMMEND_RESP | Game → Client | 推荐列表 |
+| 5060 | FRIEND_BLOCK_REQ | Client → Game | 拉黑玩家 |
+| 5061 | FRIEND_BLOCK_RESP | Game → Client | 拉黑结果 |
+| 5062 | FRIEND_UNBLOCK_REQ | Client → Game | 取消拉黑 |
+| 5063 | FRIEND_UNBLOCK_RESP | Game → Client | 取消拉黑结果 |
 
 ### Protobuf 消息定义
 
@@ -201,6 +212,28 @@ message FriendVisitActionReq {
     int32 action_type = 2;  // 0=water, 1=weed, 2=harvest, 3=steal
     int32 target_x = 3;
     int32 target_y = 4;
+}
+
+// 拉黑玩家
+message FriendBlockReq {
+    uint64 target_id = 1;   // 要拉黑的玩家 ID
+}
+
+// 拉黑响应
+message FriendBlockResp {
+    int32 code = 1;
+    string msg = 2;
+}
+
+// 取消拉黑
+message FriendUnblockReq {
+    uint64 target_id = 1;   // 要取消拉黑的玩家 ID
+}
+
+// 取消拉黑响应
+message FriendUnblockResp {
+    int32 code = 1;
+    string msg = 2;
 }
 ```
 
@@ -296,6 +329,46 @@ Client A                Game Server             Friend Service           Redis
    │◀─FRIEND_VISIT_ACTION──│                        │                    │
 ```
 
+#### 5. 黑名单流程
+
+```
+Client A                Game Server             Friend Service           Redis
+   │                        │                        │                    │
+   │──FRIEND_BLOCK_REQ────▶│                        │                    │
+   │                        │──FRIEND_BLOCK_REQ────▶│                    │
+   │                        │                        │──SADD────────────▶│ (添加到黑名单)
+   │                        │                        │──SREM────────────▶│ (从好友列表移除)
+   │                        │◀─FRIEND_BLOCK_RESP────│                    │
+   │◀─FRIEND_BLOCK_RESP────│                        │                    │
+```
+
+**黑名单规则**：
+- 被拉黑的玩家无法向拉黑者发送好友请求
+- 被拉黑的玩家无法向拉黑者发送私聊消息
+- 被拉黑的玩家无法访问拉黑者的农场
+- 如果双方已是好友，拉黑时自动解除好友关系
+
+#### 6. 好友推荐流程
+
+```
+Client A                Game Server             Friend Service           Redis
+   │                        │                        │                    │
+   │──FRIEND_RECOMMEND_REQ▶│                        │                    │
+   │                        │──FRIEND_RECOMMEND_REQ▶│                    │
+   │                        │                        │──SMEMBERS─────────▶│ (获取 A 的好友列表)
+   │                        │                        │◀──────────────────│
+   │                        │                        │──计算共同好友────────│
+   │                        │                        │──过滤已请求/已拉黑──│
+   │                        │◀─FRIEND_RECOMMEND_RESP│                    │
+   │◀─FRIEND_RECOMMEND_RESP│                        │                    │
+```
+
+**推荐算法**：
+1. 获取玩家 A 的好友列表
+2. 遍历每个好友的好友列表，找出共同好友数 >= 2 的玩家
+3. 过滤掉已经是好友、已发送请求、在黑名单中的玩家
+4. 按共同好友数排序，返回前 10 个推荐结果
+
 ## 客户端 UI 设计
 
 ### 好友系统 UI 组件
@@ -374,13 +447,51 @@ FriendUI
 # 新增 MsgID 常量
 MSG_ID_FRIEND_SEARCH_REQ = 5001
 MSG_ID_FRIEND_SEARCH_RESP = 5002
-# ... 其他 MsgID
+MSG_ID_FRIEND_ADD_REQ = 5003
+MSG_ID_FRIEND_ADD_RESP = 5004
+MSG_ID_FRIEND_ADD_NOTIFY = 5005
+MSG_ID_FRIEND_ACCEPT_REQ = 5006
+MSG_ID_FRIEND_ACCEPT_RESP = 5007
+MSG_ID_FRIEND_REJECT_REQ = 5008
+MSG_ID_FRIEND_REJECT_RESP = 5009
+MSG_ID_FRIEND_DELETE_REQ = 5010
+MSG_ID_FRIEND_DELETE_RESP = 5011
+MSG_ID_FRIEND_LIST_REQ = 5012
+MSG_ID_FRIEND_LIST_RESP = 5013
+MSG_ID_FRIEND_ONLINE_NOTIFY = 5014
+MSG_ID_FRIEND_OFFLINE_NOTIFY = 5015
+MSG_ID_FRIEND_CHAT_REQ = 5020
+MSG_ID_FRIEND_CHAT_RESP = 5021
+MSG_ID_FRIEND_CHAT_NOTIFY = 5022
+MSG_ID_FRIEND_CHAT_HISTORY_REQ = 5023
+MSG_ID_FRIEND_CHAT_HISTORY_RESP = 5024
+MSG_ID_FRIEND_GIFT_REQ = 5030
+MSG_ID_FRIEND_GIFT_RESP = 5031
+MSG_ID_FRIEND_GIFT_NOTIFY = 5032
+MSG_ID_FRIEND_VISIT_REQ = 5040
+MSG_ID_FRIEND_VISIT_RESP = 5041
+MSG_ID_FRIEND_VISIT_ACTION_REQ = 5042
+MSG_ID_FRIEND_VISIT_ACTION_RESP = 5043
+MSG_ID_FRIEND_RECOMMEND_REQ = 5050
+MSG_ID_FRIEND_RECOMMEND_RESP = 5051
 
 # 新增回调
 on_friend_search_resp: Callable[[Any], None]
 on_friend_list_resp: Callable[[Any], None]
+on_friend_add_notify: Callable[[Any], None]
+on_friend_accept_resp: Callable[[Any], None]
+on_friend_reject_resp: Callable[[Any], None]
+on_friend_delete_resp: Callable[[Any], None]
+on_friend_online_notify: Callable[[Any], None]
+on_friend_offline_notify: Callable[[Any], None]
+on_friend_chat_resp: Callable[[Any], None]
 on_friend_chat_notify: Callable[[Any], None]
-# ... 其他回调
+on_friend_chat_history_resp: Callable[[Any], None]
+on_friend_gift_resp: Callable[[Any], None]
+on_friend_gift_notify: Callable[[Any], None]
+on_friend_visit_resp: Callable[[Any], None]
+on_friend_visit_action_resp: Callable[[Any], None]
+on_friend_recommend_resp: Callable[[Any], None]
 ```
 
 ## 错误处理与边界情况
