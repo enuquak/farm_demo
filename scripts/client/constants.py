@@ -48,6 +48,7 @@ class ObjectType(IntEnum):
     BED = 12           # 床
     TV = 13            # 电视
     STOVE = 14         # 炉灶
+    NPC = 15           # NPC
 
 
 class Direction:
@@ -145,7 +146,28 @@ OBJECT_PROPERTIES: Dict[ObjectType, Dict[str, Any]] = {
         "interactable": True,
         "interact_type": "cook",
     },
+    ObjectType.NPC: {
+        "walkable": True,
+        "interactable": True,
+        "interact_type": "dialog",
+    },
 }
+
+# === NPC / Dialog UI Constants ===
+DIALOG_BOX_WIDTH_RATIO = 0.8
+DIALOG_BOX_HEIGHT = 180
+DIALOG_BOX_MARGIN_BOTTOM = 20
+DIALOG_BOX_ALPHA = 200
+DIALOG_PORTRAIT_SIZE = 64
+DIALOG_TEXT_SPEED = 30
+DIALOG_OPTION_GAP = 8
+
+BUBBLE_PADDING_X = 12
+BUBBLE_PADDING_Y = 8
+BUBBLE_OFFSET_Y = -40
+BUBBLE_FADE_TIME = 1.5
+
+NPC_INTERACT_RANGE = 1
 
 # 2.5D 高光/阴影系数
 HIGHLIGHT_ALPHA = 30    # 高光增量
