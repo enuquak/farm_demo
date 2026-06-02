@@ -61,6 +61,7 @@ set(SOURCES
     src/game_scene_manager.cpp
     src/monster_manager.cpp
     src/combat_handler.cpp
+    src/cave_spawner.cpp
     src/friend_service_connection.cpp
     src/game_clock.cpp
     src/redis_connection.cpp
@@ -220,6 +221,7 @@ set(TEST_SOURCES
     src/scene_state.cpp
     src/monster_manager.cpp
     src/combat_handler.cpp
+    src/cave_spawner.cpp
     src/friend_service_connection.cpp
     src/redis_connection.cpp
     src/login_stub.cpp
