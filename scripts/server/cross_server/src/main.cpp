@@ -165,6 +165,19 @@ int main(int argc, char* argv[]) {
             SPDLOG_ERROR("[Main]Failed to parse player route key={}: {}", key, e.what());
         }
     });
+#else
+    // Fallback: read game servers from config
+    if (config.contains("game_servers") && config["game_servers"].is_array()) {
+        for (const auto& gs : config["game_servers"]) {
+            uint32_t sid = gs.value("server_id", 0u);
+            std::string host = gs.value("host", "127.0.0.1");
+            uint16_t gport = static_cast<uint16_t>(gs.value("port", 9090));
+            if (sid > 0) {
+                server.add_game_server(sid, host, gport);
+                SPDLOG_INFO("[Main]Added Game Server from config: {} ({}:{})", sid, host, gport);
+            }
+        }
+    }
 #endif
 
     if (!server.start()) {

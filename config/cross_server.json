@@ -1,13 +1,16 @@
 {
     "server": {
         "ip": "0.0.0.0",
-        "port": 7070,
+        "port": 7080,
         "instance_id": 1
     },
     "etcd": {
         "endpoints": "http://localhost:2379",
         "lease_ttl": 15
     },
+    "game_servers": [
+        { "server_id": 1, "host": "127.0.0.1", "port": 9090 }
+    ],
     "pid_file": "./runtimeData/cross_server.pid",
     "logging": {
         "dir": "./runtimeData/logs/server",
