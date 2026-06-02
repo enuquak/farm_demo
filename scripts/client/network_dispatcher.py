@@ -11,6 +11,7 @@ from .message_ids import (
     MSG_ID_ITEM_USE_RESP, MSG_ID_SCENE_CHANGE_RESP,
     MSG_ID_CLOCK_SYNC, MSG_ID_FORCE_SLEEP_NOTIFY, MSG_ID_FORCE_SLEEP_READY,
     MSG_ID_DROP_ITEM_SYNC, MSG_ID_INVENTORY_SYNC,
+    MSG_ID_NOTIFY_TOAST,
 )
 
 import sys
@@ -39,6 +40,7 @@ class NetworkMessageDispatcher:
         on_force_sleep_notify: Callable[[int], None],
         on_drop_item_sync: Callable[[Any], None] = None,
         on_inventory_sync: Callable[[str], None] = None,
+        on_notify_toast: Callable[[Any], None] = None,
     ):
         """
         初始化消息分发器
@@ -64,6 +66,7 @@ class NetworkMessageDispatcher:
             "on_force_sleep_notify": on_force_sleep_notify,
             "on_drop_item_sync": on_drop_item_sync,
             "on_inventory_sync": on_inventory_sync,
+            "on_notify_toast": on_notify_toast,
         }
 
         # 分发表: msg_id -> handler 方法
@@ -76,6 +79,7 @@ class NetworkMessageDispatcher:
             MSG_ID_FORCE_SLEEP_NOTIFY: self._handle_force_sleep_notify,
             MSG_ID_DROP_ITEM_SYNC: self._handle_drop_item_sync,
             MSG_ID_INVENTORY_SYNC: self._handle_inventory_sync,
+            MSG_ID_NOTIFY_TOAST: self._handle_notify_toast,
         }
 
     def dispatch_pending(self, connection=None):
@@ -218,3 +222,21 @@ class NetworkMessageDispatcher:
 
         except Exception as e:
             logger.error(f"[NetworkDispatcher]Failed to parse InventorySync: {e}")
+
+    def _handle_notify_toast(self, payload: bytes):
+        """处理服务器通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            notify = player_pb2.NotifyToast()
+            notify.ParseFromString(player_msg.payload)
+
+            logger.info(f"[NetworkDispatcher]NotifyToast received: type={notify.type}, "
+                       f"title={notify.title}, priority={notify.priority}")
+
+            if self._callbacks["on_notify_toast"]:
+                self._callbacks["on_notify_toast"](notify)
+
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse NotifyToast: {e}")
