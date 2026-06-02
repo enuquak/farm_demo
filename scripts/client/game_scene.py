@@ -33,6 +33,16 @@ from .affection_system import AffectionSystem
 from .bubble_ui import BubbleUI
 from .quest_handler import QuestHandler
 
+# 战斗系统（可选模块）
+try:
+    from .monster_manager import MonsterManager
+    from .weapon_manager import WeaponManager
+    from .combat_system import CombatSystem
+    from .battle_ui import BattleUI
+    _COMBAT_AVAILABLE = True
+except ImportError:
+    _COMBAT_AVAILABLE = False
+
 from .message_ids import MSG_ID_FORCE_SLEEP_READY
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'common', 'proto', 'generated'))
@@ -142,6 +152,23 @@ class GameScene:
         # 任务系统
         self._quest_handler = QuestHandler(connection)
 
+        # 战斗系统（可选）
+        if _COMBAT_AVAILABLE:
+            self._weapon_manager = WeaponManager()
+            self._monster_manager = MonsterManager()
+            self._combat_system = CombatSystem(self._weapon_manager, self._monster_manager)
+            self._battle_ui = BattleUI(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+            self._player_hp = player_data.get('current_hp', 100)
+            self._player_max_hp = player_data.get('max_hp', 100)
+            self._player_invincible_until = 0.0
+        else:
+            self._weapon_manager = None
+            self._monster_manager = None
+            self._combat_system = None
+            self._battle_ui = None
+            self._player_hp = 100
+            self._player_max_hp = 100
+
         # 玩家控制器
         self._player_controller = PlayerController(
             connection=connection,
@@ -167,6 +194,21 @@ class GameScene:
             on_quest_abandon_resp=self._on_quest_abandon_resp,
             on_quest_sync_notify=self._on_quest_sync_notify,
             on_quest_progress_notify=self._on_quest_progress_notify,
+            # 战斗系统回调
+            on_monster_spawn=lambda data: self._monster_manager.handle_monster_spawn(
+                data.get('monster_id', 0), data.get('monster_type', ''),
+                data.get('x', 0), data.get('y', 0),
+                data.get('hp', 0), data.get('max_hp', 0)
+            ) if self._monster_manager else None,
+            on_monster_death=lambda data: self._monster_manager.handle_monster_death(
+                data.get('monster_id', 0)
+            ) if self._monster_manager else None,
+            on_monster_move=lambda data: self._monster_manager.handle_monster_move(
+                data.get('monster_id', 0), data.get('x', 0), data.get('y', 0),
+                data.get('state', '')
+            ) if self._monster_manager else None,
+            on_player_hp_update=lambda data: self._handle_player_hp_update(data),
+            on_player_death=lambda data: self._handle_player_death(data),
         )
 
         # 强制睡觉状态
@@ -232,6 +274,29 @@ class GameScene:
             self._dialog_engine.update(dt)
             self._npc_manager.update_animations(dt)
             self._bubble_ui.update(dt)
+
+            # 战斗系统更新
+            if _COMBAT_AVAILABLE and self._monster_manager:
+                self._monster_manager.update(dt, self._player_sprite.world_x, self._player_sprite.world_y)
+
+            if _COMBAT_AVAILABLE and self._battle_ui:
+                self._battle_ui.update(dt)
+
+            # 攻击检测
+            if (_COMBAT_AVAILABLE and self._combat_system
+                    and self._input_manager.is_attack_pressed() and self._combat_system.can_attack()):
+                player_screen_x = self.WINDOW_WIDTH // 2
+                player_screen_y = self.WINDOW_HEIGHT // 2
+                attack_dir = self._input_manager.get_attack_direction(player_screen_x, player_screen_y)
+                hits = self._combat_system.try_attack(
+                    self._player_sprite.world_x,
+                    self._player_sprite.world_y,
+                    attack_dir
+                )
+                for monster_id, damage, is_kill in hits:
+                    monster = self._monster_manager.get_monster(monster_id)
+                    if monster:
+                        self._battle_ui.add_damage_number(monster.world_x, monster.world_y, damage)
             self._player_controller.handle_input(
                 dt,
                 self._renderer.exhaustion_modal.is_visible,
@@ -289,6 +354,10 @@ class GameScene:
                 bubble_ui=self._bubble_ui,
                 dialog_engine=self._dialog_engine,
                 affection_system=self._affection_system,
+                monster_manager=self._monster_manager if _COMBAT_AVAILABLE else None,
+                battle_ui=self._battle_ui if _COMBAT_AVAILABLE else None,
+                player_hp=self._player_hp,
+                player_max_hp=self._player_max_hp,
             )
 
             # 控制帧率
@@ -671,3 +740,20 @@ class GameScene:
     def _on_quest_progress_notify(self, notify):
         """任务进度通知回调"""
         self._quest_handler.handle_quest_progress_notify(notify)
+
+    # ========== 战斗系统回调 ==========
+
+    def _handle_player_hp_update(self, data: dict):
+        """处理玩家HP更新"""
+        self._player_hp = data.get('current_hp', self._player_hp)
+        self._player_max_hp = data.get('max_hp', self._player_max_hp)
+        damage = data.get('damage', 0)
+        if damage > 0 and _COMBAT_AVAILABLE and self._battle_ui:
+            self._battle_ui.add_damage_number(
+                self._player_sprite.world_x, self._player_sprite.world_y, damage
+            )
+
+    def _handle_player_death(self, data: dict):
+        """处理玩家死亡"""
+        logger.info("[GameScene]Player died!")
+        # TODO: 显示死亡UI，传送回农场

@@ -15,6 +15,10 @@ from .message_ids import (
     MSG_ID_QUEST_ACCEPT_RESP, MSG_ID_QUEST_SUBMIT_RESP,
     MSG_ID_QUEST_ABANDON_RESP, MSG_ID_QUEST_SYNC_NOTIFY,
     MSG_ID_QUEST_PROGRESS_NOTIFY,
+    MSG_ID_ATTACK_NOTIFY, MSG_ID_MONSTER_SPAWN_NOTIFY,
+    MSG_ID_MONSTER_DEATH_NOTIFY, MSG_ID_MONSTER_MOVE_NOTIFY,
+    MSG_ID_MONSTER_ATTACK_NOTIFY, MSG_ID_PLAYER_HP_UPDATE,
+    MSG_ID_PLAYER_DEATH_NOTIFY,
 )
 
 import sys
@@ -51,6 +55,13 @@ class NetworkMessageDispatcher:
         on_quest_abandon_resp: Callable[[Any], None] = None,
         on_quest_sync_notify: Callable[[Any], None] = None,
         on_quest_progress_notify: Callable[[Any], None] = None,
+        on_attack_notify=None,
+        on_monster_spawn=None,
+        on_monster_death=None,
+        on_monster_move=None,
+        on_monster_attack=None,
+        on_player_hp_update=None,
+        on_player_death=None,
     ):
         """
         初始化消息分发器
@@ -91,6 +102,13 @@ class NetworkMessageDispatcher:
             "on_quest_abandon_resp": on_quest_abandon_resp,
             "on_quest_sync_notify": on_quest_sync_notify,
             "on_quest_progress_notify": on_quest_progress_notify,
+            "on_attack_notify": on_attack_notify,
+            "on_monster_spawn": on_monster_spawn,
+            "on_monster_death": on_monster_death,
+            "on_monster_move": on_monster_move,
+            "on_monster_attack": on_monster_attack,
+            "on_player_hp_update": on_player_hp_update,
+            "on_player_death": on_player_death,
         }
 
         # 分发表: msg_id -> handler 方法
@@ -112,6 +130,13 @@ class NetworkMessageDispatcher:
             MSG_ID_QUEST_ABANDON_RESP: self._handle_quest_abandon_resp,
             MSG_ID_QUEST_SYNC_NOTIFY: self._handle_quest_sync_notify,
             MSG_ID_QUEST_PROGRESS_NOTIFY: self._handle_quest_progress_notify,
+            MSG_ID_ATTACK_NOTIFY: self._handle_attack_notify,
+            MSG_ID_MONSTER_SPAWN_NOTIFY: self._handle_monster_spawn,
+            MSG_ID_MONSTER_DEATH_NOTIFY: self._handle_monster_death,
+            MSG_ID_MONSTER_MOVE_NOTIFY: self._handle_monster_move,
+            MSG_ID_MONSTER_ATTACK_NOTIFY: self._handle_monster_attack,
+            MSG_ID_PLAYER_HP_UPDATE: self._handle_player_hp_update,
+            MSG_ID_PLAYER_DEATH_NOTIFY: self._handle_player_death,
         }
 
     def dispatch_pending(self, connection=None):
@@ -365,3 +390,89 @@ class NetworkMessageDispatcher:
 
         except Exception as e:
             logger.error(f"[NetworkDispatcher]Failed to parse QuestProgressNotify: {e}")
+
+    # ========== 战斗系统消息处理 ==========
+
+    def _handle_attack_notify(self, payload: bytes):
+        """处理攻击结果通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            import json
+            data = json.loads(player_msg.payload)
+            if self._callbacks.get("on_attack_notify"):
+                self._callbacks["on_attack_notify"](data)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse AttackNotify: {e}")
+
+    def _handle_monster_spawn(self, payload: bytes):
+        """处理怪物刷新通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            import json
+            data = json.loads(player_msg.payload)
+            if self._callbacks.get("on_monster_spawn"):
+                self._callbacks["on_monster_spawn"](data)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse MonsterSpawnNotify: {e}")
+
+    def _handle_monster_death(self, payload: bytes):
+        """处理怪物死亡通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            import json
+            data = json.loads(player_msg.payload)
+            if self._callbacks.get("on_monster_death"):
+                self._callbacks["on_monster_death"](data)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse MonsterDeathNotify: {e}")
+
+    def _handle_monster_move(self, payload: bytes):
+        """处理怪物移动通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            import json
+            data = json.loads(player_msg.payload)
+            if self._callbacks.get("on_monster_move"):
+                self._callbacks["on_monster_move"](data)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse MonsterMoveNotify: {e}")
+
+    def _handle_monster_attack(self, payload: bytes):
+        """处理怪物攻击通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            import json
+            data = json.loads(player_msg.payload)
+            if self._callbacks.get("on_monster_attack"):
+                self._callbacks["on_monster_attack"](data)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse MonsterAttackNotify: {e}")
+
+    def _handle_player_hp_update(self, payload: bytes):
+        """处理玩家HP更新"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            import json
+            data = json.loads(player_msg.payload)
+            if self._callbacks.get("on_player_hp_update"):
+                self._callbacks["on_player_hp_update"](data)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse PlayerHpUpdate: {e}")
+
+    def _handle_player_death(self, payload: bytes):
+        """处理玩家死亡通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            import json
+            data = json.loads(player_msg.payload)
+            if self._callbacks.get("on_player_death"):
+                self._callbacks["on_player_death"](data)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse PlayerDeathNotify: {e}")

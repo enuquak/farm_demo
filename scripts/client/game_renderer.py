@@ -87,7 +87,9 @@ class GameRenderer:
                scene_manager, map_renderer,
                drop_item_renderer=None, notification_manager=None,
                npc_manager=None, bubble_ui=None,
-               dialog_engine=None, affection_system=None):
+               dialog_engine=None, affection_system=None,
+               monster_manager=None, battle_ui=None,
+               player_hp=100, player_max_hp=100):
         """
         渲染一帧
 
@@ -109,6 +111,13 @@ class GameRenderer:
             camera_x = map_renderer.x
             camera_y = map_renderer.y
             drop_item_renderer.render(self._screen, camera_x, camera_y)
+
+        # 怪物渲染
+        if monster_manager is not None:
+            camera_x = map_renderer.x
+            camera_y = map_renderer.y
+            for monster in monster_manager.get_all_monsters().values():
+                monster.render(self._screen, camera_x, camera_y)
 
         # 头顶气泡渲染
         if bubble_ui and npc_manager:
@@ -155,6 +164,13 @@ class GameRenderer:
                 is_choosing=dialog_engine.state.value == 'choosing',
                 bubble_color=bubble_color,
             )
+
+        # 战斗UI渲染
+        if battle_ui is not None:
+            camera_x = map_renderer.x
+            camera_y = map_renderer.y
+            battle_ui.render(self._screen, camera_x, camera_y,
+                           player_hp, player_max_hp)
 
         # 精疲力尽弹窗渲染（最顶层）
         self._exhaustion_modal.draw(self._screen)

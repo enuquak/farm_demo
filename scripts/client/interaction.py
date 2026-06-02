@@ -71,6 +71,30 @@ ITEM_EFFECTS: Dict[str, Dict[str, Any]] = {
         "description": "与 NPC 对话",
         "interactRange": 1,
     },
+    "obj:CAVE_ENTRANCE": {
+        "tool": None,
+        "effect": "enter_cave",
+        "description": "进入矿洞",
+        "interactRange": 1,
+    },
+    "obj:STAIRS_DOWN": {
+        "tool": None,
+        "effect": "stairs_down",
+        "description": "下楼",
+        "interactRange": 1,
+    },
+    "obj:STAIRS_UP": {
+        "tool": None,
+        "effect": "stairs_up",
+        "description": "上楼",
+        "interactRange": 1,
+    },
+    "obj:ANVIL": {
+        "tool": None,
+        "effect": "craft",
+        "description": "打开合成台",
+        "interactRange": 1,
+    },
 
     # 地面层匹配
     "gnd:GRASS": {
