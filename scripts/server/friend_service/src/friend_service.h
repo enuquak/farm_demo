@@ -32,6 +32,7 @@ public:
                                const uint8_t* payload, size_t len);
 
     GameSession* game_session() { return game_session_.get(); }
+    FriendManager* friend_manager() { return friend_manager_.get(); }
 
 private:
     void register_handlers();
@@ -39,6 +40,7 @@ private:
     struct event_base* base_;
     std::unique_ptr<RedisConnection> redis_;
     std::unique_ptr<GameSession> game_session_;
+    std::unique_ptr<FriendManager> friend_manager_;
 
     using MsgHandler = std::function<void(uint64_t, const uint8_t*, size_t)>;
     std::unordered_map<uint32_t, MsgHandler> handlers_;

@@ -1,4 +1,5 @@
 #include "friend_service.h"
+#include "friend_manager.h"
 #include "game_session.h"
 #include "redis_connection.h"
 #include "message_ids.h"
@@ -37,6 +38,9 @@ bool FriendService::start(const std::string& redis_uri, const std::string& game_
         return false;
     }
 
+    // Create FriendManager
+    friend_manager_ = std::make_unique<FriendManager>(redis_.get(), game_session_.get());
+
     // Register message handlers
     register_handlers();
 
@@ -46,6 +50,7 @@ bool FriendService::start(const std::string& redis_uri, const std::string& game_
 }
 
 void FriendService::stop() {
+    friend_manager_.reset();
     if (game_session_) {
         game_session_->disconnect();
         game_session_.reset();
@@ -71,29 +76,23 @@ void FriendService::handle_client_message(uint64_t player_id, uint32_t msg_id,
 
 void FriendService::register_handlers() {
     // Friend relationship messages (8001-8015)
-    handlers_[MSG_ID_FRIEND_SEARCH_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendSearchReq from player={}", player_id);
-        // TODO: implement FriendManager::handle_search
+    handlers_[MSG_ID_FRIEND_SEARCH_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        friend_manager_->handle_search(player_id, data, len);
     };
-    handlers_[MSG_ID_FRIEND_ADD_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendAddReq from player={}", player_id);
-        // TODO: implement FriendManager::handle_add
+    handlers_[MSG_ID_FRIEND_ADD_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        friend_manager_->handle_add(player_id, data, len);
     };
-    handlers_[MSG_ID_FRIEND_ACCEPT_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendAcceptReq from player={}", player_id);
-        // TODO: implement FriendManager::handle_accept
+    handlers_[MSG_ID_FRIEND_ACCEPT_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        friend_manager_->handle_accept(player_id, data, len);
     };
-    handlers_[MSG_ID_FRIEND_REJECT_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendRejectReq from player={}", player_id);
-        // TODO: implement FriendManager::handle_reject
+    handlers_[MSG_ID_FRIEND_REJECT_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        friend_manager_->handle_reject(player_id, data, len);
     };
-    handlers_[MSG_ID_FRIEND_DELETE_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendDeleteReq from player={}", player_id);
-        // TODO: implement FriendManager::handle_delete
+    handlers_[MSG_ID_FRIEND_DELETE_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        friend_manager_->handle_delete(player_id, data, len);
     };
-    handlers_[MSG_ID_FRIEND_LIST_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendListReq from player={}", player_id);
-        // TODO: implement FriendManager::handle_list
+    handlers_[MSG_ID_FRIEND_LIST_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        friend_manager_->handle_list(player_id, data, len);
     };
 
     // Friend chat messages (8020-8024)
@@ -129,13 +128,11 @@ void FriendService::register_handlers() {
     };
 
     // Friend block messages (8060-8063)
-    handlers_[MSG_ID_FRIEND_BLOCK_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendBlockReq from player={}", player_id);
-        // TODO: implement FriendManager::handle_block
+    handlers_[MSG_ID_FRIEND_BLOCK_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        friend_manager_->handle_block(player_id, data, len);
     };
-    handlers_[MSG_ID_FRIEND_UNBLOCK_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendUnblockReq from player={}", player_id);
-        // TODO: implement FriendManager::handle_unblock
+    handlers_[MSG_ID_FRIEND_UNBLOCK_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        friend_manager_->handle_unblock(player_id, data, len);
     };
 
     SPDLOG_INFO("[FriendService]Registered {} message handlers", handlers_.size());

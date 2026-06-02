@@ -29,6 +29,7 @@ set(PROTO_HDRS
 set(SOURCES
     src/main.cpp
     src/friend_service.cpp
+    src/friend_manager.cpp
     src/game_session.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp
