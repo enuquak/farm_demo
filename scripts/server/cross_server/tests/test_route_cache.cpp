@@ -53,6 +53,53 @@ void test_update_overwrite() {
     std::cout << "test_update_overwrite PASSED" << std::endl;
 }
 
+void test_clear() {
+    farm::RouteCache cache;
+
+    cache.update(1001, 1);
+    cache.update(1002, 2);
+    cache.update(1003, 3);
+    assert(cache.size() == 3);
+
+    cache.clear();
+    assert(cache.size() == 0);
+    assert(!cache.get_server_id(1001).has_value());
+    assert(!cache.get_server_id(1002).has_value());
+    assert(!cache.get_server_id(1003).has_value());
+
+    std::cout << "test_clear PASSED" << std::endl;
+}
+
+void test_clear_server() {
+    farm::RouteCache cache;
+
+    cache.update(1001, 1);
+    cache.update(1002, 1);
+    cache.update(2001, 2);
+    cache.update(2002, 2);
+    cache.update(3001, 3);
+    assert(cache.size() == 5);
+
+    cache.clear_server(2);
+    assert(cache.size() == 3);
+
+    // Server 1 routes still exist
+    assert(cache.get_server_id(1001).has_value());
+    assert(cache.get_server_id(1001).value() == 1);
+    assert(cache.get_server_id(1002).has_value());
+    assert(cache.get_server_id(1002).value() == 1);
+
+    // Server 2 routes removed
+    assert(!cache.get_server_id(2001).has_value());
+    assert(!cache.get_server_id(2002).has_value());
+
+    // Server 3 route still exists
+    assert(cache.get_server_id(3001).has_value());
+    assert(cache.get_server_id(3001).value() == 3);
+
+    std::cout << "test_clear_server PASSED" << std::endl;
+}
+
 void test_concurrent() {
     farm::RouteCache cache;
     const int NUM_THREADS = 4;
@@ -110,6 +157,8 @@ int main() {
     test_update_and_query();
     test_remove();
     test_update_overwrite();
+    test_clear();
+    test_clear_server();
     test_concurrent();
     std::cout << "All RouteCache tests PASSED" << std::endl;
     return 0;
