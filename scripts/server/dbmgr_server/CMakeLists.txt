@@ -45,7 +45,6 @@ set(SOURCES
     src/connection_manager.cpp
     src/mongo_connection.cpp
     src/mongo_server.cpp
-    src/redis_connection.cpp
     src/redis_server.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/admin_msg_ids.cpp
