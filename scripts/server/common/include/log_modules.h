@@ -28,6 +28,7 @@ constexpr std::string_view DBMgrConnection = "DBMgrConnection";
 // Redis 模块
 constexpr std::string_view RedisPool = "RedisPool";
 constexpr std::string_view RedisAsync = "RedisAsync";
+constexpr std::string_view RedisCluster = "RedisCluster";
 
 // etcd 模块
 constexpr std::string_view Etcd = "Etcd";
