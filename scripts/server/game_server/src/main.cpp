@@ -126,8 +126,8 @@ int main(int argc, char* argv[]) {
 
     SPDLOG_INFO("[Main]Registered to etcd as game/{}", server_id);
 
-    // 从 etcd 发现 dbmgr 服务
-    auto dbmgrs = etcd.discover_services("dbmgr");
+    // 从 etcd 发现 dbmgr_server 服务
+    auto dbmgrs = etcd.discover_services("dbmgr_server");
     for (const auto& dbmgr : dbmgrs) {
         farm::DBMgrConfig cfg;
         cfg.host = dbmgr.ip;
@@ -184,8 +184,10 @@ int main(int argc, char* argv[]) {
     g_server = &server;
 
 #ifdef ENABLE_ETCD
-    // 监听 dbmgr 服务变更（需要在 server 创建之后设置回调）
-    etcd.watch_services("dbmgr", [&server](const std::string& instance_id,
+    server.set_etcd_manager(&etcd);
+
+    // 监听 dbmgr_server 服务变更（需要在 server 创建之后设置回调）
+    etcd.watch_services("dbmgr_server", [&server](const std::string& instance_id,
                                             const farm::ServiceInstance& inst,
                                             bool is_delete) {
         if (is_delete) {

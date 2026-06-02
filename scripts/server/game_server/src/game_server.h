@@ -18,6 +18,7 @@
 #include "combat_handler.h"
 #include "cave_spawner.h"
 #include "friend_service_connection.h"
+#include "cross_server_connection.h"
 
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -41,6 +42,7 @@ class GameClock;
 class AdminHandler;
 class GMStub;
 class GmHttpHandler;
+class EtcdManager;
 
 class GameServer {
 public:
@@ -64,6 +66,9 @@ public:
     // 动态管理 DBMgr 连接（线程安全，可从 etcd watch 回调调用）
     void add_dbmgr(uint32_t index, const std::string& host, uint16_t port);
     void remove_dbmgr(uint32_t index);
+
+    // 设置 etcd 管理器
+    void set_etcd_manager(EtcdManager* etcd) { etcd_ = etcd; }
 
 private:
     // libevent 回调
@@ -107,6 +112,14 @@ private:
                                uint64_t player_id, const std::string& payload);
     void handle_position_update(uint64_t player_id,
                                 const uint8_t* payload, size_t payload_len);
+
+    // CrossServer message handlers
+    void handle_cross_forward_req(const uint8_t* data, size_t len);
+    void handle_cross_query_resp(const uint8_t* data, size_t len);
+
+    // etcd player route management
+    void register_player_to_etcd(uint64_t player_id);
+    void unregister_player_from_etcd(uint64_t player_id);
 
     // 玩家加入回调处理
     void handle_player_join_callback(std::shared_ptr<GateSession> session,
@@ -177,6 +190,12 @@ private:
 
     // Friend Service connection
     std::unique_ptr<FriendServiceConnection> friend_conn_;
+
+    // CrossServer connection
+    std::unique_ptr<CrossServerConnection> cross_conn_;
+
+    // etcd manager (set from main.cpp)
+    EtcdManager* etcd_ = nullptr;
 };
 
 }  // namespace farm

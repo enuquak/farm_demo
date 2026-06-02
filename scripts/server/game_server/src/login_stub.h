@@ -29,6 +29,9 @@ public:
     // Set clock reference (for enter_game response with clock data)
     void set_clock(GameClock* clock) { clock_ = clock; }
 
+    // Set callback for player online events (for etcd registration)
+    void set_player_online_callback(std::function<void(uint64_t)> cb) { player_online_callback_ = std::move(cb); }
+
     // Handle account messages (top-level entry point, replaces AccountMessageHandler::handle)
     void handle_account_msg(std::shared_ptr<GateSession> session,
                             const std::vector<uint8_t>& payload);
@@ -66,6 +69,7 @@ private:
     PlayerIdPool* id_pool_;
     SendToGateFunc send_to_gate_;
     GameClock* clock_ = nullptr;
+    std::function<void(uint64_t)> player_online_callback_;
 };
 
 }  // namespace farm

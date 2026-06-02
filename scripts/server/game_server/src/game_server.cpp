@@ -27,6 +27,8 @@
 #include "player.pb.h"
 #include "dbmgr.pb.h"
 #include "friend.pb.h"
+#include "cross.pb.h"
+#include "etcd_manager.h"
 #include "log_macros.h"
 
 #include <nlohmann/json.hpp>
@@ -162,12 +164,16 @@ bool GameServer::start() {
     id_pool_ = std::make_unique<PlayerIdPool>(&dbmgr_mgr_);
     login_stub_ = std::make_unique<LoginStub>(&player_mgr_, &dbmgr_mgr_, &redis_conn_, server_id_, id_pool_.get(), send_to_gate_func);
     login_stub_->set_clock(game_clock_.get());
+    login_stub_->set_player_online_callback([this](uint64_t player_id) {
+        register_player_to_etcd(player_id);
+    });
     online_stub_ = std::make_unique<OnlineStub>(&redis_conn_);
     SPDLOG_INFO("[Game]LoginStub and OnlineStub initialized");
 
-    // Wire up offline callback for Redis cleanup
+    // Wire up offline callback for Redis cleanup and etcd unregistration
     player_mgr_.set_offline_callback([this](uint64_t player_id) {
         login_stub_->on_player_offline(player_id);
+        unregister_player_from_etcd(player_id);
     });
 
     admin_handler_ = std::make_unique<AdminHandler>(
@@ -204,6 +210,21 @@ bool GameServer::start() {
     });
     friend_conn_->connect("127.0.0.1", 9092);  // TODO: read from config
     SPDLOG_INFO("[Game]FriendService connection initiated");
+
+    // CrossServer connection
+    cross_conn_ = std::make_unique<CrossServerConnection>(base_, server_id_);
+    cross_conn_->set_on_message([this](uint32_t msg_id, const uint8_t* data, size_t len) {
+        switch (msg_id) {
+            case MSG_ID_CROSS_FORWARD_REQ:
+                handle_cross_forward_req(data, len);
+                break;
+            case MSG_ID_CROSS_QUERY_RESP:
+                handle_cross_query_resp(data, len);
+                break;
+        }
+    });
+    cross_conn_->connect("127.0.0.1", 7080);  // TODO: read from config
+    SPDLOG_INFO("[Game]CrossServer connection initiated");
 
     // Register friend message forwarding handlers
     std::vector<uint32_t> friend_msg_ids = {
@@ -324,6 +345,11 @@ void GameServer::stop() {
     if (friend_conn_) {
         friend_conn_->disconnect();
         friend_conn_.reset();
+    }
+    // Disconnect CrossServer before freeing event_base
+    if (cross_conn_) {
+        cross_conn_->disconnect();
+        cross_conn_.reset();
     }
     if (update_timer_) {
         event_free(update_timer_);
@@ -991,6 +1017,94 @@ void GameServer::send_game_msg(uint64_t player_id, uint32_t msg_id,
     if (it != gate_sessions_.end()) {
         send_to_gate(it->second, MSG_ID_GAME_MSG, resp_data);
     }
+}
+
+// ===========================================
+// CrossServer message handlers
+// ===========================================
+
+void GameServer::handle_cross_forward_req(const uint8_t* data, size_t len) {
+    CrossForwardReq req;
+    if (!req.ParseFromArray(data, static_cast<int>(len))) {
+        SPDLOG_ERROR("[Game]Failed to parse CrossForwardReq");
+        return;
+    }
+
+    uint64_t request_id = req.request_id();
+    uint64_t target_player_id = req.target_player_id();
+
+    SPDLOG_INFO("[Game]CrossForwardReq: request_id={} target_player_id={} from_server={}",
+                request_id, target_player_id, req.source_server_id());
+
+    // Look up player
+    Player* player = player_mgr_.get_player(target_player_id).value_or(nullptr);
+
+    CrossForwardResp resp;
+    resp.set_request_id(request_id);
+
+    if (player && player->data_state() == PlayerBizDataState::LOADED) {
+        resp.set_code(0);
+
+        // Build response data with player info
+        nlohmann::json player_info;
+        player_info["player_id"] = target_player_id;
+        player_info["role_name"] = player->get_role_name();
+        player_info["level"] = player->get_level();
+        player_info["online"] = true;
+        std::string response_data = player_info.dump();
+        resp.set_response_data(response_data);
+    } else {
+        resp.set_code(CROSS_PLAYER_NOT_FOUND);
+        resp.set_response_data("{}");
+    }
+
+    std::string serialized;
+    resp.SerializeToString(&serialized);
+    cross_conn_->send_forward_resp(request_id, resp.code(), resp.response_data());
+}
+
+void GameServer::handle_cross_query_resp(const uint8_t* data, size_t len) {
+    CrossQueryResp resp;
+    if (!resp.ParseFromArray(data, static_cast<int>(len))) {
+        SPDLOG_ERROR("[Game]Failed to parse CrossQueryResp");
+        return;
+    }
+
+    SPDLOG_INFO("[Game]CrossQueryResp: request_id={} code={} data={}",
+                resp.request_id(), resp.code(), resp.response_data());
+
+    // TODO: forward to requesting client
+}
+
+void GameServer::register_player_to_etcd(uint64_t player_id) {
+#ifdef ENABLE_ETCD
+    if (!etcd_) return;
+
+    std::string key = "player_route/" + std::to_string(player_id);
+    nlohmann::json value = {
+        {"server_id", server_id_},
+        {"player_id", player_id}
+    };
+    if (etcd_->put_config(key, value.dump())) {
+        SPDLOG_INFO("[Game]Registered player {} to etcd (server_id={})", player_id, server_id_);
+    } else {
+        SPDLOG_ERROR("[Game]Failed to register player {} to etcd", player_id);
+    }
+#endif
+}
+
+void GameServer::unregister_player_from_etcd(uint64_t player_id) {
+#ifdef ENABLE_ETCD
+    if (!etcd_) return;
+
+    std::string key = "player_route/" + std::to_string(player_id);
+    // Put empty value to effectively remove the route
+    if (etcd_->put_config(key, "")) {
+        SPDLOG_INFO("[Game]Unregistered player {} from etcd", player_id);
+    } else {
+        SPDLOG_ERROR("[Game]Failed to unregister player {} from etcd", player_id);
+    }
+#endif
 }
 
 }  // namespace farm

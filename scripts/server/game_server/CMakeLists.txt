@@ -12,15 +12,18 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 # 需要: 1) vcpkg install grpc cpprestsdk  2) 编译安装 etcd-cpp-apiv3
 option(ENABLE_ETCD "Enable etcd service discovery" OFF)
 
-# 依赖路径
-set(LIBEVENT_ROOT "C:/libevent_install")
-set(HIREDIS_ROOT "C:/hiredis_install")
-set(PROTOBUF_ROOT "C:/protobuf_install")
-set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
-
-if(ENABLE_ETCD)
-    set(VCPKG_ROOT "C:/vcpkg/installed/x64-windows" CACHE PATH "vcpkg install path")
-    set(ETCD_ROOT "C:/etcd-cpp-apiv3_install" CACHE PATH "etcd-cpp-apiv3 install path")
+# 依赖路径（从父项目继承或使用默认值）
+if(NOT DEFINED LIBEVENT_ROOT)
+    set(LIBEVENT_ROOT "C:/libevent_install")
+endif()
+if(NOT DEFINED HIREDIS_ROOT)
+    set(HIREDIS_ROOT "C:/hiredis_install")
+endif()
+if(NOT DEFINED PROTOBUF_ROOT)
+    set(PROTOBUF_ROOT "C:/protobuf_install")
+endif()
+if(NOT DEFINED COMMON_PROTO_DIR)
+    set(COMMON_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../common/proto")
 endif()
 
 # Protobuf 生成的源文件
@@ -32,6 +35,7 @@ set(PROTO_SRCS
     ${PROTO_GENERATED_DIR}/account.pb.cc
     ${PROTO_GENERATED_DIR}/player.pb.cc
     ${PROTO_GENERATED_DIR}/friend.pb.cc
+    ${PROTO_GENERATED_DIR}/cross.pb.cc
 )
 set(PROTO_HDRS
     ${PROTO_GENERATED_DIR}/base.pb.h
@@ -40,6 +44,7 @@ set(PROTO_HDRS
     ${PROTO_GENERATED_DIR}/account.pb.h
     ${PROTO_GENERATED_DIR}/player.pb.h
     ${PROTO_GENERATED_DIR}/friend.pb.h
+    ${PROTO_GENERATED_DIR}/cross.pb.h
 )
 
 # 源文件
@@ -63,6 +68,7 @@ set(SOURCES
     src/combat_handler.cpp
     src/cave_spawner.cpp
     src/friend_service_connection.cpp
+    src/cross_server_connection.cpp
     src/game_clock.cpp
     src/redis_connection.cpp
     src/login_stub.cpp
@@ -223,6 +229,7 @@ set(TEST_SOURCES
     src/combat_handler.cpp
     src/cave_spawner.cpp
     src/friend_service_connection.cpp
+    src/cross_server_connection.cpp
     src/redis_connection.cpp
     src/login_stub.cpp
     src/online_stub.cpp

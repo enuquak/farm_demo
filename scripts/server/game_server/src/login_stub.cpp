@@ -480,6 +480,11 @@ void LoginStub::mark_player_online(uint64_t player_id) {
     } else {
         SPDLOG_WARN("[LoginStub]Redis not connected, skipping mark_player_online for player_id={}", player_id);
     }
+
+    // Notify etcd registration callback
+    if (player_online_callback_) {
+        player_online_callback_(player_id);
+    }
 }
 
 }  // namespace farm
