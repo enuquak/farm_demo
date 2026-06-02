@@ -1,5 +1,10 @@
 #include "friend_service.h"
 #include "friend_manager.h"
+#include "chat_manager.h"
+#include "gift_manager.h"
+#include "visit_manager.h"
+#include "recommend_manager.h"
+#include "friend_data_manager.h"
 #include "game_session.h"
 #include "redis_connection.h"
 #include "message_ids.h"
@@ -41,6 +46,13 @@ bool FriendService::start(const std::string& redis_uri, const std::string& game_
     // Create FriendManager
     friend_manager_ = std::make_unique<FriendManager>(redis_.get(), game_session_.get());
 
+    // Create additional managers
+    chat_manager_ = std::make_unique<ChatManager>(redis_.get(), game_session_.get(), friend_manager_.get());
+    gift_manager_ = std::make_unique<GiftManager>(redis_.get(), game_session_.get(), friend_manager_.get());
+    visit_manager_ = std::make_unique<VisitManager>(redis_.get(), game_session_.get(), friend_manager_.get());
+    recommend_manager_ = std::make_unique<RecommendManager>(redis_.get(), game_session_.get(), friend_manager_.get());
+    friend_data_manager_ = std::make_unique<FriendDataManager>(redis_.get());
+
     // Register message handlers
     register_handlers();
 
@@ -50,6 +62,11 @@ bool FriendService::start(const std::string& redis_uri, const std::string& game_
 }
 
 void FriendService::stop() {
+    friend_data_manager_.reset();
+    recommend_manager_.reset();
+    visit_manager_.reset();
+    gift_manager_.reset();
+    chat_manager_.reset();
     friend_manager_.reset();
     if (game_session_) {
         game_session_->disconnect();
@@ -96,35 +113,29 @@ void FriendService::register_handlers() {
     };
 
     // Friend chat messages (8020-8024)
-    handlers_[MSG_ID_FRIEND_CHAT_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendChatReq from player={}", player_id);
-        // TODO: implement ChatManager::handle_send
+    handlers_[MSG_ID_FRIEND_CHAT_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        chat_manager_->handle_send(player_id, data, len);
     };
-    handlers_[MSG_ID_FRIEND_CHAT_HISTORY_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendChatHistoryReq from player={}", player_id);
-        // TODO: implement ChatManager::handle_history
+    handlers_[MSG_ID_FRIEND_CHAT_HISTORY_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        chat_manager_->handle_history(player_id, data, len);
     };
 
     // Friend gift messages (8030-8032)
-    handlers_[MSG_ID_FRIEND_GIFT_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendGiftReq from player={}", player_id);
-        // TODO: implement GiftManager::handle_send
+    handlers_[MSG_ID_FRIEND_GIFT_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        gift_manager_->handle_send(player_id, data, len);
     };
 
     // Friend visit messages (8040-8043)
-    handlers_[MSG_ID_FRIEND_VISIT_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendVisitReq from player={}", player_id);
-        // TODO: implement VisitManager::handle_visit
+    handlers_[MSG_ID_FRIEND_VISIT_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        visit_manager_->handle_visit(player_id, data, len);
     };
-    handlers_[MSG_ID_FRIEND_VISIT_ACTION_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendVisitActionReq from player={}", player_id);
-        // TODO: implement VisitManager::handle_action
+    handlers_[MSG_ID_FRIEND_VISIT_ACTION_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        visit_manager_->handle_action(player_id, data, len);
     };
 
     // Friend recommend messages (8050-8051)
-    handlers_[MSG_ID_FRIEND_RECOMMEND_REQ] = [](uint64_t player_id, const uint8_t* data, size_t len) {
-        SPDLOG_INFO("[FriendService]FriendRecommendReq from player={}", player_id);
-        // TODO: implement RecommendManager::handle_recommend
+    handlers_[MSG_ID_FRIEND_RECOMMEND_REQ] = [this](uint64_t player_id, const uint8_t* data, size_t len) {
+        recommend_manager_->handle_recommend(player_id, data, len);
     };
 
     // Friend block messages (8060-8063)

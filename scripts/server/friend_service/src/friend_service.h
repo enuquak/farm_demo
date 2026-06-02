@@ -33,6 +33,11 @@ public:
 
     GameSession* game_session() { return game_session_.get(); }
     FriendManager* friend_manager() { return friend_manager_.get(); }
+    ChatManager* chat_manager() { return chat_manager_.get(); }
+    GiftManager* gift_manager() { return gift_manager_.get(); }
+    VisitManager* visit_manager() { return visit_manager_.get(); }
+    RecommendManager* recommend_manager() { return recommend_manager_.get(); }
+    FriendDataManager* friend_data_manager() { return friend_data_manager_.get(); }
 
 private:
     void register_handlers();
@@ -41,6 +46,11 @@ private:
     std::unique_ptr<RedisConnection> redis_;
     std::unique_ptr<GameSession> game_session_;
     std::unique_ptr<FriendManager> friend_manager_;
+    std::unique_ptr<ChatManager> chat_manager_;
+    std::unique_ptr<GiftManager> gift_manager_;
+    std::unique_ptr<VisitManager> visit_manager_;
+    std::unique_ptr<RecommendManager> recommend_manager_;
+    std::unique_ptr<FriendDataManager> friend_data_manager_;
 
     using MsgHandler = std::function<void(uint64_t, const uint8_t*, size_t)>;
     std::unordered_map<uint32_t, MsgHandler> handlers_;

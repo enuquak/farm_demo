@@ -30,6 +30,11 @@ set(SOURCES
     src/main.cpp
     src/friend_service.cpp
     src/friend_manager.cpp
+    src/chat_manager.cpp
+    src/gift_manager.cpp
+    src/visit_manager.cpp
+    src/recommend_manager.cpp
+    src/friend_data_manager.cpp
     src/game_session.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp
