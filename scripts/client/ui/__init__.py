@@ -12,6 +12,8 @@ from .toast_channel import ToastChannel
 from .marquee_channel import MarqueeChannel
 from .toast_renderer import ToastRenderer
 from .marquee_renderer import MarqueeRenderer
+from .friend_list_panel import FriendListPanel
+from .friend_chat_panel import FriendChatPanel
 
 __all__ = [
     'EnergyBar',
@@ -24,4 +26,6 @@ __all__ = [
     'MarqueeChannel',
     'ToastRenderer',
     'MarqueeRenderer',
+    'FriendListPanel',
+    'FriendChatPanel',
 ]
