@@ -38,7 +38,7 @@
 **Files:**
 - 无代码文件变更，仅环境配置
 
-- [ ] **Step 1: 使用 vcpkg 安装 etcd-cpp-apiv3**
+- [x] **Step 1: 使用 vcpkg 安装 etcd-cpp-apiv3**
 
 ```bash
 cd C:/vcpkg  # 或你的 vcpkg 路径
@@ -47,7 +47,7 @@ cd C:/vcpkg  # 或你的 vcpkg 路径
 
 Expected: 安装成功，输出安装路径（如 `C:/vcpkg/installed/x64-windows`）
 
-- [ ] **Step 2: 验证安装**
+- [x] **Step 2: 验证安装**
 
 ```bash
 ls C:/vcpkg/installed/x64-windows/include/etcd/
@@ -56,7 +56,7 @@ ls C:/vcpkg/installed/x64-windows/lib/ | grep etcd
 
 Expected: 能看到 `etcd/Client.hpp` 等头文件和 `etcd-cpp-api.lib` 库文件
 
-- [ ] **Step 3: 记录安装路径**
+- [x] **Step 3: 记录安装路径**
 
 将 etcd 安装路径记录下来，后续 CMakeLists.txt 会使用。假设路径为 `C:/vcpkg/installed/x64-windows`。
 
@@ -67,7 +67,7 @@ Expected: 能看到 `etcd/Client.hpp` 等头文件和 `etcd-cpp-api.lib` 库文�
 **Files:**
 - Create: `scripts/server/common/include/etcd_manager.h`
 
-- [ ] **Step 1: 创建 EtcdManager 头文件**
+- [x] **Step 1: 创建 EtcdManager 头文件**
 
 ```cpp
 #pragma once
@@ -226,7 +226,7 @@ private:
 }  // namespace farm
 ```
 
-- [ ] **Step 2: 验证头文件语法**
+- [x] **Step 2: 验证头文件语法**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -236,7 +236,7 @@ cat scripts/server/common/include/etcd_manager.h | head -5
 
 Expected: 文件存在且内容正确
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/server/common/include/etcd_manager.h
@@ -250,7 +250,7 @@ git commit -m "feat(etcd): add EtcdManager header file"
 **Files:**
 - Create: `scripts/server/common/src/etcd_manager.cpp`
 
-- [ ] **Step 1: 创建 EtcdManager 实现文件 - 构造/析构/connect**
+- [x] **Step 1: 创建 EtcdManager 实现文件 - 构造/析构/connect**
 
 ```cpp
 #include "etcd_manager.h"
@@ -378,7 +378,7 @@ void EtcdManager::lease_keepalive_loop() {
 }  // namespace farm
 ```
 
-- [ ] **Step 2: 添加服务注册/注销功能**
+- [x] **Step 2: 添加服务注册/注销功能**
 
 在 `etcd_manager.cpp` 末尾（`}` 之前）添加：
 
@@ -525,7 +525,7 @@ void EtcdManager::watch_services(const std::string& service_type,
 }
 ```
 
-- [ ] **Step 3: 添加配置中心功能**
+- [x] **Step 3: 添加配置中心功能**
 
 在 `etcd_manager.cpp` 末尾（`}` 之前）添加：
 
@@ -620,7 +620,7 @@ void EtcdManager::watch_config(const std::string& key_prefix,
 }  // namespace farm
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add scripts/server/common/src/etcd_manager.cpp
@@ -636,7 +636,7 @@ git commit -m "feat(etcd): implement EtcdManager with service registration, disc
 - Modify: `scripts/server/game_server/CMakeLists.txt`
 - Modify: `scripts/server/dbmgr/CMakeLists.txt`
 
-- [ ] **Step 1: 更新 gate_server/CMakeLists.txt**
+- [x] **Step 1: 更新 gate_server/CMakeLists.txt**
 
 在 `set(LIBEVENT_ROOT ...)` 后添加：
 
@@ -682,7 +682,7 @@ set(ETCD_ROOT "C:/vcpkg/installed/x64-windows")
         protobuf
 ```
 
-- [ ] **Step 2: 更新 game_server/CMakeLists.txt**
+- [x] **Step 2: 更新 game_server/CMakeLists.txt**
 
 同样的修改：
 
@@ -691,11 +691,11 @@ set(ETCD_ROOT "C:/vcpkg/installed/x64-windows")
 3. include 目录添加 `${ETCD_ROOT}/include`
 4. 链接库添加 etcd 相关库
 
-- [ ] **Step 3: 更新 dbmgr/CMakeLists.txt**
+- [x] **Step 3: 更新 dbmgr/CMakeLists.txt**
 
 同样的修改。
 
-- [ ] **Step 4: 验证 CMake 配置**
+- [x] **Step 4: 验证 CMake 配置**
 
 ```bash
 cd D:/mb_workspace/farm_demo/scripts/server/gate_server/build
@@ -704,7 +704,7 @@ cmake .. -G "Visual Studio 17 2022" -A x64
 
 Expected: CMake 配置成功，无错误
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/server/gate_server/CMakeLists.txt
@@ -722,7 +722,7 @@ git commit -m "build: add etcd-cpp-apiv3 dependency to all server CMakeLists"
 - Modify: `config/game_server.json`
 - Modify: `config/dbmgr.json`
 
-- [ ] **Step 1: 更新 gate_server.json**
+- [x] **Step 1: 更新 gate_server.json**
 
 ```json
 {
@@ -748,7 +748,7 @@ git commit -m "build: add etcd-cpp-apiv3 dependency to all server CMakeLists"
 }
 ```
 
-- [ ] **Step 2: 更新 game_server.json**
+- [x] **Step 2: 更新 game_server.json**
 
 ```json
 {
@@ -774,7 +774,7 @@ git commit -m "build: add etcd-cpp-apiv3 dependency to all server CMakeLists"
 }
 ```
 
-- [ ] **Step 3: 更新 dbmgr.json**
+- [x] **Step 3: 更新 dbmgr.json**
 
 ```json
 {
@@ -812,7 +812,7 @@ git commit -m "build: add etcd-cpp-apiv3 dependency to all server CMakeLists"
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add config/gate_server.json config/game_server.json config/dbmgr.json
@@ -826,7 +826,7 @@ git commit -m "config: simplify server configs for etcd-based discovery"
 **Files:**
 - Modify: `scripts/server/dbmgr/src/main.cpp`
 
-- [ ] **Step 1: 修改 dbmgr/main.cpp - 添加 etcd 头文件**
+- [x] **Step 1: 修改 dbmgr/main.cpp - 添加 etcd 头文件**
 
 在文件顶部的 `#include` 区域添加：
 
@@ -834,7 +834,7 @@ git commit -m "config: simplify server configs for etcd-based discovery"
 #include "etcd_manager.h"
 ```
 
-- [ ] **Step 2: 修改 dbmgr/main.cpp - 添加 etcd 初始化代码**
+- [x] **Step 2: 修改 dbmgr/main.cpp - 添加 etcd 初始化代码**
 
 在 `farm::init_logging_from_config("dbmgr", config);` 之后，`signal(SIGINT, signal_handler);` 之前，添加：
 
@@ -864,7 +864,7 @@ git commit -m "config: simplify server configs for etcd-based discovery"
     SPDLOG_INFO("[Main]Registered to etcd as dbmgr/{}", index);
 ```
 
-- [ ] **Step 3: 修改 signal_handler - 确保优雅退出**
+- [x] **Step 3: 修改 signal_handler - 确保优雅退出**
 
 修改 `signal_handler` 函数，使其能访问 etcd：
 
@@ -888,7 +888,7 @@ static void signal_handler(int sig) {
     g_etcd = &etcd;
 ```
 
-- [ ] **Step 4: 验证编译**
+- [x] **Step 4: 验证编译**
 
 ```bash
 cd D:/mb_workspace/farm_demo/scripts/server/dbmgr/build
@@ -898,7 +898,7 @@ cmake --build . --config Debug
 
 Expected: 编译成功
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/server/dbmgr/src/main.cpp
@@ -912,13 +912,13 @@ git commit -m "feat(dbmgr): integrate etcd service registration"
 **Files:**
 - Modify: `scripts/server/game_server/src/main.cpp`
 
-- [ ] **Step 1: 修改 game_server/main.cpp - 添加 etcd 头文件**
+- [x] **Step 1: 修改 game_server/main.cpp - 添加 etcd 头文件**
 
 ```cpp
 #include "etcd_manager.h"
 ```
 
-- [ ] **Step 2: 修改 game_server/main.cpp - 添加 etcd 初始化**
+- [x] **Step 2: 修改 game_server/main.cpp - 添加 etcd 初始化**
 
 在 `farm::init_logging_from_config("game_server", config);` 之后，`signal(SIGINT, signal_handler);` 之前：
 
@@ -977,7 +977,7 @@ git commit -m "feat(dbmgr): integrate etcd service registration"
     });
 ```
 
-- [ ] **Step 3: 修改 signal_handler**
+- [x] **Step 3: 修改 signal_handler**
 
 ```cpp
 static farm::EtcdManager* g_etcd = nullptr;
@@ -999,7 +999,7 @@ static void signal_handler(int sig) {
     g_etcd = &etcd;
 ```
 
-- [ ] **Step 4: 移除旧的静态配置读取**
+- [x] **Step 4: 移除旧的静态配置读取**
 
 删除或注释掉原来的 dbmgr 静态配置读取代码：
 
@@ -1016,7 +1016,7 @@ static void signal_handler(int sig) {
     // }
 ```
 
-- [ ] **Step 5: 验证编译**
+- [x] **Step 5: 验证编译**
 
 ```bash
 cd D:/mb_workspace/farm_demo/scripts/server/game_server/build
@@ -1026,7 +1026,7 @@ cmake --build . --config Debug
 
 Expected: 编译成功
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/server/game_server/src/main.cpp
@@ -1042,7 +1042,7 @@ git commit -m "feat(game_server): integrate etcd for service registration and db
 - Modify: `scripts/server/gate_server/src/gate_server.cpp`
 - Modify: `scripts/server/gate_server/src/main.cpp`
 
-- [ ] **Step 1: 修改 gate_server.h - 添加 remove_game_server 和 mutex**
+- [x] **Step 1: 修改 gate_server.h - 添加 remove_game_server 和 mutex**
 
 在 `gate_server.h` 中添加 `<mutex>` 头文件：
 
@@ -1064,7 +1064,7 @@ git commit -m "feat(game_server): integrate etcd for service registration and db
     mutable std::mutex game_conns_mutex_;
 ```
 
-- [ ] **Step 2: 修改 gate_server.cpp - 实现 remove_game_server**
+- [x] **Step 2: 修改 gate_server.cpp - 实现 remove_game_server**
 
 在 `gate_server.cpp` 中添加 `remove_game_server` 实现：
 
@@ -1207,7 +1207,7 @@ void GateServer::stop() {
 }
 ```
 
-- [ ] **Step 3: 修改 gate_server/main.cpp - 添加 etcd 集成**
+- [x] **Step 3: 修改 gate_server/main.cpp - 添加 etcd 集成**
 
 添加 etcd 头文件：
 
@@ -1302,7 +1302,7 @@ static void signal_handler(int sig) {
     });
 ```
 
-- [ ] **Step 4: 验证编译**
+- [x] **Step 4: 验证编译**
 
 ```bash
 cd D:/mb_workspace/farm_demo/scripts/server/gate_server/build
@@ -1312,7 +1312,7 @@ cmake --build . --config Debug
 
 Expected: 编译成功
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/server/gate_server/src/gate_server.h
@@ -1328,7 +1328,7 @@ git commit -m "feat(gate_server): integrate etcd for service registration and ga
 **Files:**
 - 无代码修改，仅测试
 
-- [ ] **Step 1: 启动 etcd**
+- [x] **Step 1: 启动 etcd**
 
 ```bash
 # 如果还没有 etcd，可以用 Docker 启动
@@ -1340,7 +1340,7 @@ docker run -d --name etcd \
        --advertise-client-urls http://localhost:2379
 ```
 
-- [ ] **Step 2: 手动写入配置到 etcd**
+- [x] **Step 2: 手动写入配置到 etcd**
 
 ```bash
 # 使用 etcdctl 写入配置
@@ -1348,7 +1348,7 @@ etcdctl put /farm/config/servers/game/1 '{"ip":"0.0.0.0","port":9090,"id":1}'
 etcdctl put /farm/config/servers/dbmgr/0 '{"ip":"0.0.0.0","port":5000,"index":0}'
 ```
 
-- [ ] **Step 3: 启动 dbmgr**
+- [x] **Step 3: 启动 dbmgr**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -1357,7 +1357,7 @@ cd D:/mb_workspace/farm_demo
 
 Expected: 看到日志 `Registered to etcd as dbmgr/0`
 
-- [ ] **Step 4: 启动 game_server**
+- [x] **Step 4: 启动 game_server**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -1366,7 +1366,7 @@ cd D:/mb_workspace/farm_demo
 
 Expected: 看到日志 `Discovered DBMgr from etcd: 127.0.0.1:5000` 和 `Registered to etcd as game/1`
 
-- [ ] **Step 5: 启动 gate_server**
+- [x] **Step 5: 启动 gate_server**
 
 ```bash
 cd D:/mb_workspace/farm_demo
@@ -1375,7 +1375,7 @@ cd D:/mb_workspace/farm_demo
 
 Expected: 看到日志 `Discovered Game Server from etcd: server_id=1 at 0.0.0.0:9090` 和 `Registered to etcd as gate/gate-1`
 
-- [ ] **Step 6: 验证 etcd 注册信息**
+- [x] **Step 6: 验证 etcd 注册信息**
 
 ```bash
 etcdctl get /farm/services/ --prefix
@@ -1383,13 +1383,13 @@ etcdctl get /farm/services/ --prefix
 
 Expected: 看到三个服务的注册信息
 
-- [ ] **Step 7: 测试动态发现**
+- [x] **Step 7: 测试动态发现**
 
 1. 停止 game_server
 2. 等待 15 秒（lease 过期）
 3. 在 gate_server 日志中看到 `Game Server 1 removed from etcd`
 
-- [ ] **Step 8: Commit 最终状态**
+- [x] **Step 8: Commit 最终状态**
 
 ```bash
 git add -A
