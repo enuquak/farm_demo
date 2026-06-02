@@ -384,42 +384,96 @@ void TeamServer::broadcast_to_team(uint64_t team_id, uint32_t msg_id,
     }
 }
 
-// Team message handlers - implemented in Task 5
+// Team message handlers
 void TeamServer::handle_team_create_req(uint64_t player_id, const uint8_t* payload, size_t len) {
-    // TODO: Task 5
+    farm::TeamCreateReq req;
+    if (!req.ParseFromArray(payload, static_cast<int>(len))) return;
+    team_mgr_.create_team(player_id);
 }
 
 void TeamServer::handle_team_disband_req(uint64_t player_id, const uint8_t* payload, size_t len) {
-    // TODO: Task 5
+    farm::TeamDisbandReq req;
+    if (!req.ParseFromArray(payload, static_cast<int>(len))) return;
+    team_mgr_.disband_team(player_id);
 }
 
 void TeamServer::handle_team_invite_req(uint64_t player_id, const uint8_t* payload, size_t len) {
-    // TODO: Task 5
+    farm::TeamInviteReq req;
+    if (!req.ParseFromArray(payload, static_cast<int>(len))) return;
+    team_mgr_.invite_player(player_id, req.target_id());
 }
 
 void TeamServer::handle_team_accept_req(uint64_t player_id, const uint8_t* payload, size_t len) {
-    // TODO: Task 5
+    farm::TeamAcceptReq req;
+    if (!req.ParseFromArray(payload, static_cast<int>(len))) return;
+    team_mgr_.accept_invite(player_id, req.team_id());
 }
 
 void TeamServer::handle_team_reject_req(uint64_t player_id, const uint8_t* payload, size_t len) {
-    // TODO: Task 5
+    farm::TeamRejectReq req;
+    if (!req.ParseFromArray(payload, static_cast<int>(len))) return;
+    team_mgr_.reject_invite(player_id, req.team_id());
 }
 
 void TeamServer::handle_team_leave_req(uint64_t player_id, const uint8_t* payload, size_t len) {
-    // TODO: Task 5
+    farm::TeamLeaveReq req;
+    if (!req.ParseFromArray(payload, static_cast<int>(len))) return;
+    team_mgr_.leave_team(player_id);
 }
 
 void TeamServer::handle_team_kick_req(uint64_t player_id, const uint8_t* payload, size_t len) {
-    // TODO: Task 5
+    farm::TeamKickReq req;
+    if (!req.ParseFromArray(payload, static_cast<int>(len))) return;
+    team_mgr_.kick_member(player_id, req.target_id());
 }
 
 void TeamServer::handle_team_info_req(uint64_t player_id, const uint8_t* payload, size_t len) {
-    // TODO: Task 5
+    farm::TeamInfoReq req;
+    if (!req.ParseFromArray(payload, static_cast<int>(len))) return;
+
+    farm::TeamInfoResp resp;
+    auto* team = team_mgr_.get_player_team(player_id);
+    if (team) {
+        resp.set_code(farm::TEAM_SUCCESS);
+        resp.set_team_id(team->team_id);
+        resp.set_leader_id(team->leader_id);
+        resp.set_status(static_cast<uint32_t>(team->status));
+        resp.set_cave_level(team->cave_level);
+        for (uint64_t mid : team->members) {
+            auto* member = resp.add_members();
+            member->set_player_id(mid);
+            member->set_is_leader(mid == team->leader_id);
+        }
+    } else {
+        resp.set_code(farm::TEAM_NOT_IN_TEAM);
+    }
+
+    std::string data;
+    resp.SerializeToString(&data);
+    send_to_player(player_id, MSG_ID_TEAM_INFO_RESP,
+                   reinterpret_cast<const uint8_t*>(data.data()), data.size());
 }
 
 void TeamServer::handle_team_query_members_req(std::shared_ptr<TeamGateSession> session,
                                                 const uint8_t* payload, size_t len) {
-    // TODO: Task 5
+    farm::TeamQueryMembersReq req;
+    if (!req.ParseFromArray(payload, static_cast<int>(len))) return;
+
+    farm::TeamQueryMembersResp resp;
+    auto* team = team_mgr_.get_player_team(req.player_id());
+    if (team) {
+        resp.set_code(0);
+        resp.set_team_id(team->team_id);
+        for (uint64_t mid : team->members) {
+            resp.add_member_ids(mid);
+        }
+    } else {
+        resp.set_code(1);  // not in team
+    }
+
+    std::string data;
+    resp.SerializeToString(&data);
+    send_to_gate(session, MSG_ID_TEAM_QUERY_MEMBERS_RESP, data);
 }
 
 }  // namespace farm
