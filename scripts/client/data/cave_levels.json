@@ -1,0 +1,108 @@
+{
+  "cave_levels": [
+    {
+      "level": 1,
+      "name": "矿洞入口",
+      "scene_id": "cave_1",
+      "max_monsters": 5,
+      "monster_types": ["slime"],
+      "spawn_points": [
+        {"x": 10, "y": 8},
+        {"x": 15, "y": 12},
+        {"x": 8, "y": 15}
+      ],
+      "entrance": {"x": 2, "y": 18},
+      "exit_down": {"x": 18, "y": 2},
+      "map_size": [20, 20],
+      "room_count": 4,
+      "ambient_color": [40, 30, 30],
+      "light_radius": 5,
+      "boss_lighting": null,
+      "spawn_config": {
+        "respawn_delay": 10.0,
+        "spawn_check_interval": 5.0,
+        "spawn_radius": 2
+      }
+    },
+    {
+      "level": 2,
+      "name": "矿洞深层",
+      "scene_id": "cave_2",
+      "max_monsters": 8,
+      "monster_types": ["slime", "bat"],
+      "spawn_points": [
+        {"x": 5, "y": 5},
+        {"x": 15, "y": 8},
+        {"x": 10, "y": 15},
+        {"x": 18, "y": 12}
+      ],
+      "entrance": {"x": 2, "y": 18},
+      "exit_down": {"x": 18, "y": 2},
+      "exit_up": {"x": 2, "y": 18},
+      "map_size": [25, 25],
+      "room_count": 6,
+      "ambient_color": [30, 25, 25],
+      "light_radius": 4,
+      "boss_lighting": null,
+      "spawn_config": {
+        "respawn_delay": 8.0,
+        "spawn_check_interval": 4.0,
+        "spawn_radius": 2
+      }
+    },
+    {
+      "level": 3,
+      "name": "骷髅大厅",
+      "scene_id": "cave_3",
+      "max_monsters": 10,
+      "monster_types": ["bat", "skeleton"],
+      "spawn_points": [
+        {"x": 8, "y": 8},
+        {"x": 12, "y": 8},
+        {"x": 10, "y": 12},
+        {"x": 15, "y": 15},
+        {"x": 5, "y": 15}
+      ],
+      "entrance": {"x": 2, "y": 18},
+      "exit_down": {"x": 18, "y": 2},
+      "exit_up": {"x": 2, "y": 18},
+      "map_size": [30, 30],
+      "room_count": 8,
+      "ambient_color": [25, 20, 20],
+      "light_radius": 3,
+      "boss_lighting": null,
+      "spawn_config": {
+        "respawn_delay": 6.0,
+        "spawn_check_interval": 3.0,
+        "spawn_radius": 3
+      }
+    },
+    {
+      "level": 10,
+      "name": "骷髅王座",
+      "scene_id": "cave_boss",
+      "max_monsters": 1,
+      "monster_types": ["boss_skeleton_king"],
+      "spawn_points": [
+        {"x": 10, "y": 5}
+      ],
+      "entrance": {"x": 10, "y": 18},
+      "exit_up": {"x": 10, "y": 18},
+      "map_size": [20, 20],
+      "room_count": 1,
+      "is_boss_room": true,
+      "ambient_color": [20, 15, 15],
+      "light_radius": 6,
+      "boss_lighting": {
+        "color": [150, 50, 50],
+        "pulse_speed": 0.5,
+        "pulse_range": [0.8, 1.2]
+      },
+      "spawn_config": {
+        "respawn_delay": 0,
+        "spawn_check_interval": 0,
+        "spawn_radius": 0
+      }
+    }
+  ]
+}
