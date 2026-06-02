@@ -34,3 +34,6 @@ runtimeData/logs/
 
 # 工具日志
 logs/
+
+# 脑暴会话临时文件
+.superpowers/

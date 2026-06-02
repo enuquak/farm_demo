@@ -14,6 +14,7 @@ from .hud import HUD
 from .ui.energy_bar import EnergyBar
 from .ui.exhaustion_modal import ExhaustionModal
 from .ui.time_hud import TimeHUD
+from .dialog_ui import DialogUI
 
 logger = logging.getLogger("client.game_renderer")
 
@@ -60,6 +61,9 @@ class GameRenderer:
             player_data.get('time_slot', 0)
         )
 
+        # 对话 UI
+        self._dialog_ui = DialogUI(screen_width, screen_height)
+
     @property
     def exhaustion_modal(self) -> ExhaustionModal:
         """获取精疲力尽弹窗对象（用于事件处理）"""
@@ -75,9 +79,15 @@ class GameRenderer:
         """获取时间 HUD 对象（用于数据更新）"""
         return self._time_hud
 
+    @property
+    def dialog_ui(self) -> DialogUI:
+        return self._dialog_ui
+
     def render(self, dt: float, group, player_sprite: PlayerSprite,
                scene_manager, map_renderer,
-               drop_item_renderer=None, notification_manager=None):
+               drop_item_renderer=None, notification_manager=None,
+               npc_manager=None, bubble_ui=None,
+               dialog_engine=None, affection_system=None):
         """
         渲染一帧
 
@@ -93,6 +103,20 @@ class GameRenderer:
 
         # pyscroll 渲染地图和精灵（自动处理图层遮挡）
         group.draw(self._screen)
+
+        # 掉落物渲染
+        if drop_item_renderer is not None:
+            camera_x = map_renderer.x
+            camera_y = map_renderer.y
+            drop_item_renderer.render(self._screen, camera_x, camera_y)
+
+        # 头顶气泡渲染
+        if bubble_ui and npc_manager:
+            camera_x, camera_y = map_renderer.center
+            for npc in npc_manager.get_npcs_in_scene():
+                screen_x = int(npc.world_x + npc.rect.width // 2)
+                screen_y = int(npc.world_y)
+                bubble_ui.render(self._screen, npc.npc_id, screen_x, screen_y)
 
         # HUD 渲染（在游戏画面上方）
         tile_x = player_sprite.world_x / TILE_SIZE
@@ -111,14 +135,29 @@ class GameRenderer:
         # 时间 HUD 渲染（左上角）
         self._time_hud.draw(self._screen)
 
+        # 对话框渲染
+        if dialog_engine and dialog_engine.is_active:
+            npc_id = dialog_engine.current_npc_id
+            npc_name = ""
+            bubble_color = (70, 130, 180)
+            if npc_manager:
+                npc = npc_manager.get_npc_by_id(npc_id)
+                if npc:
+                    npc_name = npc.name
+            self._dialog_ui.render(
+                screen=self._screen,
+                npc_id=npc_id,
+                npc_name=npc_name,
+                displayed_text=dialog_engine.displayed_text,
+                is_text_complete=dialog_engine.is_text_complete,
+                responses=dialog_engine.responses,
+                selected_option=dialog_engine.selected_option,
+                is_choosing=dialog_engine.state.value == 'choosing',
+                bubble_color=bubble_color,
+            )
+
         # 精疲力尽弹窗渲染（最顶层）
         self._exhaustion_modal.draw(self._screen)
-
-        # 掉落物渲染
-        if drop_item_renderer is not None:
-            camera_x = map_renderer.x
-            camera_y = map_renderer.y
-            drop_item_renderer.render(self._screen, camera_x, camera_y)
 
         # 通知渲染
         if notification_manager is not None:

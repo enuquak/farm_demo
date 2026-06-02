@@ -65,6 +65,12 @@ ITEM_EFFECTS: Dict[str, Dict[str, Any]] = {
         "description": "烹饪",
         "interactRange": 1,
     },
+    "obj:NPC": {
+        "tool": None,
+        "effect": "start_dialog",
+        "description": "与 NPC 对话",
+        "interactRange": 1,
+    },
 
     # 地面层匹配
     "gnd:GRASS": {
@@ -253,3 +259,15 @@ def get_portal_scene(map_data, tile_x: int, tile_y: int) -> Optional[str]:
         return "farm"
 
     return None
+
+
+def is_npc(map_data, tile_x: int, tile_y: int) -> bool:
+    """检查格子上是否有 NPC。"""
+    return get_interact_type(map_data, tile_x, tile_y) == "dialog"
+
+
+def get_npc_at_tile(npc_manager, tile_x: int, tile_y: int):
+    """获取格子上的 NPC（需要 NPCManager 实例）。"""
+    if npc_manager is None:
+        return None
+    return npc_manager.get_npc_at_tile(tile_x, tile_y)
