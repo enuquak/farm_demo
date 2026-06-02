@@ -114,6 +114,14 @@ int main(int argc, char* argv[]) {
 
     farm::GateServer server(ip, port);
 
+    // 配置 Chat Server 连接
+    std::string chat_ip = config.value("/chat_server/ip"_json_pointer, "");
+    uint16_t chat_port = static_cast<uint16_t>(config.value("/chat_server/port"_json_pointer, 0));
+    if (!chat_ip.empty() && chat_port > 0) {
+        server.set_chat_server(chat_ip, chat_port);
+        SPDLOG_INFO("[Main]Chat Server configured: {}:{}", chat_ip, chat_port);
+    }
+
     // 从 etcd 发现 game servers
     auto games = etcd.discover_services("game");
     for (const auto& game : games) {

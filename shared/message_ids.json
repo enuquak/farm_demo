@@ -194,6 +194,26 @@
     {"code": 8060, "name": "MSG_ID_FRIEND_BLOCK_REQ", "description": "拉黑玩家"},
     {"code": 8061, "name": "MSG_ID_FRIEND_BLOCK_RESP", "description": "拉黑结果"},
     {"code": 8062, "name": "MSG_ID_FRIEND_UNBLOCK_REQ", "description": "取消拉黑"},
-    {"code": 8063, "name": "MSG_ID_FRIEND_UNBLOCK_RESP", "description": "取消拉黑结果"}
+    {"code": 8063, "name": "MSG_ID_FRIEND_UNBLOCK_RESP", "description": "取消拉黑结果"},
+    {"code": 7001, "name": "MSG_ID_TEAM_CREATE_REQ", "description": "创建队伍请求"},
+    {"code": 7002, "name": "MSG_ID_TEAM_CREATE_RESP", "description": "创建队伍响应"},
+    {"code": 7003, "name": "MSG_ID_TEAM_DISBAND_REQ", "description": "解散队伍请求"},
+    {"code": 7004, "name": "MSG_ID_TEAM_DISBAND_RESP", "description": "解散队伍响应"},
+    {"code": 7005, "name": "MSG_ID_TEAM_INVITE_REQ", "description": "邀请玩家组队"},
+    {"code": 7006, "name": "MSG_ID_TEAM_INVITE_RESP", "description": "邀请结果"},
+    {"code": 7007, "name": "MSG_ID_TEAM_INVITE_NOTIFY", "description": "收到组队邀请通知"},
+    {"code": 7008, "name": "MSG_ID_TEAM_ACCEPT_REQ", "description": "接受组队邀请"},
+    {"code": 7009, "name": "MSG_ID_TEAM_ACCEPT_RESP", "description": "接受邀请结果"},
+    {"code": 7010, "name": "MSG_ID_TEAM_REJECT_REQ", "description": "拒绝组队邀请"},
+    {"code": 7011, "name": "MSG_ID_TEAM_REJECT_RESP", "description": "拒绝邀请结果"},
+    {"code": 7012, "name": "MSG_ID_TEAM_LEAVE_REQ", "description": "离开队伍"},
+    {"code": 7013, "name": "MSG_ID_TEAM_LEAVE_RESP", "description": "离开队伍结果"},
+    {"code": 7014, "name": "MSG_ID_TEAM_KICK_REQ", "description": "踢出队伍成员"},
+    {"code": 7015, "name": "MSG_ID_TEAM_KICK_RESP", "description": "踢出结果"},
+    {"code": 7016, "name": "MSG_ID_TEAM_INFO_REQ", "description": "查询队伍信息"},
+    {"code": 7017, "name": "MSG_ID_TEAM_INFO_RESP", "description": "队伍信息响应"},
+    {"code": 7018, "name": "MSG_ID_TEAM_MEMBER_UPDATE", "description": "队伍成员变更通知"},
+    {"code": 7019, "name": "MSG_ID_TEAM_LEADER_CHANGE", "description": "队长变更通知"},
+    {"code": 7020, "name": "MSG_ID_TEAM_STATUS_UPDATE", "description": "队伍状态变更通知"}
   ]
 }
