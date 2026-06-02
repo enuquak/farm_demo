@@ -1,5 +1,5 @@
 // 自动生成，请勿手动修改
-// 生成时间：2026-06-02 23:07:12
+// 生成时间：2026-06-02 23:12:54
 // 源文件：shared/message_ids.json
 #pragma once
 
@@ -57,5 +57,38 @@ inline constexpr uint32_t MSG_ID_COMBAT_LEVEL_UP                  = 5031;  // �
 inline constexpr uint32_t MSG_ID_CHAT_SEND_REQ                    = 6001;  // 聊天发送请求
 inline constexpr uint32_t MSG_ID_CHAT_SEND_RESP                   = 6002;  // 聊天发送响应
 inline constexpr uint32_t MSG_ID_CHAT_MESSAGE                     = 6003;  // 聊天消息推送
+inline constexpr uint32_t MSG_ID_FRIEND_SEARCH_REQ                = 8001;  // 搜索玩家请求
+inline constexpr uint32_t MSG_ID_FRIEND_SEARCH_RESP               = 8002;  // 搜索玩家响应
+inline constexpr uint32_t MSG_ID_FRIEND_ADD_REQ                   = 8003;  // 发送好友请求
+inline constexpr uint32_t MSG_ID_FRIEND_ADD_RESP                  = 8004;  // 好友请求结果
+inline constexpr uint32_t MSG_ID_FRIEND_ADD_NOTIFY                = 8005;  // 收到好友请求通知
+inline constexpr uint32_t MSG_ID_FRIEND_ACCEPT_REQ                = 8006;  // 接受好友请求
+inline constexpr uint32_t MSG_ID_FRIEND_ACCEPT_RESP               = 8007;  // 接受好友结果
+inline constexpr uint32_t MSG_ID_FRIEND_REJECT_REQ                = 8008;  // 拒绝好友请求
+inline constexpr uint32_t MSG_ID_FRIEND_REJECT_RESP               = 8009;  // 拒绝好友结果
+inline constexpr uint32_t MSG_ID_FRIEND_DELETE_REQ                = 8010;  // 删除好友
+inline constexpr uint32_t MSG_ID_FRIEND_DELETE_RESP               = 8011;  // 删除好友结果
+inline constexpr uint32_t MSG_ID_FRIEND_LIST_REQ                  = 8012;  // 获取好友列表
+inline constexpr uint32_t MSG_ID_FRIEND_LIST_RESP                 = 8013;  // 好友列表数据
+inline constexpr uint32_t MSG_ID_FRIEND_ONLINE_NOTIFY             = 8014;  // 好友上线通知
+inline constexpr uint32_t MSG_ID_FRIEND_OFFLINE_NOTIFY            = 8015;  // 好友下线通知
+inline constexpr uint32_t MSG_ID_FRIEND_CHAT_REQ                  = 8020;  // 发送私聊消息
+inline constexpr uint32_t MSG_ID_FRIEND_CHAT_RESP                 = 8021;  // 私聊发送结果
+inline constexpr uint32_t MSG_ID_FRIEND_CHAT_NOTIFY               = 8022;  // 收到私聊消息
+inline constexpr uint32_t MSG_ID_FRIEND_CHAT_HISTORY_REQ          = 8023;  // 获取聊天记录
+inline constexpr uint32_t MSG_ID_FRIEND_CHAT_HISTORY_RESP         = 8024;  // 聊天记录数据
+inline constexpr uint32_t MSG_ID_FRIEND_GIFT_REQ                  = 8030;  // 赠送物品请求
+inline constexpr uint32_t MSG_ID_FRIEND_GIFT_RESP                 = 8031;  // 赠送物品结果
+inline constexpr uint32_t MSG_ID_FRIEND_GIFT_NOTIFY               = 8032;  // 收到礼物通知
+inline constexpr uint32_t MSG_ID_FRIEND_VISIT_REQ                 = 8040;  // 访问好友农场
+inline constexpr uint32_t MSG_ID_FRIEND_VISIT_RESP                = 8041;  // 访问农场结果
+inline constexpr uint32_t MSG_ID_FRIEND_VISIT_ACTION_REQ          = 8042;  // 农场访问操作
+inline constexpr uint32_t MSG_ID_FRIEND_VISIT_ACTION_RESP         = 8043;  // 农场操作结果
+inline constexpr uint32_t MSG_ID_FRIEND_RECOMMEND_REQ             = 8050;  // 获取推荐好友
+inline constexpr uint32_t MSG_ID_FRIEND_RECOMMEND_RESP            = 8051;  // 推荐好友列表
+inline constexpr uint32_t MSG_ID_FRIEND_BLOCK_REQ                 = 8060;  // 拉黑玩家
+inline constexpr uint32_t MSG_ID_FRIEND_BLOCK_RESP                = 8061;  // 拉黑结果
+inline constexpr uint32_t MSG_ID_FRIEND_UNBLOCK_REQ               = 8062;  // 取消拉黑
+inline constexpr uint32_t MSG_ID_FRIEND_UNBLOCK_RESP              = 8063;  // 取消拉黑结果
 
 }  // namespace farm
