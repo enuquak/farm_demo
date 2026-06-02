@@ -13,7 +13,7 @@ public:
     ~RateLimiter() = default;
 
     // Check if player can send on this channel. Returns true if allowed.
-    bool check_limit(uint64_t player_id, uint32_t channel_type, float cooldown_sec);
+    bool check_limit(uint64_t player_id, uint32_t channel_type, float cooldown_sec) const;
 
     // Record that player just sent on this channel.
     void update(uint64_t player_id, uint32_t channel_type);

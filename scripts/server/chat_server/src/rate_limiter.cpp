@@ -6,7 +6,7 @@ std::string RateLimiter::make_key(uint64_t player_id, uint32_t channel_type) {
     return std::to_string(player_id) + ":" + std::to_string(channel_type);
 }
 
-bool RateLimiter::check_limit(uint64_t player_id, uint32_t channel_type, float cooldown_sec) {
+bool RateLimiter::check_limit(uint64_t player_id, uint32_t channel_type, float cooldown_sec) const {
     auto it = last_send_.find(make_key(player_id, channel_type));
     if (it == last_send_.end()) {
         return true;  // No previous send
