@@ -756,7 +756,7 @@ void GameServer::handle_position_update(uint64_t player_id,
     player->set_pos_y(new_y);
     player->set_pos_z(new_z);
 
-    SPDLOG_DEBUG("[Game]Position updated: player_id=({:.1f},{:.1f})", player_id, new_x, new_y);
+    SPDLOG_DEBUG("[Game]Position updated: player_id={} pos=({:.1f},{:.1f})", player_id, new_x, new_y);
 }
 
 void GameServer::handle_item_use_req(uint64_t player_id,
