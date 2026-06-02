@@ -36,6 +36,7 @@ struct PlayerBizData {
     std::string inventory;       // 背包数据（JSON 格式）
     std::string farm_state;      // 农场状态（JSON 格式）
     std::string extra_data;      // 扩展数据（JSON 格式）
+    std::string task_infos;      // 任务进度数据（JSON 格式）
 };
 
 class Player {
@@ -100,6 +101,9 @@ public:
 
     const std::string& get_extra_data() const { return player_data_.extra_data; }
     void set_extra_data(const std::string& extra_data);
+
+    const std::string& get_task_infos() const { return player_data_.task_infos; }
+    void set_task_infos(const std::string& task_infos);
 
     // 初始化默认数据（新玩家）
     void init_default_data();

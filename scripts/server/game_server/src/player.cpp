@@ -40,6 +40,7 @@ std::string Player::get_all_data_json() const {
     data["inventory"] = player_data_.inventory;
     data["farm_state"] = player_data_.farm_state;
     data["extra_data"] = player_data_.extra_data;
+    data["task_infos"] = player_data_.task_infos;
     return data.dump();
 }
 
@@ -66,6 +67,9 @@ std::string Player::get_field_json(const std::string& field) const {
     else if (field == "extra_data") {
         try { val = nlohmann::json::parse(player_data_.extra_data); }
         catch (...) { val = player_data_.extra_data; }
+    }
+    else if (field == "task_infos") {
+        return player_data_.task_infos.empty() ? "{}" : player_data_.task_infos;
     }
     else val = nullptr;
     return val.dump();
@@ -157,7 +161,8 @@ void Player::set_player_data(const PlayerBizData& data) {
     dirty_ = true;
     dirty_fields_ = {"role_name", "level", "gold", "experience",
                      "pos_x", "pos_y", "pos_z", "energy",
-                     "scene_id", "inventory", "farm_state", "extra_data"};
+                     "scene_id", "inventory", "farm_state", "extra_data",
+                     "task_infos"};
 }
 
 void Player::set_player_data(PlayerBizData&& data) {
@@ -165,7 +170,8 @@ void Player::set_player_data(PlayerBizData&& data) {
     dirty_ = true;
     dirty_fields_ = {"role_name", "level", "gold", "experience",
                      "pos_x", "pos_y", "pos_z", "energy",
-                     "scene_id", "inventory", "farm_state", "extra_data"};
+                     "scene_id", "inventory", "farm_state", "extra_data",
+                     "task_infos"};
 }
 
 void Player::set_role_name(const std::string& role_name) {
@@ -252,6 +258,13 @@ void Player::set_extra_data(const std::string& extra_data) {
     }
 }
 
+void Player::set_task_infos(const std::string& task_infos) {
+    if (player_data_.task_infos != task_infos) {
+        player_data_.task_infos = task_infos;
+        mark_dirty("task_infos");
+    }
+}
+
 void Player::init_default_data() {
     player_data_.role_name = "";
     player_data_.level = 1;
@@ -264,10 +277,12 @@ void Player::init_default_data() {
     player_data_.inventory = "{}";  // 空背包
     player_data_.farm_state = "{}";  // 空农场
     player_data_.extra_data = "{}";  // 空扩展数据
+    player_data_.task_infos = "{}";  // 空任务数据
     dirty_ = true;
     dirty_fields_ = {"role_name", "level", "gold", "experience",
                      "pos_x", "pos_y", "pos_z", "energy",
-                     "scene_id", "inventory", "farm_state", "extra_data"};
+                     "scene_id", "inventory", "farm_state", "extra_data",
+                     "task_infos"};
 
     SPDLOG_INFO("[Player]Initialized default data for player_id={}", player_id_);
 }
