@@ -32,6 +32,9 @@ from .dialog_engine import DialogEngine
 from .affection_system import AffectionSystem
 from .bubble_ui import BubbleUI
 from .quest_handler import QuestHandler
+from .quest_data import QuestData
+from .ui.quest_tracker import QuestTracker
+from .ui.quest_panel import QuestPanel
 from .chat import ChatManager, ChatPanel
 from .team_manager import TeamManager
 from .team_hud import TeamHUD
@@ -156,6 +159,16 @@ class GameScene:
 
         # 任务系统
         self._quest_handler = QuestHandler(connection)
+
+        # 任务 UI
+        self._quest_data = QuestData()
+        self._quest_tracker = QuestTracker(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+        self._quest_panel = QuestPanel(self.WINDOW_WIDTH, self.WINDOW_HEIGHT, self._input_manager)
+        self._quest_tracker.set_on_quest_click(self._quest_panel.select_quest)
+        self._quest_panel.set_callbacks(
+            on_accept=self._quest_handler.request_accept_quest,
+            on_abandon=self._quest_handler.request_abandon_quest,
+        )
 
         # 聊天系统
         self._chat_manager = ChatManager(connection, player_data)
@@ -318,6 +331,16 @@ class GameScene:
                 if self._team_hud.handle_event(event, self._team_mgr):
                     continue
 
+                # 任务面板事件（打开时优先处理）
+                if self._quest_panel.handle_event(event):
+                    continue
+
+                # Q 键打开/关闭任务面板
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                    if not self._chat_panel.is_input_active:
+                        self._quest_panel.toggle()
+                        continue
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         running = False
@@ -411,6 +434,9 @@ class GameScene:
                     self._bubble_ui.show_dots(npc.npc_id)
                 else:
                     self._bubble_ui.hide_dots(npc.npc_id)
+
+            # 更新任务追踪条
+            self._quest_tracker.update(self._quest_data)
 
             # 渲染
             self._renderer.render(
@@ -803,22 +829,39 @@ class GameScene:
     def _on_quest_accept_resp(self, resp):
         """任务接受响应回调"""
         self._quest_handler.handle_quest_accept_resp(resp)
+        if resp.code == 0 and resp.HasField('task_info'):
+            self._quest_data.add_quest(resp.task_info)
+            self._notification_manager.show_toast(f"📜 任务已接取: {resp.task_info.task_id}")
 
     def _on_quest_submit_resp(self, resp):
         """任务提交响应回调"""
         self._quest_handler.handle_quest_submit_resp(resp)
+        if resp.code == 0:
+            pass
 
     def _on_quest_abandon_resp(self, resp):
         """任务放弃响应回调"""
         self._quest_handler.handle_quest_abandon_resp(resp)
+        if resp.code == 0:
+            self._notification_manager.show_toast("📜 任务已放弃")
 
     def _on_quest_sync_notify(self, notify):
         """任务同步通知回调"""
         self._quest_handler.handle_quest_sync_notify(notify)
+        self._quest_data.sync_from_server(self._quest_handler.active_quests)
 
     def _on_quest_progress_notify(self, notify):
         """任务进度通知回调"""
         self._quest_handler.handle_quest_progress_notify(notify)
+        self._quest_data.update_progress(notify.quest_id, dict(notify.progress))
+        quest = self._quest_data.get_quest(notify.quest_id)
+        if quest:
+            for obj in quest.objectives:
+                if obj.obj_id in notify.progress:
+                    self._notification_manager.show_toast(
+                        f"🌾 {obj.description} {obj.current}/{obj.required}"
+                    )
+                    break
 
     # ========== 组队系统回调 ==========
 
