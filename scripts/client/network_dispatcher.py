@@ -26,6 +26,13 @@ from .message_ids import (
     MSG_ID_TEAM_LEAVE_RESP, MSG_ID_TEAM_KICK_RESP,
     MSG_ID_TEAM_INFO_RESP, MSG_ID_TEAM_MEMBER_UPDATE,
     MSG_ID_TEAM_LEADER_CHANGE, MSG_ID_TEAM_STATUS_UPDATE,
+    MSG_ID_FRIEND_SEARCH_RESP, MSG_ID_FRIEND_ADD_RESP, MSG_ID_FRIEND_ADD_NOTIFY,
+    MSG_ID_FRIEND_ACCEPT_RESP, MSG_ID_FRIEND_REJECT_RESP, MSG_ID_FRIEND_DELETE_RESP,
+    MSG_ID_FRIEND_LIST_RESP, MSG_ID_FRIEND_ONLINE_NOTIFY, MSG_ID_FRIEND_OFFLINE_NOTIFY,
+    MSG_ID_FRIEND_CHAT_RESP, MSG_ID_FRIEND_CHAT_NOTIFY, MSG_ID_FRIEND_CHAT_HISTORY_RESP,
+    MSG_ID_FRIEND_GIFT_RESP, MSG_ID_FRIEND_GIFT_NOTIFY,
+    MSG_ID_FRIEND_VISIT_RESP, MSG_ID_FRIEND_VISIT_ACTION_RESP,
+    MSG_ID_FRIEND_RECOMMEND_RESP, MSG_ID_FRIEND_BLOCK_RESP, MSG_ID_FRIEND_UNBLOCK_RESP,
 )
 
 import sys
@@ -33,6 +40,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'common', 'proto', 'generated'))
 import player_pb2
 import base_pb2
+import friend_pb2
 
 logger = logging.getLogger("client.network_dispatcher")
 
@@ -83,6 +91,25 @@ class NetworkMessageDispatcher:
         on_team_member_update: Callable[[bytes], None] = None,
         on_team_leader_change: Callable[[bytes], None] = None,
         on_team_status_update: Callable[[bytes], None] = None,
+        on_friend_search_resp=None,
+        on_friend_add_resp=None,
+        on_friend_add_notify=None,
+        on_friend_accept_resp=None,
+        on_friend_reject_resp=None,
+        on_friend_delete_resp=None,
+        on_friend_list_resp=None,
+        on_friend_online_notify=None,
+        on_friend_offline_notify=None,
+        on_friend_chat_resp=None,
+        on_friend_chat_notify=None,
+        on_friend_chat_history_resp=None,
+        on_friend_gift_resp=None,
+        on_friend_gift_notify=None,
+        on_friend_visit_resp=None,
+        on_friend_visit_action_resp=None,
+        on_friend_recommend_resp=None,
+        on_friend_block_resp=None,
+        on_friend_unblock_resp=None,
     ):
         """
         初始化消息分发器
@@ -144,6 +171,25 @@ class NetworkMessageDispatcher:
             "on_team_member_update": on_team_member_update,
             "on_team_leader_change": on_team_leader_change,
             "on_team_status_update": on_team_status_update,
+            "on_friend_search_resp": on_friend_search_resp,
+            "on_friend_add_resp": on_friend_add_resp,
+            "on_friend_add_notify": on_friend_add_notify,
+            "on_friend_accept_resp": on_friend_accept_resp,
+            "on_friend_reject_resp": on_friend_reject_resp,
+            "on_friend_delete_resp": on_friend_delete_resp,
+            "on_friend_list_resp": on_friend_list_resp,
+            "on_friend_online_notify": on_friend_online_notify,
+            "on_friend_offline_notify": on_friend_offline_notify,
+            "on_friend_chat_resp": on_friend_chat_resp,
+            "on_friend_chat_notify": on_friend_chat_notify,
+            "on_friend_chat_history_resp": on_friend_chat_history_resp,
+            "on_friend_gift_resp": on_friend_gift_resp,
+            "on_friend_gift_notify": on_friend_gift_notify,
+            "on_friend_visit_resp": on_friend_visit_resp,
+            "on_friend_visit_action_resp": on_friend_visit_action_resp,
+            "on_friend_recommend_resp": on_friend_recommend_resp,
+            "on_friend_block_resp": on_friend_block_resp,
+            "on_friend_unblock_resp": on_friend_unblock_resp,
         }
 
         # 分发表: msg_id -> handler 方法
@@ -186,6 +232,25 @@ class NetworkMessageDispatcher:
             MSG_ID_TEAM_MEMBER_UPDATE: self._handle_team_member_update,
             MSG_ID_TEAM_LEADER_CHANGE: self._handle_team_leader_change,
             MSG_ID_TEAM_STATUS_UPDATE: self._handle_team_status_update,
+            MSG_ID_FRIEND_SEARCH_RESP: self._handle_friend_search_resp,
+            MSG_ID_FRIEND_ADD_RESP: self._handle_friend_add_resp,
+            MSG_ID_FRIEND_ADD_NOTIFY: self._handle_friend_add_notify,
+            MSG_ID_FRIEND_ACCEPT_RESP: self._handle_friend_accept_resp,
+            MSG_ID_FRIEND_REJECT_RESP: self._handle_friend_reject_resp,
+            MSG_ID_FRIEND_DELETE_RESP: self._handle_friend_delete_resp,
+            MSG_ID_FRIEND_LIST_RESP: self._handle_friend_list_resp,
+            MSG_ID_FRIEND_ONLINE_NOTIFY: self._handle_friend_online_notify,
+            MSG_ID_FRIEND_OFFLINE_NOTIFY: self._handle_friend_offline_notify,
+            MSG_ID_FRIEND_CHAT_RESP: self._handle_friend_chat_resp,
+            MSG_ID_FRIEND_CHAT_NOTIFY: self._handle_friend_chat_notify,
+            MSG_ID_FRIEND_CHAT_HISTORY_RESP: self._handle_friend_chat_history_resp,
+            MSG_ID_FRIEND_GIFT_RESP: self._handle_friend_gift_resp,
+            MSG_ID_FRIEND_GIFT_NOTIFY: self._handle_friend_gift_notify,
+            MSG_ID_FRIEND_VISIT_RESP: self._handle_friend_visit_resp,
+            MSG_ID_FRIEND_VISIT_ACTION_RESP: self._handle_friend_visit_action_resp,
+            MSG_ID_FRIEND_RECOMMEND_RESP: self._handle_friend_recommend_resp,
+            MSG_ID_FRIEND_BLOCK_RESP: self._handle_friend_block_resp,
+            MSG_ID_FRIEND_UNBLOCK_RESP: self._handle_friend_unblock_resp,
         }
 
     def dispatch_pending(self, connection=None):
@@ -669,3 +734,252 @@ class NetworkMessageDispatcher:
                 self._callbacks["on_team_status_update"](player_msg.payload)
         except Exception as e:
             logger.error(f"[NetworkDispatcher]Failed to parse TeamStatusUpdate: {e}")
+
+    # ========== 好友系统消息处理 ==========
+
+    def _handle_friend_search_resp(self, payload: bytes):
+        """处理搜索玩家响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendSearchResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendSearchResp: code={resp.code}, {len(resp.results)} results")
+            if self._callbacks.get("on_friend_search_resp"):
+                self._callbacks["on_friend_search_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendSearchResp: {e}")
+
+    def _handle_friend_add_resp(self, payload: bytes):
+        """处理好友请求结果"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendAddResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendAddResp: code={resp.code}, msg={resp.msg}")
+            if self._callbacks.get("on_friend_add_resp"):
+                self._callbacks["on_friend_add_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendAddResp: {e}")
+
+    def _handle_friend_add_notify(self, payload: bytes):
+        """处理收到好友请求通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            notify = friend_pb2.FriendAddNotify()
+            notify.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendAddNotify: sender={notify.request.sender_name}")
+            if self._callbacks.get("on_friend_add_notify"):
+                self._callbacks["on_friend_add_notify"](notify)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendAddNotify: {e}")
+
+    def _handle_friend_accept_resp(self, payload: bytes):
+        """处理接受好友结果"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendAcceptResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendAcceptResp: code={resp.code}")
+            if self._callbacks.get("on_friend_accept_resp"):
+                self._callbacks["on_friend_accept_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendAcceptResp: {e}")
+
+    def _handle_friend_reject_resp(self, payload: bytes):
+        """处理拒绝好友结果"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendRejectResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendRejectResp: code={resp.code}")
+            if self._callbacks.get("on_friend_reject_resp"):
+                self._callbacks["on_friend_reject_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendRejectResp: {e}")
+
+    def _handle_friend_delete_resp(self, payload: bytes):
+        """处理删除好友结果"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendDeleteResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendDeleteResp: code={resp.code}")
+            if self._callbacks.get("on_friend_delete_resp"):
+                self._callbacks["on_friend_delete_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendDeleteResp: {e}")
+
+    def _handle_friend_list_resp(self, payload: bytes):
+        """处理好友列表数据"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendListResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendListResp: {len(resp.friends)} friends, {len(resp.pending_requests)} pending")
+            if self._callbacks.get("on_friend_list_resp"):
+                self._callbacks["on_friend_list_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendListResp: {e}")
+
+    def _handle_friend_online_notify(self, payload: bytes):
+        """处理好友上线通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            notify = friend_pb2.FriendOnlineNotify()
+            notify.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendOnlineNotify: player_id={notify.player_id}, name={notify.role_name}")
+            if self._callbacks.get("on_friend_online_notify"):
+                self._callbacks["on_friend_online_notify"](notify)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendOnlineNotify: {e}")
+
+    def _handle_friend_offline_notify(self, payload: bytes):
+        """处理好友下线通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            notify = friend_pb2.FriendOfflineNotify()
+            notify.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendOfflineNotify: player_id={notify.player_id}")
+            if self._callbacks.get("on_friend_offline_notify"):
+                self._callbacks["on_friend_offline_notify"](notify)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendOfflineNotify: {e}")
+
+    def _handle_friend_chat_resp(self, payload: bytes):
+        """处理私聊发送结果"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendChatResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendChatResp: code={resp.code}")
+            if self._callbacks.get("on_friend_chat_resp"):
+                self._callbacks["on_friend_chat_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendChatResp: {e}")
+
+    def _handle_friend_chat_notify(self, payload: bytes):
+        """处理收到私聊消息"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            notify = friend_pb2.FriendChatNotify()
+            notify.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendChatNotify: from={notify.sender_name}, content={notify.content[:20]}")
+            if self._callbacks.get("on_friend_chat_notify"):
+                self._callbacks["on_friend_chat_notify"](notify)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendChatNotify: {e}")
+
+    def _handle_friend_chat_history_resp(self, payload: bytes):
+        """处理聊天记录数据"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendChatHistoryResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendChatHistoryResp: code={resp.code}, {len(resp.messages)} messages")
+            if self._callbacks.get("on_friend_chat_history_resp"):
+                self._callbacks["on_friend_chat_history_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendChatHistoryResp: {e}")
+
+    def _handle_friend_gift_resp(self, payload: bytes):
+        """处理赠送物品结果"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendGiftResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendGiftResp: code={resp.code}, msg={resp.msg}")
+            if self._callbacks.get("on_friend_gift_resp"):
+                self._callbacks["on_friend_gift_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendGiftResp: {e}")
+
+    def _handle_friend_gift_notify(self, payload: bytes):
+        """处理收到礼物通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            notify = friend_pb2.FriendGiftNotify()
+            notify.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendGiftNotify: from={notify.sender_name}, item={notify.item_id}x{notify.count}")
+            if self._callbacks.get("on_friend_gift_notify"):
+                self._callbacks["on_friend_gift_notify"](notify)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendGiftNotify: {e}")
+
+    def _handle_friend_visit_resp(self, payload: bytes):
+        """处理访问农场结果"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendVisitResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendVisitResp: code={resp.code}, owner={resp.owner_name}, scene={resp.scene_id}")
+            if self._callbacks.get("on_friend_visit_resp"):
+                self._callbacks["on_friend_visit_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendVisitResp: {e}")
+
+    def _handle_friend_visit_action_resp(self, payload: bytes):
+        """处理农场操作结果"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendVisitActionResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendVisitActionResp: code={resp.code}, msg={resp.msg}")
+            if self._callbacks.get("on_friend_visit_action_resp"):
+                self._callbacks["on_friend_visit_action_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendVisitActionResp: {e}")
+
+    def _handle_friend_recommend_resp(self, payload: bytes):
+        """处理推荐好友列表"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendRecommendResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendRecommendResp: code={resp.code}, {len(resp.recommendations)} recommendations")
+            if self._callbacks.get("on_friend_recommend_resp"):
+                self._callbacks["on_friend_recommend_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendRecommendResp: {e}")
+
+    def _handle_friend_block_resp(self, payload: bytes):
+        """处理拉黑结果"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendBlockResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendBlockResp: code={resp.code}")
+            if self._callbacks.get("on_friend_block_resp"):
+                self._callbacks["on_friend_block_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendBlockResp: {e}")
+
+    def _handle_friend_unblock_resp(self, payload: bytes):
+        """处理取消拉黑结果"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+            resp = friend_pb2.FriendUnblockResp()
+            resp.ParseFromString(player_msg.payload)
+            logger.info(f"[NetworkDispatcher]FriendUnblockResp: code={resp.code}")
+            if self._callbacks.get("on_friend_unblock_resp"):
+                self._callbacks["on_friend_unblock_resp"](resp)
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse FriendUnblockResp: {e}")
