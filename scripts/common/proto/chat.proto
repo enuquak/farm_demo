@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package farm;
+
+option optimize_for = LITE_RUNTIME;
+
+// ===========================================
+// 聊天消息协议
+// MsgID 范围: 6000-6999 (Client -> Gate -> ChatServer)
+// ===========================================
+
+// 聊天频道类型
+enum ChatChannelType {
+    CHANNEL_WORLD = 0;     // 世界频道
+    CHANNEL_PARTY = 1;     // 队伍频道
+    CHANNEL_WHISPER = 2;   // 私聊频道
+}
+
+// 聊天错误码
+enum ChatErrorCode {
+    CHAT_SUCCESS = 0;
+    CHAT_RATE_LIMITED = 1;     // 发送太频繁
+    CHAT_MSG_TOO_LONG = 2;     // 消息超长
+    CHAT_TARGET_OFFLINE = 3;   // 私聊目标不在线
+    CHAT_CHANNEL_NOT_FOUND = 4;// 频道不存在
+    CHAT_PERMISSION_DENIED = 5;// 无权限
+}
+
+// 聊天消息（服务器推送给客户端）
+message ChatMessage {
+    ChatChannelType channel_type = 1;  // 频道类型
+    uint64 sender_id = 2;              // 发送者 player_id
+    string sender_name = 3;            // 发送者角色名
+    string content = 4;                // 消息内容
+    uint64 timestamp = 5;              // 时间戳 (ms)
+    uint64 target_id = 6;              // 目标 player_id (私聊用)
+}
+
+// 发送聊天请求 (Client -> ChatServer via Gate)
+message ChatSendReq {
+    ChatChannelType channel_type = 1;  // 频道类型
+    string content = 2;                // 消息内容
+    uint64 target_id = 3;              // 私聊时指定目标
+}
+
+// 发送聊天响应 (ChatServer -> Client via Gate)
+message ChatSendResp {
+    ChatErrorCode code = 1;
+    string msg = 2;
+}

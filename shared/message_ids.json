@@ -147,6 +147,20 @@
     {"code": 4005, "name": "MSG_ID_QUEST_ABANDON_REQ", "description": "任务放弃请求"},
     {"code": 4006, "name": "MSG_ID_QUEST_ABANDON_RESP", "description": "任务放弃响应"},
     {"code": 4007, "name": "MSG_ID_QUEST_SYNC_NOTIFY", "description": "任务同步通知"},
-    {"code": 4008, "name": "MSG_ID_QUEST_PROGRESS_NOTIFY", "description": "任务进度通知"}
+    {"code": 4008, "name": "MSG_ID_QUEST_PROGRESS_NOTIFY", "description": "任务进度通知"},
+    {"code": 5001, "name": "MSG_ID_ATTACK_REQ", "description": "攻击请求"},
+    {"code": 5002, "name": "MSG_ID_ATTACK_NOTIFY", "description": "攻击结果通知"},
+    {"code": 5010, "name": "MSG_ID_MONSTER_SPAWN_NOTIFY", "description": "怪物刷新通知"},
+    {"code": 5011, "name": "MSG_ID_MONSTER_DEATH_NOTIFY", "description": "怪物死亡通知"},
+    {"code": 5012, "name": "MSG_ID_MONSTER_MOVE_NOTIFY", "description": "怪物移动通知"},
+    {"code": 5013, "name": "MSG_ID_MONSTER_ATTACK_NOTIFY", "description": "怪物攻击通知"},
+    {"code": 5020, "name": "MSG_ID_PLAYER_HP_UPDATE", "description": "玩家HP更新"},
+    {"code": 5021, "name": "MSG_ID_PLAYER_DEATH_NOTIFY", "description": "玩家死亡通知"},
+    {"code": 5022, "name": "MSG_ID_PLAYER_RESPAWN", "description": "玩家复活"},
+    {"code": 5030, "name": "MSG_ID_COMBAT_EXP_UPDATE", "description": "战斗经验更新"},
+    {"code": 5031, "name": "MSG_ID_COMBAT_LEVEL_UP", "description": "战斗升级"},
+    {"code": 6001, "name": "MSG_ID_CHAT_SEND_REQ", "description": "聊天发送请求"},
+    {"code": 6002, "name": "MSG_ID_CHAT_SEND_RESP", "description": "聊天发送响应"},
+    {"code": 6003, "name": "MSG_ID_CHAT_MESSAGE", "description": "聊天消息推送"}
   ]
 }
