@@ -43,6 +43,8 @@ struct PlayerBizData {
     int32_t combat_exp = 0;      // 战斗经验值
     int32_t combat_level = 1;    // 战斗等级
     std::string equipped_weapon; // 装备的武器ID（JSON）
+    int32_t cave_level = 0;           // 当前矿洞层级（0=不在矿洞）
+    int32_t max_cave_level = 0;       // 已到达的最深层级
     std::string task_infos;      // 任务进度数据（JSON 格式）
 };
 
@@ -131,6 +133,12 @@ public:
 
     const std::string& get_equipped_weapon() const { return player_data_.equipped_weapon; }
     void set_equipped_weapon(const std::string& weapon_id);
+
+    int32_t get_cave_level() const { return player_data_.cave_level; }
+    void set_cave_level(int32_t cave_level);
+
+    int32_t get_max_cave_level() const { return player_data_.max_cave_level; }
+    void set_max_cave_level(int32_t max_cave_level);
 
     const std::string& get_task_infos() const { return player_data_.task_infos; }
     void set_task_infos(const std::string& task_infos);

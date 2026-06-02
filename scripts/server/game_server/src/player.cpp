@@ -47,6 +47,8 @@ std::string Player::get_all_data_json() const {
     data["combat_exp"] = player_data_.combat_exp;
     data["combat_level"] = player_data_.combat_level;
     data["equipped_weapon"] = player_data_.equipped_weapon;
+    data["cave_level"] = player_data_.cave_level;
+    data["max_cave_level"] = player_data_.max_cave_level;
     data["task_infos"] = player_data_.task_infos;
     return data.dump();
 }
@@ -82,6 +84,8 @@ std::string Player::get_field_json(const std::string& field) const {
     else if (field == "combat_exp") val = player_data_.combat_exp;
     else if (field == "combat_level") val = player_data_.combat_level;
     else if (field == "equipped_weapon") val = player_data_.equipped_weapon;
+    else if (field == "cave_level") val = player_data_.cave_level;
+    else if (field == "max_cave_level") val = player_data_.max_cave_level;
     else if (field == "task_infos") {
         return player_data_.task_infos.empty() ? "{}" : player_data_.task_infos;
     }
@@ -178,6 +182,7 @@ void Player::set_player_data(const PlayerBizData& data) {
                      "scene_id", "inventory", "farm_state", "extra_data",
                      "max_hp", "current_hp", "attack_power", "defense_power",
                      "combat_exp", "combat_level", "equipped_weapon",
+                     "cave_level", "max_cave_level",
                      "task_infos"};
 }
 
@@ -189,6 +194,7 @@ void Player::set_player_data(PlayerBizData&& data) {
                      "scene_id", "inventory", "farm_state", "extra_data",
                      "max_hp", "current_hp", "attack_power", "defense_power",
                      "combat_exp", "combat_level", "equipped_weapon",
+                     "cave_level", "max_cave_level",
                      "task_infos"};
 }
 
@@ -332,6 +338,20 @@ void Player::set_equipped_weapon(const std::string& weapon_id) {
     }
 }
 
+void Player::set_cave_level(int32_t cave_level) {
+    if (player_data_.cave_level != cave_level) {
+        player_data_.cave_level = cave_level;
+        mark_dirty("cave_level");
+    }
+}
+
+void Player::set_max_cave_level(int32_t max_cave_level) {
+    if (player_data_.max_cave_level != max_cave_level) {
+        player_data_.max_cave_level = max_cave_level;
+        mark_dirty("max_cave_level");
+    }
+}
+
 void Player::init_default_data() {
     player_data_.role_name = "";
     player_data_.level = 1;
@@ -391,6 +411,10 @@ bool Player::load_from_json(const std::string& json_str) {
         data.defense_power = json.value("defense_power", 0);
         data.combat_exp = json.value("combat_exp", 0);
         data.combat_level = json.value("combat_level", 1);
+
+        // 矿洞字段
+        data.cave_level = json.value("cave_level", 0);
+        data.max_cave_level = json.value("max_cave_level", 0);
 
         // 检查关键字段是否存在于 JSON 中
         static const std::vector<std::string> critical_fields = {
