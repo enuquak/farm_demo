@@ -84,6 +84,8 @@ public:
 
     int64_t get_experience() const { return player_data_.experience; }
     void set_experience(int64_t experience);
+    void add_exp(int64_t exp) { set_experience(player_data_.experience + exp); }
+    int64_t get_exp() const { return player_data_.experience; }
 
     float get_pos_x() const { return player_data_.pos_x; }
     void set_pos_x(float pos_x);

@@ -2,6 +2,7 @@
 // Tests clock advancement logic using real dependencies
 
 #include "test_login_stub.h"
+#include "test_admin_handler.h"
 #include "game_clock.h"
 #include "game_scene_manager.h"
 #include "player_manager.h"
@@ -142,6 +143,9 @@ int main() {
 
     // Run LoginStub tests
     failed += run_login_stub_tests();
+
+    // Run AdminHandler tests
+    failed += run_admin_handler_tests();
 
     std::cout << std::endl;
     std::cout << "Results: " << passed << " passed, " << failed << " failed" << std::endl;

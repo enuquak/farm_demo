@@ -199,6 +199,7 @@ set_target_properties(game_server PROPERTIES
 set(TEST_SOURCES
     tests/test_game_clock.cpp
     tests/test_login_stub.cpp
+    tests/test_admin_handler.cpp
     src/game_clock.cpp
     src/game_scene_manager.cpp
     src/event_bus.cpp
