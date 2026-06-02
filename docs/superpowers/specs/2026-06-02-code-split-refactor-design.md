@@ -1,7 +1,7 @@
 # Code Split Refactoring Design (Updated)
 
 **Date**: 2026-06-02 (Updated from 2026-05-31)
-**Status**: In Progress
+**Status**: Complete ✅
 
 ## Overview
 
@@ -311,19 +311,20 @@ class GameRenderer:
 | Client | sprite_data.py creation | ✅ Done |
 | Client | Dead code deletion (camera.py, tile_renderer.py, message_handler.py) | ✅ Done |
 
-### Remaining Work
+### Remaining Work — All Complete ✅
 
-| Category | Task | Priority |
-|----------|------|----------|
-| Client | Fix `constants.py` missing constants (`HOTBAR_*`, `PANEL_*`, `ITEM_ICON_PALETTE`) | High |
-| Server | Unit tests: GameClock | Medium |
-| Server | Unit tests: GameSceneManager | Medium |
-| Server | Unit tests: LoginStub | Medium |
-| Client | Unit tests: PlayerController | Medium |
-| Client | Unit tests: NetworkMessageDispatcher | Medium |
-| Client | Unit tests: GameRenderer | Medium |
-| Verification | All server builds verification (gate_server, game_server, dbmgr) | High |
-| Verification | Client import verification | High |
+| Category | Task | Priority | Status |
+|----------|------|----------|--------|
+| Client | Fix `constants.py` missing constants (`HOTBAR_*`, `PANEL_*`, `ITEM_ICON_PALETTE`) | High | ✅ Done |
+| Server | Unit tests: GameClock | Medium | ✅ Done |
+| Server | Unit tests: GameSceneManager | Medium | ✅ Done |
+| Server | Unit tests: LoginStub | Medium | ✅ Done |
+| Server | Unit tests: AdminHandler | Medium | ✅ Done |
+| Client | Unit tests: PlayerController | Medium | ✅ Done |
+| Client | Unit tests: NetworkMessageDispatcher | Medium | ✅ Done |
+| Client | Unit tests: GameRenderer | Medium | ✅ Done |
+| Verification | All server builds verification (gate_server, game_server, dbmgr) | High | ✅ Done |
+| Verification | Client import verification | High | ✅ Done |
 
 ---
 
@@ -368,14 +369,14 @@ class GameRenderer:
 | Modify | `connection.py` | 358 |
 | Delete | `camera.py`, `tile_renderer.py`, `message_handler.py` | - |
 
-### Tests to Create
+### Tests — All Created ✅
 
-| Category | File | Coverage |
-|----------|------|----------|
-| Server | `game_clock_test.cpp` | tick, day/week/month events, save/load |
-| Server | `game_scene_manager_test.cpp` | create, find, switch, persistence |
-| Server | `login_stub_test.cpp` | 5 message types |
-| Server | `admin_handler_test.cpp` | shutdown request/response |
-| Client | `test_player_controller.py` | Movement, collision, position correction |
-| Client | `test_network_dispatcher.py` | Dispatch table, each handler |
-| Client | `test_game_renderer.py` | Render call chain |
+| Category | File | Coverage | Status |
+|----------|------|----------|--------|
+| Server | `test_game_clock.cpp` | tick, day/week/month events, save/load | ✅ 7 tests |
+| Server | `test_game_clock.cpp` | create, find, switch, persistence | ✅ 2 tests |
+| Server | `test_login_stub.cpp` | constructor, clock, offline, empty msg | ✅ 4 tests |
+| Server | `test_admin_handler.cpp` | constructor, unknown msg, shutdown | ✅ 3 tests |
+| Client | `test_player_controller.py` | Import, methods, constants | ✅ 4 tests |
+| Client | `test_network_dispatcher.py` | Import, methods, registry, dispatch | ✅ 4 tests |
+| Client | `test_game_renderer.py` | Import, methods, constructor | ✅ 3 tests |
