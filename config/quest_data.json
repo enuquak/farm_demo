@@ -1,0 +1,74 @@
+{
+  "quests": {
+    "quest_001": {
+      "id": "quest_001",
+      "name": "初识农耕",
+      "description": "学习基本的种植技巧",
+      "type": "plant_harvest",
+      "trigger": {
+        "type": "auto",
+        "condition": "player_level >= 1"
+      },
+      "objectives": [
+        {
+          "id": "obj_001",
+          "type": "plant_crop",
+          "target": "wheat",
+          "count": 3,
+          "description": "种植3个小麦"
+        },
+        {
+          "id": "obj_002",
+          "type": "harvest_crop",
+          "target": "wheat",
+          "count": 3,
+          "description": "收获3个小麦"
+        }
+      ],
+      "rewards": {
+        "items": [{"id": "seed_tomato", "count": 5}],
+        "gold": 100,
+        "exp": 50,
+        "unlock_quests": ["quest_002"]
+      },
+      "prerequisites": [],
+      "branch_group": ""
+    },
+    "quest_002": {
+      "id": "quest_002",
+      "name": "番茄之路",
+      "description": "尝试种植番茄",
+      "type": "plant_harvest",
+      "trigger": {
+        "type": "npc",
+        "npc_id": "npc_farmer",
+        "dialogue": "你已经学会了种小麦，试试番茄吧！"
+      },
+      "objectives": [
+        {
+          "id": "obj_003",
+          "type": "plant_crop",
+          "target": "tomato",
+          "count": 5,
+          "description": "种植5个番茄"
+        }
+      ],
+      "rewards": {
+        "items": [{"id": "fertilizer", "count": 10}],
+        "gold": 150,
+        "exp": 75,
+        "unlock_quests": []
+      },
+      "prerequisites": ["quest_001"],
+      "branch_group": "farming_path"
+    }
+  },
+  "branch_groups": {
+    "farming_path": {
+      "name": "农耕路线",
+      "description": "专注于农业发展",
+      "unlock_condition": "quest_001.completed",
+      "quest_ids": ["quest_002"]
+    }
+  }
+}
