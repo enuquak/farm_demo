@@ -35,6 +35,7 @@ set(SOURCES
     src/session_manager.cpp
     src/game_connection.cpp
     src/chat_connection.cpp
+    src/team_connection.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/admin_msg_ids.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp

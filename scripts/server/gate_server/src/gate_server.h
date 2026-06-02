@@ -3,6 +3,7 @@
 #include "session_manager.h"
 #include "game_connection.h"
 #include "chat_connection.h"
+#include "team_connection.h"
 #include "admin_msg_ids.h"
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -88,6 +89,12 @@ private:
                          const std::vector<uint8_t>& payload);
     void handle_chat_message(uint32_t msg_id, const std::vector<uint8_t>& payload);
 
+    // Team 连接相关
+    void add_team_server(const std::string& ip, uint16_t port);
+    void handle_team_message(uint32_t msg_id, const std::vector<uint8_t>& payload);
+    void forward_to_team(std::shared_ptr<Session> session, uint32_t msg_id,
+                         const std::vector<uint8_t>& payload);
+
     // 管理消息处理
     void handle_admin_message(uint32_t msg_id, const std::vector<uint8_t>& payload);
     void handle_shutdown(const AdminShutdownMsg& msg);
@@ -124,6 +131,11 @@ private:
     std::unique_ptr<ChatConnection> chat_conn_;
     std::string chat_server_ip_;
     uint16_t chat_server_port_ = 0;
+
+    // Team 连接
+    std::unique_ptr<TeamConnection> team_conn_;
+    std::string team_server_ip_;
+    uint16_t team_server_port_ = 0;
 };
 
 }  // namespace farm
