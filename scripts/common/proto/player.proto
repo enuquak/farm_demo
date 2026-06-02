@@ -150,3 +150,26 @@ message PositionCorrect {
     float pos_z = 3;            // 纠正后位置 Z (像素)
     uint64 timestamp = 4;       // 原始更新的时间戳 (ms)
 }
+
+// ===========================================
+// 通知提示协议
+// ===========================================
+
+// 通知类型枚举
+enum NotifyType {
+    NOTIFY_DAWN = 0;           // 天亮了
+    NOTIFY_DUSK = 1;           // 天黑了
+    NOTIFY_ITEM_SUCCESS = 2;   // 物品使用成功
+    NOTIFY_ITEM_FAIL = 3;      // 物品使用失败
+    NOTIFY_SYSTEM = 4;         // 系统公告
+}
+
+// 服务器通知 (Game -> Client)
+message NotifyToast {
+    NotifyType type = 1;       // 通知类型
+    string title = 2;          // 标题
+    string content = 3;        // 内容（可选）
+    int32 priority = 4;        // 优先级：0=LOW, 1=NORMAL, 2=HIGH, 3=CRITICAL
+    int32 duration_ms = 5;     // 显示时长（毫秒）
+    bool is_marquee = 6;       // 是否为跑马灯
+}
