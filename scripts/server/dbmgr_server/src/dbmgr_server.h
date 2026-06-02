@@ -90,7 +90,7 @@ private:
     // 数据库连接管理
     ConnectionManager& conn_mgr_;
     MongoServer mongo_server_;
-    RedisServer redis_server_;
+    std::unique_ptr<RedisServer> redis_server_;
 };
 
 }  // namespace farm
