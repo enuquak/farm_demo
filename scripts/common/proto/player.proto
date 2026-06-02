@@ -110,3 +110,43 @@ message ForceSleepNotify {
 message ForceSleepReady {
     int32 day = 1;              // 当前天数
 }
+
+// ===========================================
+// 背包与物品协议
+// ===========================================
+
+// 掉落物同步 (Game -> Client)
+message DropItemSync {
+    uint32 drop_id = 1;         // 掉落物唯一 ID
+    int32 item_id = 2;          // 物品 ID
+    int32 count = 3;            // 数量
+    float x = 4;                // 世界坐标 X (像素)
+    float y = 5;                // 世界坐标 Y (像素)
+    int32 action = 6;           // 0=spawn, 1=remove, 2=pickup
+}
+
+// 背包数据同步 (Game -> Client)
+message InventorySync {
+    string inventory_json = 1;  // 背包 JSON 数据
+}
+
+// 快捷栏选中格切换 (Client -> Game)
+message ActiveSlotChange {
+    int32 active_slot = 1;      // 新的选中格索引 (0-9)
+}
+
+// 位置更新 (Client -> Game)
+message PositionUpdate {
+    float pos_x = 1;            // 位置 X (像素)
+    float pos_y = 2;            // 位置 Y (像素)
+    float pos_z = 3;            // 位置 Z (像素)
+    uint64 timestamp = 4;       // 客户端时间戳 (ms)
+}
+
+// 位置纠正 (Game -> Client)
+message PositionCorrect {
+    float pos_x = 1;            // 纠正后位置 X (像素)
+    float pos_y = 2;            // 纠正后位置 Y (像素)
+    float pos_z = 3;            // 纠正后位置 Z (像素)
+    uint64 timestamp = 4;       // 原始更新的时间戳 (ms)
+}
