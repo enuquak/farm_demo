@@ -136,7 +136,7 @@ class ToastChannel:
     def add(self, notification: Notification):
         """添加提示到队列"""
         # CRITICAL 优先级直接打断当前提示
-        if notification.priority == Priority.CRITICAL:
+        if notification.priority == NotificationPriority.CRITICAL:
             self._interrupt_current(notification)
         else:
             self._queue.append(notification)
@@ -194,6 +194,7 @@ class MarqueeChannel:
         self._queue = []           # 消息队列
         self._current_text = ""    # 当前显示的文字
         self._current_x = 0       # 当前 X 坐标
+        self._current_text_width = 0  # 当前文字宽度（由渲染器更新）
         self._speed = 100          # 滚动速度（像素/秒）
         self._state = "idle"       # idle / scrolling
     
@@ -217,7 +218,8 @@ class MarqueeChannel:
         if self._state == "scrolling":
             self._current_x -= self._speed * dt
             # 当文字完全滚出左侧时，显示下一条
-            if self._current_x < -len(self._current_text) * 16:  # 假设每个字符 16 像素
+            # 使用实际文字宽度（由渲染器计算）
+            if self._current_x < -self._current_text_width:
                 self._start_next()
 ```
 
