@@ -29,3 +29,4 @@ class MessageIds:
     MSG_ID_DROP_ITEM_SYNC = 3004  # 掉落物同步
     MSG_ID_INVENTORY_SYNC = 3100  # 背包数据同步
     MSG_ID_ACTIVE_SLOT_CHANGE = 3101  # 快捷栏选中格切换
+    MSG_ID_NOTIFY_TOAST = 4001  # 服务器通知提示
