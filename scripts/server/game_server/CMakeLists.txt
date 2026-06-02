@@ -64,6 +64,7 @@ set(SOURCES
     src/admin_handler.cpp
     src/gm_stub.cpp
     src/gm_http_handler.cpp
+    src/event_bus.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/admin_msg_ids.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp
@@ -191,6 +192,7 @@ set(TEST_SOURCES
     tests/test_game_clock.cpp
     src/game_clock.cpp
     src/game_scene_manager.cpp
+    src/event_bus.cpp
     src/gate_session.cpp
     src/player.cpp
     src/player_manager.cpp
