@@ -1,0 +1,13 @@
+{
+  "npcs": [
+    {
+      "id": "merchant",
+      "name": "商人老李",
+      "sprite_sheet": "npc_merchant.png",
+      "portrait": "portrait_merchant.png",
+      "bubble_color": [70, 130, 180],
+      "initial_scene": "farm",
+      "default_position": {"x": 12, "y": 8}
+    }
+  ]
+}

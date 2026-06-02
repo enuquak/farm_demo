@@ -1,0 +1,58 @@
+{
+  "merchant": {
+    "greeting": {
+      "condition": {"affection": {"min": 0}},
+      "lines": [
+        {"speaker": "merchant", "text": "早上好啊！今天天气不错。"},
+        {"speaker": "merchant", "text": "有什么需要的吗？"}
+      ],
+      "responses": [
+        {"text": "看看有什么", "next": "browse_shop"},
+        {"text": "没什么事", "next": "farewell"}
+      ]
+    },
+    "browse_shop": {
+      "lines": [
+        {"speaker": "merchant", "text": "我这里种子和工具都有，慢慢挑。"}
+      ],
+      "effect": {"action": "open_shop"},
+      "next": "farewell"
+    },
+    "farewell": {
+      "lines": [
+        {"speaker": "merchant", "text": "下次再来啊！"}
+      ],
+      "effect": {"affection": 1}
+    },
+    "high_affection": {
+      "condition": {"affection": {"min": 50}},
+      "lines": [
+        {"speaker": "merchant", "text": "老朋友来了！今天给你打折。"}
+      ],
+      "responses": [
+        {"text": "太好了！", "next": "browse_shop"},
+        {"text": "谢谢老李", "next": "farewell"}
+      ]
+    },
+    "gift_loved": {
+      "lines": [
+        {"speaker": "merchant", "text": "哇！这是我最喜欢的！太感谢你了！"}
+      ]
+    },
+    "gift_liked": {
+      "lines": [
+        {"speaker": "merchant", "text": "谢谢！我很喜欢这个。"}
+      ]
+    },
+    "gift_neutral": {
+      "lines": [
+        {"speaker": "merchant", "text": "哦，谢谢。"}
+      ]
+    },
+    "gift_disliked": {
+      "lines": [
+        {"speaker": "merchant", "text": "这个...我不太需要。"}
+      ]
+    }
+  }
+}

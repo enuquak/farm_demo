@@ -1,0 +1,8 @@
+{
+  "merchant": {
+    "loved": {"items": ["gold_ore", "diamond"], "affection": 10},
+    "liked": {"items": ["iron_ore", "coal"], "affection": 5},
+    "neutral": {"default": true, "affection": 1},
+    "disliked": {"items": ["weed", "trash"], "affection": -3}
+  }
+}
