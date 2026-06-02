@@ -281,6 +281,9 @@ def get_portal_scene(map_data, tile_x: int, tile_y: int) -> Optional[str]:
         return "house"
     elif obj_type == ObjectType.DOOR_OUT:
         return "farm"
+    # 矿洞入口
+    if obj_type == ObjectType.CAVE_ENTRANCE:
+        return "cave_1"
 
     return None
 

@@ -101,6 +101,24 @@ def _generate_house_map(width: int, height: int) -> Dict[str, List[List[int]]]:
     return {"ground": ground, "objects": objects}
 
 
+def _generate_cave_placeholder(width: int, height: int) -> Dict[str, Any]:
+    """
+    矿洞占位地图生成（实际由 CaveGenerator 程序化生成）
+    这里返回一个全地板的地图作为占位。
+    """
+    ground = [[0 for _ in range(width)] for _ in range(height)]
+    objects = [[0 for _ in range(width)] for _ in range(height)]
+
+    for x in range(width):
+        ground[0][x] = 1
+        ground[height - 1][x] = 1
+    for y in range(height):
+        ground[y][0] = 1
+        ground[y][width - 1] = 1
+
+    return {"ground": ground, "objects": objects}
+
+
 # 场景注册表
 SCENE_DEFS: Dict[str, Dict[str, Any]] = {
     "farm": {
@@ -120,6 +138,12 @@ SCENE_DEFS: Dict[str, Dict[str, Any]] = {
                 "target": "house",
                 "target_portal": "door_out",
             },
+            {
+                "pos": (55, 25),
+                "trigger_dir": "right",
+                "target": "cave_1",
+                "target_portal": "cave_entrance",
+            },
         ],
         "player_spawn": (30, 25),
     },
@@ -132,10 +156,50 @@ SCENE_DEFS: Dict[str, Dict[str, Any]] = {
                 "pos": (5, 7),
                 "trigger_dir": "down",
                 "target": "farm",
-                "target_portal": "door_in",
+                "target_portal": "door_out",
             },
         ],
         "player_spawn": (5, 6),
+    },
+    "cave_1": {
+        "width": 20,
+        "height": 20,
+        "generate": lambda: _generate_cave_placeholder(20, 20),
+        "portals": [
+            {
+                "pos": (10, 0),
+                "trigger_dir": "up",
+                "target": "farm",
+                "target_portal": "cave_entrance",
+            },
+        ],
+        "player_spawn": (10, 18),
+        "is_cave": True,
+    },
+    "cave_2": {
+        "width": 25,
+        "height": 25,
+        "generate": lambda: _generate_cave_placeholder(25, 25),
+        "portals": [],
+        "player_spawn": (12, 23),
+        "is_cave": True,
+    },
+    "cave_3": {
+        "width": 30,
+        "height": 30,
+        "generate": lambda: _generate_cave_placeholder(30, 30),
+        "portals": [],
+        "player_spawn": (15, 28),
+        "is_cave": True,
+    },
+    "cave_boss": {
+        "width": 20,
+        "height": 20,
+        "generate": lambda: _generate_cave_placeholder(20, 20),
+        "portals": [],
+        "player_spawn": (10, 18),
+        "is_cave": True,
+        "is_boss_room": True,
     },
 }
 
