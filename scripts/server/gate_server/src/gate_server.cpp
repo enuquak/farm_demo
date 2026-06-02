@@ -97,6 +97,16 @@ bool GateServer::start() {
         }
     }
 
+    // 连接到 Chat Server（如果配置了）
+    if (!chat_server_ip_.empty() && chat_server_port_ > 0) {
+        chat_conn_ = std::make_unique<ChatConnection>(base_, "gate_1");
+        chat_conn_->set_message_callback([this](uint32_t msg_id, const std::vector<uint8_t>& payload) {
+            handle_chat_message(msg_id, payload);
+        });
+        chat_conn_->connect(chat_server_ip_, chat_server_port_);
+        SPDLOG_INFO("[Gate]ChatServer connection configured: {}:{}", chat_server_ip_, chat_server_port_);
+    }
+
     // 进入事件循环（阻塞）
     event_base_dispatch(base_);
 
@@ -400,6 +410,12 @@ void GateServer::route_message(std::shared_ptr<Session> session, uint32_t msg_id
         return;
     }
 
+    // Chat 消息（6000-6999）
+    if (msg_id >= 6000 && msg_id < 7000) {
+        forward_to_chat(session, msg_id, payload);
+        return;
+    }
+
     // 内部消息（3000+）转发到 Game
     if (msg_id >= 3000) {
         forward_to_game(session, msg_id, payload);
@@ -654,6 +670,90 @@ void GateServer::forward_player_msg_to_game(std::shared_ptr<Session> session, ui
     client_msg.SerializeToString(&packed_payload);
 
     conn.value()->send(MSG_ID_CLIENT_MSG, packed_payload);
+}
+
+// ===========================================
+// Chat 连接相关
+// ===========================================
+
+void GateServer::set_chat_server(const std::string& ip, uint16_t port) {
+    chat_server_ip_ = ip;
+    chat_server_port_ = port;
+}
+
+void GateServer::forward_to_chat(std::shared_ptr<Session> session, uint32_t msg_id,
+                                  const std::vector<uint8_t>& payload) {
+    if (!chat_conn_ || !chat_conn_->is_identified()) {
+        SPDLOG_WARN("[Gate]ChatServer not connected, dropping msg_id={}", msg_id);
+        return;
+    }
+    // Parse PlayerMsg to get player_id
+    farm::PlayerMsg player_msg;
+    if (!payload.empty() && !player_msg.ParseFromArray(payload.data(),
+            static_cast<int>(payload.size()))) {
+        SPDLOG_ERROR("[Gate]Failed to parse PlayerMsg for chat from fd={}", session->fd());
+        return;
+    }
+    uint64_t player_id = player_msg.player_id();
+    // Wrap as ClientMessage for ChatServer
+    farm::ClientMessage client_msg;
+    client_msg.set_player_id(player_id);
+    client_msg.set_msg_id(msg_id);
+    client_msg.set_payload(player_msg.payload());
+    std::string wrapped;
+    client_msg.SerializeToString(&wrapped);
+    chat_conn_->send(MSG_ID_CLIENT_MSG, wrapped);
+}
+
+void GateServer::handle_chat_message(uint32_t msg_id, const std::vector<uint8_t>& payload) {
+    // Handle identify response from ChatServer
+    if (msg_id == MSG_ID_GATE_IDENTIFY_RESP) {
+        farm::GateIdentifyResp resp;
+        if (!payload.empty() && !resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+            SPDLOG_ERROR("[Gate]Failed to parse GateIdentifyResp from ChatServer");
+            return;
+        }
+        if (resp.code() == 0) {
+            SPDLOG_INFO("[Gate]ChatServer identified successfully");
+            if (chat_conn_) {
+                chat_conn_->set_state(ChatConnState::IDENTIFIED);
+            }
+        } else {
+            SPDLOG_ERROR("[Gate]ChatServer identification failed: {}", resp.msg());
+        }
+        return;
+    }
+
+    // Handle heartbeat response from ChatServer
+    if (msg_id == MSG_ID_INTERN_HEARTBEAT_RESP) {
+        // Heartbeat response, ChatConnection internal already handled
+        return;
+    }
+
+    // ChatServer sends back GameMessage format
+    if (msg_id == MSG_ID_GAME_MSG) {
+        farm::GameMessage game_msg;
+        if (!game_msg.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+            SPDLOG_ERROR("[Gate]Failed to parse GameMessage from ChatServer");
+            return;
+        }
+        uint64_t player_id = game_msg.player_id();
+        uint32_t inner_msg_id = game_msg.msg_id();
+        const auto& inner_payload = game_msg.payload();
+        // Find the player's session and forward
+        auto session = session_mgr_.find_by_player_id(player_id);
+        if (!session) {
+            SPDLOG_DEBUG("[Gate]Player {} not found for chat response", player_id);
+            return;
+        }
+        // Forward to the player's client
+        auto packed = MessageParser::pack(inner_msg_id, inner_payload);
+        bufferevent_write(session->bev(), packed.data(), packed.size());
+        SPDLOG_DEBUG("[Gate]Forwarding chat msg_id={} to player={}", inner_msg_id, player_id);
+        return;
+    }
+
+    SPDLOG_INFO("[Gate]Unknown chat msg_id={}", msg_id);
 }
 
 // ===========================================

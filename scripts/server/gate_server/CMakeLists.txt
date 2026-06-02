@@ -19,10 +19,12 @@ set(PROTO_GENERATED_DIR "${COMMON_PROTO_DIR}/generated")
 set(PROTO_SRCS
     ${PROTO_GENERATED_DIR}/base.pb.cc
     ${PROTO_GENERATED_DIR}/internal.pb.cc
+    ${PROTO_GENERATED_DIR}/chat.pb.cc
 )
 set(PROTO_HDRS
     ${PROTO_GENERATED_DIR}/base.pb.h
     ${PROTO_GENERATED_DIR}/internal.pb.h
+    ${PROTO_GENERATED_DIR}/chat.pb.h
 )
 
 # 源文件
@@ -32,6 +34,7 @@ set(SOURCES
     src/session.cpp
     src/session_manager.cpp
     src/game_connection.cpp
+    src/chat_connection.cpp
     ${PROTO_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/admin_msg_ids.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/log_init.cpp

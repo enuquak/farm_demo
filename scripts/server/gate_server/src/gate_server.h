@@ -2,6 +2,7 @@
 
 #include "session_manager.h"
 #include "game_connection.h"
+#include "chat_connection.h"
 #include "admin_msg_ids.h"
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -42,6 +43,9 @@ public:
     // 将操作分发到事件循环线程（线程安全）
     void dispatch_to_event_loop(std::function<void()> func);
 
+    // 设置 Chat Server 连接
+    void set_chat_server(const std::string& ip, uint16_t port);
+
 private:
     // libevent 回调
     static void on_accept(struct evconnlistener* listener, evutil_socket_t fd,
@@ -79,6 +83,11 @@ private:
     void forward_player_msg_to_game(std::shared_ptr<Session> session, uint32_t server_id,
                                     uint32_t msg_id, const std::vector<uint8_t>& payload);
 
+    // Chat 连接相关
+    void forward_to_chat(std::shared_ptr<Session> session, uint32_t msg_id,
+                         const std::vector<uint8_t>& payload);
+    void handle_chat_message(uint32_t msg_id, const std::vector<uint8_t>& payload);
+
     // 管理消息处理
     void handle_admin_message(uint32_t msg_id, const std::vector<uint8_t>& payload);
     void handle_shutdown(const AdminShutdownMsg& msg);
@@ -110,6 +119,11 @@ private:
 
     // 轮询索引（用于 get_any_game_connection）
     size_t next_game_index_ = 0;
+
+    // Chat 连接
+    std::unique_ptr<ChatConnection> chat_conn_;
+    std::string chat_server_ip_;
+    uint16_t chat_server_port_ = 0;
 };
 
 }  // namespace farm
