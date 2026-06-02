@@ -1,6 +1,7 @@
 #pragma once
 
-#include "redis_connection.h"
+#include "redis_pool.h"
+#include "db_types.h"
 
 #include <string>
 #include <vector>
@@ -8,16 +9,9 @@
 
 namespace farm {
 
-enum class CacheResult : int32_t {
-    SUCCESS = 0,
-    NOT_FOUND = 1,
-    CONNECTION_ERROR = 2,
-    TIMEOUT = 3,
-};
-
 class RedisServer {
 public:
-    RedisServer(RedisConnection& conn);
+    explicit RedisServer(RedisPool& pool);
 
     // 获取缓存
     CacheResult get(const std::string& key, std::vector<uint8_t>& value);
@@ -28,11 +22,11 @@ public:
     // 删除缓存
     CacheResult del(const std::string& key);
 
-    // 检查连接是否可用
+    // 检查连接池是否可用
     bool is_available() const;
 
 private:
-    RedisConnection& conn_;
+    RedisPool& pool_;
 };
 
 }  // namespace farm

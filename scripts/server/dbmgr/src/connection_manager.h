@@ -1,7 +1,8 @@
 #pragma once
 
-#include "mongo_connection.h"
-#include "redis_connection.h"
+#include "mongo_replica_set.h"
+#include "redis_pool.h"
+#include "db_types.h"
 
 #include <string>
 #include <thread>
@@ -11,30 +12,13 @@
 
 namespace farm {
 
-enum class ConnectionState {
-    DISCONNECTED,
-    CONNECTING,
-    CONNECTED,
-    FAILED,           // 重试中
-    FAILED_PERMANENT  // 超过最大重试次数
-};
-
-// 连接配置
-struct MongoConfig {
-    std::string uri;
-    int retry_interval_ms = 3000;
-    int max_retry_count = 0;  // 0 = 无限重试
-};
-
-struct RedisConfig {
-    std::string uri;
-    int retry_interval_ms = 3000;
-    int max_retry_count = 0;  // 0 = 无限重试
-};
+// 连接配置（使用新的配置类型）
+using MongoConfig = MongoReplicaSetConfig;
+using RedisConfig = RedisPoolConfig;
 
 class ConnectionManager {
 public:
-    ConnectionManager(const MongoConfig& mongo_config, const RedisConfig& redis_config);
+    ConnectionManager(const MongoReplicaSetConfig& mongo_config, const RedisPoolConfig& redis_config);
     ~ConnectionManager();
 
     // 禁止拷贝
@@ -54,8 +38,14 @@ public:
     ConnectionState state() const;
 
     // 获取连接对象
-    MongoConnection& mongo_connection();
-    RedisConnection& redis_connection();
+    MongoReplicaSetConnection& mongo_connection();
+    RedisPool& redis_pool();
+
+    // 写后读一致性：切到 primary 读
+    void read_from_primary_after_write();
+
+    // 恢复默认 read preference
+    void restore_read_preference();
 
     // 状态变化回调（DbMgrServer 注册）
     void set_on_ready_callback(std::function<void()> callback);
@@ -73,11 +63,11 @@ private:
     // 更新状态
     void update_state();
 
-    MongoConfig mongo_config_;
-    RedisConfig redis_config_;
+    MongoReplicaSetConfig mongo_config_;
+    RedisPoolConfig redis_config_;
 
-    MongoConnection mongo_conn_;
-    RedisConnection redis_conn_;
+    MongoReplicaSetConnection mongo_conn_;
+    RedisPool redis_pool_;
 
     std::atomic<ConnectionState> state_{ConnectionState::DISCONNECTED};
     std::atomic<bool> running_{false};

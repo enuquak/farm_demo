@@ -30,7 +30,7 @@ DbMgrServer::DbMgrServer(uint32_t index, const std::string& ip, uint16_t port,
     , running_(false)
     , conn_mgr_(conn_mgr)
     , mongo_server_(conn_mgr.mongo_connection(), index_config_dir)
-    , redis_server_(conn_mgr.redis_connection())
+    , redis_server_(conn_mgr.redis_pool())
 {
 }
 

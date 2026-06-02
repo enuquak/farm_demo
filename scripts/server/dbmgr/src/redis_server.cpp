@@ -5,16 +5,22 @@
 
 namespace farm {
 
-RedisServer::RedisServer(RedisConnection& conn)
-    : conn_(conn) {
+RedisServer::RedisServer(RedisPool& pool)
+    : pool_(pool) {
 }
 
 CacheResult RedisServer::get(const std::string& key, std::vector<uint8_t>& value) {
-    if (!conn_.is_connected()) {
+    if (!pool_.is_ready()) {
         return CacheResult::CONNECTION_ERROR;
     }
 
-    redisReply* reply = (redisReply*)redisCommand(conn_.context(), "GET %s", key.c_str());
+    auto guard = pool_.acquire();
+    if (!guard.is_valid()) {
+        SPDLOG_ERROR("[RedisServer]Failed to acquire Redis connection for GET key={}", key);
+        return CacheResult::CONNECTION_ERROR;
+    }
+
+    redisReply* reply = (redisReply*)redisCommand(guard.context(), "GET %s", key.c_str());
     if (!reply) {
         SPDLOG_ERROR("[RedisServer]GET command failed for key: {}", key);
         return CacheResult::CONNECTION_ERROR;
@@ -38,11 +44,17 @@ CacheResult RedisServer::get(const std::string& key, std::vector<uint8_t>& value
 }
 
 CacheResult RedisServer::set(const std::string& key, const std::vector<uint8_t>& value, int ttl_seconds) {
-    if (!conn_.is_connected()) {
+    if (!pool_.is_ready()) {
         return CacheResult::CONNECTION_ERROR;
     }
 
-    redisReply* reply = (redisReply*)redisCommand(conn_.context(),
+    auto guard = pool_.acquire();
+    if (!guard.is_valid()) {
+        SPDLOG_ERROR("[RedisServer]Failed to acquire Redis connection for SET key={}", key);
+        return CacheResult::CONNECTION_ERROR;
+    }
+
+    redisReply* reply = (redisReply*)redisCommand(guard.context(),
         "SET %s %b EX %d",
         key.c_str(),
         value.data(), value.size(),
@@ -66,11 +78,17 @@ CacheResult RedisServer::set(const std::string& key, const std::vector<uint8_t>&
 }
 
 CacheResult RedisServer::del(const std::string& key) {
-    if (!conn_.is_connected()) {
+    if (!pool_.is_ready()) {
         return CacheResult::CONNECTION_ERROR;
     }
 
-    redisReply* reply = (redisReply*)redisCommand(conn_.context(), "DEL %s", key.c_str());
+    auto guard = pool_.acquire();
+    if (!guard.is_valid()) {
+        SPDLOG_ERROR("[RedisServer]Failed to acquire Redis connection for DEL key={}", key);
+        return CacheResult::CONNECTION_ERROR;
+    }
+
+    redisReply* reply = (redisReply*)redisCommand(guard.context(), "DEL %s", key.c_str());
     if (!reply) {
         SPDLOG_ERROR("[RedisServer]DEL command failed for key: {}", key);
         return CacheResult::CONNECTION_ERROR;
@@ -88,7 +106,7 @@ CacheResult RedisServer::del(const std::string& key) {
 }
 
 bool RedisServer::is_available() const {
-    return conn_.is_connected();
+    return pool_.is_ready();
 }
 
 }  // namespace farm

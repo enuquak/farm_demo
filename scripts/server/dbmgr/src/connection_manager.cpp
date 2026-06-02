@@ -5,9 +5,11 @@
 
 namespace farm {
 
-ConnectionManager::ConnectionManager(const MongoConfig& mongo_config, const RedisConfig& redis_config)
+ConnectionManager::ConnectionManager(const MongoReplicaSetConfig& mongo_config, const RedisPoolConfig& redis_config)
     : mongo_config_(mongo_config)
-    , redis_config_(redis_config) {
+    , redis_config_(redis_config)
+    , mongo_conn_(mongo_config)
+    , redis_pool_(redis_config) {
 }
 
 ConnectionManager::~ConnectionManager() {
@@ -48,7 +50,7 @@ void ConnectionManager::shutdown() {
     }
 
     mongo_conn_.disconnect();
-    redis_conn_.disconnect();
+    redis_pool_.shutdown();
 
     state_ = ConnectionState::DISCONNECTED;
     SPDLOG_INFO("[ConnectionManager]Shutdown complete");
@@ -62,12 +64,20 @@ ConnectionState ConnectionManager::state() const {
     return state_;
 }
 
-MongoConnection& ConnectionManager::mongo_connection() {
+MongoReplicaSetConnection& ConnectionManager::mongo_connection() {
     return mongo_conn_;
 }
 
-RedisConnection& ConnectionManager::redis_connection() {
-    return redis_conn_;
+RedisPool& ConnectionManager::redis_pool() {
+    return redis_pool_;
+}
+
+void ConnectionManager::read_from_primary_after_write() {
+    mongo_conn_.read_from_primary_after_write();
+}
+
+void ConnectionManager::restore_read_preference() {
+    mongo_conn_.restore_read_preference();
 }
 
 void ConnectionManager::set_on_ready_callback(std::function<void()> callback) {
@@ -79,8 +89,8 @@ bool ConnectionManager::try_connect_mongo() {
         return true;
     }
 
-    SPDLOG_INFO("[ConnectionManager]Connecting to MongoDB...");
-    if (mongo_conn_.connect(mongo_config_.uri)) {
+    SPDLOG_INFO("[ConnectionManager]Connecting to MongoDB Replica Set...");
+    if (mongo_conn_.connect()) {
         mongo_retry_count_ = 0;
         return true;
     }
@@ -91,18 +101,18 @@ bool ConnectionManager::try_connect_mongo() {
 }
 
 bool ConnectionManager::try_connect_redis() {
-    if (redis_conn_.is_connected()) {
+    if (redis_pool_.is_ready()) {
         return true;
     }
 
-    SPDLOG_INFO("[ConnectionManager]Connecting to Redis...");
-    if (redis_conn_.connect(redis_config_.uri)) {
+    SPDLOG_INFO("[ConnectionManager]Connecting to Redis Pool...");
+    if (redis_pool_.init()) {
         redis_retry_count_ = 0;
         return true;
     }
 
     redis_retry_count_++;
-    SPDLOG_ERROR("[ConnectionManager]Redis connection failed (attempt {})", redis_retry_count_);
+    SPDLOG_ERROR("[ConnectionManager]Redis pool init failed (attempt {})", redis_retry_count_);
     return false;
 }
 
@@ -144,7 +154,7 @@ void ConnectionManager::retry_thread_func() {
 }
 
 void ConnectionManager::update_state() {
-    if (mongo_conn_.is_connected() && redis_conn_.is_connected()) {
+    if (mongo_conn_.is_connected() && redis_pool_.is_ready()) {
         state_ = ConnectionState::CONNECTED;
     } else if (state_ == ConnectionState::CONNECTED) {
         state_ = ConnectionState::FAILED;
