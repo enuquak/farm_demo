@@ -268,6 +268,13 @@ void LoginStub::handle_enter_game(std::shared_ptr<GateSession> session,
                 player_data.set_pos_y(data.pos_y);
                 player_data.set_pos_z(data.pos_z);
                 player_data.set_scene_id(data.scene_id);
+                player_data.set_energy(data.energy);
+                player_data.set_gold(data.gold);
+                player_data.set_max_hp(data.max_hp);
+                player_data.set_current_hp(data.current_hp);
+                player_data.set_attack_power(data.attack_power);
+                player_data.set_defense_power(data.defense_power);
+                player_data.set_combat_level(data.combat_level);
                 *enter_resp.mutable_player_data() = player_data;
 
                 // Include energy data
@@ -388,6 +395,13 @@ void LoginStub::handle_enter_game_req(std::shared_ptr<GateSession> session,
                 player_data.set_pos_y(data.pos_y);
                 player_data.set_pos_z(data.pos_z);
                 player_data.set_scene_id(data.scene_id);
+                player_data.set_energy(data.energy);
+                player_data.set_gold(data.gold);
+                player_data.set_max_hp(data.max_hp);
+                player_data.set_current_hp(data.current_hp);
+                player_data.set_attack_power(data.attack_power);
+                player_data.set_defense_power(data.defense_power);
+                player_data.set_combat_level(data.combat_level);
                 *resp.mutable_player_data() = player_data;
 
                 // Include energy data
