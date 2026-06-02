@@ -14,7 +14,7 @@ import pyscroll
 from .constants import (
     TILE_SIZE, ZOOM_FACTOR, TARGET_FPS,
     DEFAULT_MAP_PATH, PLAYER_SPRITE_PATH,
-    Direction,
+    Direction, NPC_INTERACT_RANGE,
 )
 from .tmx_map import TmxMapLoader
 from .player_sprite import PlayerSprite
@@ -27,6 +27,11 @@ from .game_renderer import GameRenderer
 from .drop_item_renderer import DropItemRenderer
 from .notification import Notification, NotificationType, NotificationPriority
 from .ui.notification_manager import NotificationManager
+from .npc_manager import NPCManager
+from .dialog_engine import DialogEngine
+from .affection_system import AffectionSystem
+from .bubble_ui import BubbleUI
+from .quest_handler import QuestHandler
 
 from .message_ids import MSG_ID_FORCE_SLEEP_READY
 
@@ -125,6 +130,18 @@ class GameScene:
             self.WINDOW_WIDTH, self.WINDOW_HEIGHT
         )
 
+        # NPC 系统
+        self._npc_manager = NPCManager(zoom=ZOOM_FACTOR)
+        self._dialog_engine = DialogEngine()
+        self._affection_system = AffectionSystem()
+        self._bubble_ui = BubbleUI()
+        self._current_time_slot = "08:00"
+        self._npc_manager.set_current_scene(self._scene_manager.current_scene)
+        self._update_npc_sprites_in_group()
+
+        # 任务系统
+        self._quest_handler = QuestHandler(connection)
+
         # 玩家控制器
         self._player_controller = PlayerController(
             connection=connection,
@@ -145,6 +162,11 @@ class GameScene:
             on_clock_sync=self._on_clock_sync,
             on_force_sleep_notify=self._on_force_sleep_notify,
             on_notify_toast=self._on_notify_toast,
+            on_quest_accept_resp=self._on_quest_accept_resp,
+            on_quest_submit_resp=self._on_quest_submit_resp,
+            on_quest_abandon_resp=self._on_quest_abandon_resp,
+            on_quest_sync_notify=self._on_quest_sync_notify,
+            on_quest_progress_notify=self._on_quest_progress_notify,
         )
 
         # 强制睡觉状态
@@ -206,6 +228,10 @@ class GameScene:
             # 处理玩家输入（帧率无关）
             self._handle_mouse_click()
             self._handle_portal_interaction()
+            self._handle_npc_interaction()
+            self._dialog_engine.update(dt)
+            self._npc_manager.update_animations(dt)
+            self._bubble_ui.update(dt)
             self._player_controller.handle_input(
                 dt,
                 self._renderer.exhaustion_modal.is_visible,
@@ -229,12 +255,40 @@ class GameScene:
             player_cy = self._player_sprite.world_y + TILE_SIZE // 2
             self._map_renderer.center = (int(player_cx), int(player_cy))
 
+            # 处理对话效果
+            effects = self._dialog_engine.pending_effects
+            for effect in effects:
+                if 'affection' in effect:
+                    npc_id = self._dialog_engine.current_npc_id
+                    if npc_id:
+                        self._affection_system.add_affection(npc_id, effect['affection'])
+
+            if not self._dialog_engine.is_active and self._input_manager.is_ui_blocking():
+                self._input_manager.set_ui_blocking(False)
+
+            # NPC 可交互状态更新
+            player_tile_x = self._player_sprite.world_x // (TILE_SIZE * ZOOM_FACTOR)
+            player_tile_y = self._player_sprite.world_y // (TILE_SIZE * ZOOM_FACTOR)
+            for npc in self._npc_manager.get_npcs_in_scene():
+                dx = abs(npc.tile_x - player_tile_x)
+                dy = abs(npc.tile_y - player_tile_y)
+                is_near = max(dx, dy) <= NPC_INTERACT_RANGE
+                npc.set_interactable(is_near)
+                if is_near:
+                    self._bubble_ui.show_dots(npc.npc_id)
+                else:
+                    self._bubble_ui.hide_dots(npc.npc_id)
+
             # 渲染
             self._renderer.render(
                 dt, self._group, self._player_sprite,
                 self._scene_manager, self._map_renderer,
-                self._drop_item_renderer,
-                self._notification_manager,
+                drop_item_renderer=self._drop_item_renderer,
+                notification_manager=self._notification_manager,
+                npc_manager=self._npc_manager,
+                bubble_ui=self._bubble_ui,
+                dialog_engine=self._dialog_engine,
+                affection_system=self._affection_system,
             )
 
             # 控制帧率
@@ -250,6 +304,8 @@ class GameScene:
         处理鼠标点击交互
         鼠标左键点击世界中的 tile 触发物品交互
         """
+        if self._dialog_engine.is_active:
+            return
         if self._input_manager.is_ui_blocking():
             return
 
@@ -307,6 +363,21 @@ class GameScene:
                 )
                 return
 
+        # 检查是否点击了 NPC
+        npc = self._npc_manager.get_npc_at_tile(tile_x, tile_y)
+        if npc is not None:
+            self._npc_manager.face_player(
+                self._player_sprite.world_x // (TILE_SIZE * ZOOM_FACTOR),
+                self._player_sprite.world_y // (TILE_SIZE * ZOOM_FACTOR)
+            )
+            started = self._dialog_engine.start_dialog(
+                npc_id=npc.npc_id,
+                affection=self._affection_system.get_affection(npc.npc_id),
+            )
+            if started:
+                self._input_manager.set_ui_blocking(True)
+            return
+
         current_tool = None
         effect, description = match_item_effect(current_tool, self._tmx_map, tile_x, tile_y)
 
@@ -323,6 +394,8 @@ class GameScene:
         处理空格键 Portal 交互
         玩家站在 Portal 旁（切比雪夫距离=1），面前 tile 是 Portal，按空格触发场景切换
         """
+        if self._dialog_engine.is_active:
+            return
         if not self._input_manager.is_action_pressed("interact"):
             return
 
@@ -412,6 +485,64 @@ class GameScene:
         self._scene_manager.request_scene_change(
             target_scene, target_portal_id, (screen_x, screen_y)
         )
+
+    # ========== NPC 交互 ==========
+
+    def _update_npc_sprites_in_group(self):
+        """将当前场景的 NPC 精灵加入 pyscroll group。"""
+        for npc in list(self._group):
+            if hasattr(npc, 'npc_id'):
+                self._group.remove(npc)
+        for npc in self._npc_manager.get_npcs_in_scene():
+            self._group.add(npc)
+
+    def _on_affection_sync(self, payload):
+        """处理好感度同步消息。"""
+        pass  # Will be connected to network dispatcher later
+
+    def _handle_npc_interaction(self):
+        """处理 NPC 交互（空格键触发）。"""
+        if self._input_manager.is_ui_blocking():
+            return
+        if self._scene_manager.is_input_blocked():
+            return
+        if not self._input_manager.is_action_pressed('interact'):
+            return
+
+        player_tile_x = self._player_sprite.world_x // (TILE_SIZE * ZOOM_FACTOR)
+        player_tile_y = self._player_sprite.world_y // (TILE_SIZE * ZOOM_FACTOR)
+        facing = self._player_sprite.direction
+
+        if self._dialog_engine.is_active:
+            self._dialog_engine.advance()
+            self._input_manager.set_ui_blocking(self._dialog_engine.is_active)
+            return
+
+        npc = self._npc_manager.get_interactable_npc(player_tile_x, player_tile_y, facing)
+        if npc is None:
+            npc = self._npc_manager.get_nearby_npc(player_tile_x, player_tile_y)
+
+        if npc is not None:
+            self._npc_manager.face_player(player_tile_x, player_tile_y)
+
+            active_item = self._inventory.get_active_item() if hasattr(self, '_inventory') else None
+            if active_item:
+                item_id = str(active_item.get('item_id', ''))
+                reaction = self._dialog_engine.get_gift_reaction(npc.npc_id, item_id)
+                if self._affection_system.can_gift(npc.npc_id):
+                    self._affection_system.record_gift(npc.npc_id)
+                    self._affection_system.add_affection(npc.npc_id, reaction['affection'])
+                    self._dialog_engine.start_gift_dialog(npc.npc_id, reaction)
+                    self._input_manager.set_ui_blocking(True)
+                    return
+
+            started = self._dialog_engine.start_dialog(
+                npc_id=npc.npc_id,
+                affection=self._affection_system.get_affection(npc.npc_id),
+                time_slot=getattr(self, '_current_time_slot', '08:00'),
+            )
+            if started:
+                self._input_manager.set_ui_blocking(True)
 
     # ========== 网络回调 ==========
 
@@ -518,3 +649,25 @@ class GameScene:
         )
         self._notification_manager.add(notification)
         logger.info(f"[GameScene]Notification received: {notify.title}")
+
+    # ========== 任务系统回调 ==========
+
+    def _on_quest_accept_resp(self, resp):
+        """任务接受响应回调"""
+        self._quest_handler.handle_quest_accept_resp(resp)
+
+    def _on_quest_submit_resp(self, resp):
+        """任务提交响应回调"""
+        self._quest_handler.handle_quest_submit_resp(resp)
+
+    def _on_quest_abandon_resp(self, resp):
+        """任务放弃响应回调"""
+        self._quest_handler.handle_quest_abandon_resp(resp)
+
+    def _on_quest_sync_notify(self, notify):
+        """任务同步通知回调"""
+        self._quest_handler.handle_quest_sync_notify(notify)
+
+    def _on_quest_progress_notify(self, notify):
+        """任务进度通知回调"""
+        self._quest_handler.handle_quest_progress_notify(notify)

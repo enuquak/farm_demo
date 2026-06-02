@@ -12,6 +12,9 @@ from .message_ids import (
     MSG_ID_CLOCK_SYNC, MSG_ID_FORCE_SLEEP_NOTIFY, MSG_ID_FORCE_SLEEP_READY,
     MSG_ID_DROP_ITEM_SYNC, MSG_ID_INVENTORY_SYNC,
     MSG_ID_NOTIFY_TOAST,
+    MSG_ID_QUEST_ACCEPT_RESP, MSG_ID_QUEST_SUBMIT_RESP,
+    MSG_ID_QUEST_ABANDON_RESP, MSG_ID_QUEST_SYNC_NOTIFY,
+    MSG_ID_QUEST_PROGRESS_NOTIFY,
 )
 
 import sys
@@ -41,6 +44,13 @@ class NetworkMessageDispatcher:
         on_drop_item_sync: Callable[[Any], None] = None,
         on_inventory_sync: Callable[[str], None] = None,
         on_notify_toast: Callable[[Any], None] = None,
+        on_gift_resp: Callable[[Any], None] = None,
+        on_affection_sync: Callable[[Any], None] = None,
+        on_quest_accept_resp: Callable[[Any], None] = None,
+        on_quest_submit_resp: Callable[[Any], None] = None,
+        on_quest_abandon_resp: Callable[[Any], None] = None,
+        on_quest_sync_notify: Callable[[Any], None] = None,
+        on_quest_progress_notify: Callable[[Any], None] = None,
     ):
         """
         初始化消息分发器
@@ -55,6 +65,13 @@ class NetworkMessageDispatcher:
             on_force_sleep_notify: 强制睡觉通知回调 (day)
             on_drop_item_sync: 掉落物同步回调 (drop_sync)
             on_inventory_sync: 背包同步回调 (inventory_json)
+            on_gift_resp: 送礼响应回调 (gift_resp)
+            on_affection_sync: 好感度同步回调 (affection_sync)
+            on_quest_accept_resp: 任务接受响应回调 (resp)
+            on_quest_submit_resp: 任务提交响应回调 (resp)
+            on_quest_abandon_resp: 任务放弃响应回调 (resp)
+            on_quest_sync_notify: 任务同步通知回调 (notify)
+            on_quest_progress_notify: 任务进度通知回调 (notify)
         """
         self._connection = connection
         self._callbacks = {
@@ -67,6 +84,13 @@ class NetworkMessageDispatcher:
             "on_drop_item_sync": on_drop_item_sync,
             "on_inventory_sync": on_inventory_sync,
             "on_notify_toast": on_notify_toast,
+            "on_gift_resp": on_gift_resp,
+            "on_affection_sync": on_affection_sync,
+            "on_quest_accept_resp": on_quest_accept_resp,
+            "on_quest_submit_resp": on_quest_submit_resp,
+            "on_quest_abandon_resp": on_quest_abandon_resp,
+            "on_quest_sync_notify": on_quest_sync_notify,
+            "on_quest_progress_notify": on_quest_progress_notify,
         }
 
         # 分发表: msg_id -> handler 方法
@@ -80,6 +104,14 @@ class NetworkMessageDispatcher:
             MSG_ID_DROP_ITEM_SYNC: self._handle_drop_item_sync,
             MSG_ID_INVENTORY_SYNC: self._handle_inventory_sync,
             MSG_ID_NOTIFY_TOAST: self._handle_notify_toast,
+            # NPC 对话相关 (msg_ids.py auto-generated, using integer values directly)
+            3202: self._handle_gift_resp,          # MSG_ID_GIFT_RESP
+            3203: self._handle_affection_sync,     # MSG_ID_AFFECTION_SYNC
+            MSG_ID_QUEST_ACCEPT_RESP: self._handle_quest_accept_resp,
+            MSG_ID_QUEST_SUBMIT_RESP: self._handle_quest_submit_resp,
+            MSG_ID_QUEST_ABANDON_RESP: self._handle_quest_abandon_resp,
+            MSG_ID_QUEST_SYNC_NOTIFY: self._handle_quest_sync_notify,
+            MSG_ID_QUEST_PROGRESS_NOTIFY: self._handle_quest_progress_notify,
         }
 
     def dispatch_pending(self, connection=None):
@@ -240,3 +272,96 @@ class NetworkMessageDispatcher:
 
         except Exception as e:
             logger.error(f"[NetworkDispatcher]Failed to parse NotifyToast: {e}")
+
+    def _handle_gift_resp(self, payload: bytes):
+        """处理送礼响应。"""
+        pass  # Placeholder - will be connected when server is ready
+
+    def _handle_affection_sync(self, payload: bytes):
+        """处理好感度同步。"""
+        pass  # Placeholder - will be connected when server is ready
+
+    def _handle_quest_accept_resp(self, payload: bytes):
+        """处理任务接受响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            resp = player_pb2.QuestAcceptResp()
+            resp.ParseFromString(player_msg.payload)
+
+            logger.info(f"[NetworkDispatcher]QuestAcceptResp received: code={resp.code}, msg={resp.msg}")
+
+            if self._callbacks["on_quest_accept_resp"]:
+                self._callbacks["on_quest_accept_resp"](resp)
+
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse QuestAcceptResp: {e}")
+
+    def _handle_quest_submit_resp(self, payload: bytes):
+        """处理任务提交响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            resp = player_pb2.QuestSubmitResp()
+            resp.ParseFromString(player_msg.payload)
+
+            logger.info(f"[NetworkDispatcher]QuestSubmitResp received: code={resp.code}, msg={resp.msg}")
+
+            if self._callbacks["on_quest_submit_resp"]:
+                self._callbacks["on_quest_submit_resp"](resp)
+
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse QuestSubmitResp: {e}")
+
+    def _handle_quest_abandon_resp(self, payload: bytes):
+        """处理任务放弃响应"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            resp = player_pb2.QuestAbandonResp()
+            resp.ParseFromString(player_msg.payload)
+
+            logger.info(f"[NetworkDispatcher]QuestAbandonResp received: code={resp.code}, msg={resp.msg}")
+
+            if self._callbacks["on_quest_abandon_resp"]:
+                self._callbacks["on_quest_abandon_resp"](resp)
+
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse QuestAbandonResp: {e}")
+
+    def _handle_quest_sync_notify(self, payload: bytes):
+        """处理任务同步通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            notify = player_pb2.QuestSyncNotify()
+            notify.ParseFromString(player_msg.payload)
+
+            logger.info(f"[NetworkDispatcher]QuestSyncNotify received: {len(notify.task_infos)} quests")
+
+            if self._callbacks["on_quest_sync_notify"]:
+                self._callbacks["on_quest_sync_notify"](notify)
+
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse QuestSyncNotify: {e}")
+
+    def _handle_quest_progress_notify(self, payload: bytes):
+        """处理任务进度通知"""
+        try:
+            player_msg = base_pb2.PlayerMsg()
+            player_msg.ParseFromString(payload)
+
+            notify = player_pb2.QuestProgressNotify()
+            notify.ParseFromString(player_msg.payload)
+
+            logger.info(f"[NetworkDispatcher]QuestProgressNotify received: quest_id={notify.quest_id}")
+
+            if self._callbacks["on_quest_progress_notify"]:
+                self._callbacks["on_quest_progress_notify"](notify)
+
+        except Exception as e:
+            logger.error(f"[NetworkDispatcher]Failed to parse QuestProgressNotify: {e}")
